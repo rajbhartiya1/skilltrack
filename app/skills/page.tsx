@@ -1,0 +1,398 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+
+type Skill = {
+  name: string;
+  level: number;
+};
+
+const initialSkills: Skill[] = [
+  { name: "JavaScript", level: 85 },
+  { name: "React", level: 78 },
+  { name: "Next.js", level: 72 },
+  { name: "Node.js", level: 68 },
+  { name: "SQL", level: 62 },
+  { name: "Python", level: 55 },
+];
+
+export default function SkillsPage() {
+  const [skills, setSkills] = useState<Skill[]>(initialSkills);
+  const [showForm, setShowForm] = useState(false);
+
+  const [skillName, setSkillName] = useState("");
+  const [skillLevel, setSkillLevel] = useState(50);
+
+  function addSkill() {
+    if (!skillName.trim()) {
+      alert("Please enter a skill name.");
+      return;
+    }
+
+    const newSkill: Skill = {
+      name: skillName.trim(),
+      level: skillLevel,
+    };
+
+    setSkills((current) => [...current, newSkill]);
+
+    setSkillName("");
+    setSkillLevel(50);
+    setShowForm(false);
+  }
+
+  function deleteSkill(skillName: string) {
+    setSkills((current) =>
+      current.filter((skill) => skill.name !== skillName)
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-[#07111f] text-white">
+      <div className="flex min-h-screen">
+
+        {/* SIDEBAR */}
+        <aside className="hidden w-64 border-r border-white/10 bg-[#0b1728] p-5 md:block">
+
+          <div className="mb-10 flex items-center gap-3">
+            <Link href="/">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 text-xl font-bold text-slate-950">
+                S
+              </div>
+            </Link>
+
+            <div>
+              <h1 className="text-xl font-bold">
+                SkillTrack
+              </h1>
+
+              <p className="text-xs text-slate-400">
+                Career Intelligence
+              </p>
+            </div>
+          </div>
+
+          <nav className="space-y-2">
+
+            <Link
+              href="/"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            >
+              <span className="text-lg">▦</span>
+              Dashboard
+            </Link>
+
+            <Link
+              href="/skills"
+              className="flex w-full items-center gap-3 rounded-xl bg-cyan-500/15 px-4 py-3 text-cyan-400"
+            >
+              <span className="text-lg">◎</span>
+              My Skills
+            </Link>
+
+            <Link
+              href="/skill-gap"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            >
+              <span className="text-lg">◈</span>
+              Skill Gap
+            </Link>
+
+            <Link
+              href="/jobs"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            >
+              <span className="text-lg">▣</span>
+              Jobs
+            </Link>
+
+            <Link
+              href="/applications"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            >
+              <span className="text-lg">✓</span>
+              Applications
+            </Link>
+
+          </nav>
+
+          <div className="mt-10 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+
+            <p className="text-xs text-slate-400">
+              Profile completion
+            </p>
+
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-700">
+              <div className="h-full w-[82%] rounded-full bg-cyan-400" />
+            </div>
+
+            <p className="mt-2 text-sm font-semibold">
+              82% complete
+            </p>
+
+          </div>
+
+        </aside>
+
+        {/* MAIN */}
+        <section className="flex-1">
+
+          {/* HEADER */}
+          <header className="flex items-center justify-between border-b border-white/10 bg-[#0b1728]/80 px-5 py-5 backdrop-blur md:px-8">
+
+            <div>
+              <p className="text-sm text-slate-400">
+                Career Dashboard
+              </p>
+
+              <h2 className="text-xl font-bold md:text-2xl">
+                My Skills
+              </h2>
+            </div>
+
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 font-bold">
+              R
+            </div>
+
+          </header>
+
+          <div className="space-y-7 p-5 md:p-8">
+
+            {/* TITLE */}
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+
+              <div>
+                <h3 className="text-3xl font-bold">
+                  Your Skills
+                </h3>
+
+                <p className="mt-2 text-slate-400">
+                  Manage your skills and proficiency levels.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+              >
+                + Add Skill
+              </button>
+
+            </div>
+
+            {/* ADD SKILL FORM */}
+            {showForm && (
+              <div className="rounded-2xl border border-cyan-500/20 bg-[#0d1b2e] p-6">
+
+                <h3 className="text-lg font-bold">
+                  Add New Skill
+                </h3>
+
+                <div className="mt-5 grid gap-5 md:grid-cols-2">
+
+                  <div>
+                    <label className="mb-2 block text-sm text-slate-400">
+                      Skill Name
+                    </label>
+
+                    <input
+                      type="text"
+                      value={skillName}
+                      onChange={(e) =>
+                        setSkillName(e.target.value)
+                      }
+                      placeholder="e.g. TypeScript"
+                      className="w-full rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-white outline-none placeholder:text-slate-600 focus:border-cyan-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm text-slate-400">
+                      Proficiency: {skillLevel}%
+                    </label>
+
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={skillLevel}
+                      onChange={(e) =>
+                        setSkillLevel(Number(e.target.value))
+                      }
+                      className="mt-3 w-full accent-cyan-400"
+                    />
+                  </div>
+
+                </div>
+
+                <div className="mt-5 flex gap-3">
+
+                  <button
+                    onClick={addSkill}
+                    className="rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-bold text-slate-950 hover:bg-cyan-300"
+                  >
+                    Add Skill
+                  </button>
+
+                  <button
+                    onClick={() => setShowForm(false)}
+                    className="rounded-xl border border-white/10 px-5 py-2.5 text-sm text-slate-300 hover:bg-white/5"
+                  >
+                    Cancel
+                  </button>
+
+                </div>
+
+              </div>
+            )}
+
+            {/* SUMMARY */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+              <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
+
+                <p className="text-sm text-slate-400">
+                  Total Skills
+                </p>
+
+                <p className="mt-2 text-3xl font-bold">
+                  {skills.length}
+                </p>
+
+                <p className="mt-2 text-xs text-cyan-400">
+                  Active skills
+                </p>
+
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
+
+                <p className="text-sm text-slate-400">
+                  Average Proficiency
+                </p>
+
+                <p className="mt-2 text-3xl font-bold">
+                  {Math.round(
+                    skills.reduce(
+                      (total, skill) => total + skill.level,
+                      0
+                    ) / skills.length
+                  )}%
+                </p>
+
+                <p className="mt-2 text-xs text-green-400">
+                  Overall skill level
+                </p>
+
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
+
+                <p className="text-sm text-slate-400">
+                  Strongest Skill
+                </p>
+
+                <p className="mt-2 text-2xl font-bold">
+                  {skills.length > 0
+                    ? [...skills].sort(
+                        (a, b) => b.level - a.level
+                      )[0].name
+                    : "None"}
+                </p>
+
+                <p className="mt-2 text-xs text-cyan-400">
+                  Highest proficiency
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* SKILLS LIST */}
+            <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+
+              <div className="mb-6">
+                <h3 className="text-xl font-bold">
+                  Skill Proficiency
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-400">
+                  Your current technical skill levels.
+                </p>
+              </div>
+
+              <div className="space-y-6">
+
+                {skills.map((skill) => (
+
+                  <div key={skill.name}>
+
+                    <div className="mb-2 flex items-center justify-between">
+
+                      <div className="flex items-center gap-3">
+
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-500/10 text-sm font-bold text-cyan-400">
+                          {skill.name.charAt(0)}
+                        </div>
+
+                        <span className="font-medium">
+                          {skill.name}
+                        </span>
+
+                      </div>
+
+                      <div className="flex items-center gap-4">
+
+                        <span className="text-sm text-slate-400">
+                          {skill.level}%
+                        </span>
+
+                        <button
+                          onClick={() =>
+                            deleteSkill(skill.name)
+                          }
+                          className="text-xs text-red-400 hover:text-red-300"
+                        >
+                          Remove
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-800">
+
+                      <div
+                        className="h-full rounded-full bg-cyan-400 transition-all"
+                        style={{
+                          width: `${skill.level}%`,
+                        }}
+                      />
+
+                    </div>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            </div>
+
+            {/* BACK */}
+            <Link
+              href="/"
+              className="inline-block text-sm font-semibold text-cyan-400 hover:text-cyan-300"
+            >
+              ← Back to Dashboard
+            </Link>
+
+          </div>
+
+        </section>
+
+      </div>
+    </main>
+  );
+}
