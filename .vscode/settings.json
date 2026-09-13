@@ -1,0 +1,10 @@
+﻿{
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "\\.(tsx|ts|jsx|js|css|json|html)$",
+                "cmd": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}\\.vscode\\auto-push.ps1\""
+            }
+        ]
+    }
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-
+<p> hi my name is raj </p>
 type Job = {
   id: string;
   title: string;
@@ -157,7 +157,7 @@ export default function JobsPage() {
             )}
           </>
         )}
-
+        
       </div>
     </main>
   );
