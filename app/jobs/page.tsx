@@ -13,10 +13,7 @@ type Job = {
   location: string | null;
 };
 
-export default function JobsPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
 
   useEffect(() => {
     async function loadJobs() {
