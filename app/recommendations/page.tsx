@@ -2,302 +2,491 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../lib/supabase";
-import { getJobs } from "../../lib/jobs";
-import {
-  calculateSkillGap,
-  UserSkill,
-  SkillGapResult,
-} from "../../lib/skillGap";
+import { supabase } from "../lib/supabase";
+import { calculateSkillGap, UserSkill } from "../lib/skillGap";
 
 type Job = {
   id: string;
   title: string;
   company: string;
   required_skills: string[] | null;
-  description?: string | null;
+  description: string | null;
   location: string | null;
+  created_at: string;
 };
 
 type Profile = {
+  id: string;
   full_name: string | null;
-  skills: UserSkill[] | null;
+  skills: UserSkill[] | string[] | null;
+  bio: string | null;
 };
 
-type Recommendation = Job & {
-  matchPercentage: number;
+type CareerRecommendation = {
+  title: string;
+  score: number;
+  jobs: Job[];
+  requiredSkills: string[];
   matchedSkills: string[];
-  missingSkills: string[];
   improvingSkills: string[];
-  analysis: SkillGapResult;
+  missingSkills: string[];
+  reasons: string[];
 };
+
+function normalizeSkills(
+  skills: UserSkill[] | string[] | null | undefined
+): UserSkill[] {
+  if (!Array.isArray(skills)) {
+    return [];
+  }
+
+  return skills
+    .map((skill) => {
+      if (typeof skill === "string") {
+        return {
+          name: skill.trim(),
+          level: 70,
+        };
+      }
+
+      return {
+        name: String(skill.name || "").trim(),
+        level: Math.max(0, Math.min(100, Number(skill.level) || 0)),
+      };
+    })
+    .filter((skill) => skill.name);
+}
+
+function getCareerCategory(title: string) {
+  const name = title.toLowerCase();
+
+  if (
+    name.includes("frontend") ||
+    name.includes("front-end") ||
+    name.includes("web developer") ||
+    name.includes("react")
+  ) {
+    return "Frontend Development";
+  }
+
+  if (
+    name.includes("backend") ||
+    name.includes("back-end") ||
+    name.includes("node") ||
+    name.includes("server")
+  ) {
+    return "Backend Development";
+  }
+
+  if (
+    name.includes("full stack") ||
+    name.includes("full-stack") ||
+    name.includes("software developer") ||
+    name.includes("software engineer")
+  ) {
+    return "Full Stack & Software Development";
+  }
+
+  if (
+    name.includes("data analyst") ||
+    name.includes("business intelligence") ||
+    name.includes("bi developer") ||
+    name.includes("data visualization") ||
+    name.includes("business analyst")
+  ) {
+    return "Data Analytics & BI";
+  }
+
+  if (
+    name.includes("data scientist") ||
+    name.includes("machine learning") ||
+    name.includes("ai engineer") ||
+    name.includes("deep learning") ||
+    name.includes("nlp") ||
+    name.includes("computer vision") ||
+    name.includes("generative ai") ||
+    name.includes("research scientist") ||
+    name.includes("mlops")
+  ) {
+    return "AI & Machine Learning";
+  }
+
+  if (
+    name.includes("cloud") ||
+    name.includes("devops") ||
+    name.includes("site reliability") ||
+    name.includes("sre") ||
+    name.includes("release engineer")
+  ) {
+    return "Cloud & DevOps";
+  }
+
+  if (
+    name.includes("cyber") ||
+    name.includes("security") ||
+    name.includes("ethical hacker") ||
+    name.includes("penetration tester") ||
+    name.includes("devsecops")
+  ) {
+    return "Cybersecurity";
+  }
+
+  if (
+    name.includes("database") ||
+    name.includes("sql developer") ||
+    name.includes("data engineer") ||
+    name.includes("big data") ||
+    name.includes("data architect")
+  ) {
+    return "Data Engineering";
+  }
+
+  if (
+    name.includes("ui/ux") ||
+    name.includes("product designer") ||
+    name.includes("designer")
+  ) {
+    return "UI/UX & Product Design";
+  }
+
+  if (
+    name.includes("product manager") ||
+    name.includes("project manager") ||
+    name.includes("technical product")
+  ) {
+    return "Product & Project Management";
+  }
+
+  if (
+    name.includes("qa") ||
+    name.includes("tester") ||
+    name.includes("test engineer")
+  ) {
+    return "Quality Engineering";
+  }
+
+  if (
+    name.includes("mobile") ||
+    name.includes("android") ||
+    name.includes("ios")
+  ) {
+    return "Mobile Development";
+  }
+
+  if (
+    name.includes("blockchain") ||
+    name.includes("web3") ||
+    name.includes("smart contract")
+  ) {
+    return "Blockchain & Web3";
+  }
+
+  if (
+    name.includes("embedded") ||
+    name.includes("firmware") ||
+    name.includes("hardware") ||
+    name.includes("robotics") ||
+    name.includes("iot")
+  ) {
+    return "Embedded & IoT";
+  }
+
+  return "Software & Technology";
+}
+
+function uniqueStrings(items: string[]) {
+  return Array.from(
+    new Map(
+      items
+        .filter(Boolean)
+        .map((item) => [item.toLowerCase(), item.trim()])
+    ).values()
+  );
+}
 
 export default function RecommendationsPage() {
-  const [userName, setUserName] = useState("SkillTrack User");
-  const [skills, setSkills] = useState<UserSkill[]>([]);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
   const [selectedCareer, setSelectedCareer] =
-    useState<Recommendation | null>(null);
+    useState<CareerRecommendation | null>(null);
 
-  async function loadRecommendations() {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      setError("");
 
-      if (!user) {
-        window.location.href = "/login";
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setError("Please login first.");
+          return;
+        }
+
+        const [profileResult, jobsResult] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, full_name, skills, bio")
+            .eq("id", user.id)
+            .maybeSingle(),
+
+          supabase
+            .from("jobs")
+            .select(
+              "id, title, company, required_skills, description, location, created_at"
+            )
+            .order("created_at", { ascending: false }),
+        ]);
+
+        if (profileResult.error) {
+          throw new Error(profileResult.error.message);
+        }
+
+        if (jobsResult.error) {
+          throw new Error(jobsResult.error.message);
+        }
+
+        setProfile(profileResult.data as Profile | null);
+        setJobs((jobsResult.data || []) as Job[]);
+      } catch (err) {
+        console.error(err);
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load career recommendations."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  const userSkills = useMemo(() => {
+    return normalizeSkills(profile?.skills);
+  }, [profile]);
+
+  const careerRecommendations = useMemo(() => {
+    if (!jobs.length) {
+      return [];
+    }
+
+    const grouped = new Map<string, Job[]>();
+
+    jobs.forEach((job) => {
+      const category = getCareerCategory(job.title);
+
+      if (!grouped.has(category)) {
+        grouped.set(category, []);
+      }
+
+      grouped.get(category)!.push(job);
+    });
+
+    const recommendations: CareerRecommendation[] = [];
+
+    grouped.forEach((careerJobs, category) => {
+      const allRequiredSkills = uniqueStrings(
+        careerJobs.flatMap((job) =>
+          Array.isArray(job.required_skills) ? job.required_skills : []
+        )
+      );
+
+      if (!allRequiredSkills.length) {
         return;
       }
 
-      const { data: profile, error: profileError } =
-        await supabase
-          .from("profiles")
-          .select("full_name, skills")
-          .eq("id", user.id)
-          .maybeSingle();
+      const gapResults = careerJobs.map((job) =>
+        calculateSkillGap(
+          userSkills,
+          Array.isArray(job.required_skills) ? job.required_skills : []
+        )
+      );
 
-      if (profileError) {
-        console.error(
-          "Profile error:",
-          profileError.message
+      const averageScore = Math.round(
+        gapResults.reduce((sum, result) => sum + result.matchPercentage, 0) /
+          gapResults.length
+      );
+
+      const matchedSkills = uniqueStrings(
+        gapResults.flatMap((result) => result.matchedSkills)
+      );
+
+      const improvingSkills = uniqueStrings(
+        gapResults.flatMap((result) => result.improvingSkills)
+      );
+
+      const missingSkills = uniqueStrings(
+        gapResults.flatMap((result) => result.missingSkills)
+      );
+
+      const reasons: string[] = [];
+
+      if (matchedSkills.length > 0) {
+        reasons.push(
+          `You already match ${matchedSkills.length} important skill${
+            matchedSkills.length === 1 ? "" : "s"
+          }.`
         );
       }
 
-      const profileData = profile as Profile | null;
-
-      if (profileData?.full_name) {
-        setUserName(profileData.full_name);
-      } else if (user.email) {
-        setUserName(user.email.split("@")[0]);
+      if (averageScore >= 75) {
+        reasons.push(
+          "Your current profile is strongly aligned with this career path."
+        );
+      } else if (averageScore >= 50) {
+        reasons.push(
+          "You have a solid foundation, but a few skills need strengthening."
+        );
+      } else {
+        reasons.push(
+          "This path has potential, but you should close the skill gaps first."
+        );
       }
 
-      const userSkills = Array.isArray(profileData?.skills)
-        ? profileData.skills
+      if (missingSkills.length > 0) {
+        reasons.push(
+          `${missingSkills.slice(0, 3).join(", ")} ${
+            missingSkills.length === 1 ? "is" : "are"
+          } among the biggest gaps.`
+        );
+      }
+
+      recommendations.push({
+        title: category,
+        score: averageScore,
+        jobs: careerJobs,
+        requiredSkills: allRequiredSkills,
+        matchedSkills,
+        improvingSkills,
+        missingSkills,
+        reasons,
+      });
+    });
+
+    return recommendations.sort((a, b) => b.score - a.score);
+  }, [jobs, userSkills]);
+
+  const topRecommendation = careerRecommendations[0];
+
+  const marketSkills = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    jobs.forEach((job) => {
+      const skills = Array.isArray(job.required_skills)
+        ? job.required_skills
         : [];
 
-      setSkills(userSkills);
+      skills.forEach((skill) => {
+        const clean = String(skill).trim();
 
-      const jobsData = await getJobs();
+        if (!clean) {
+          return;
+        }
 
-      setJobs(jobsData as Job[]);
-    } catch (error) {
-      console.error(
-        "Recommendation loading error:",
-        error
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }
+        const key = clean.toLowerCase();
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+    });
 
-  useEffect(() => {
-    loadRecommendations();
-  }, []);
-
-  const recommendations = useMemo<Recommendation[]>(() => {
-    return jobs
-      .map((job) => {
-        const analysis = calculateSkillGap(
-          skills,
-          job.required_skills || []
-        );
+    return Array.from(counts.entries())
+      .map(([key, count]) => {
+        const original = jobs
+          .flatMap((job) =>
+            Array.isArray(job.required_skills) ? job.required_skills : []
+          )
+          .find((skill) => String(skill).trim().toLowerCase() === key);
 
         return {
-          ...job,
-          matchPercentage: analysis.matchPercentage,
-          matchedSkills: analysis.matchedSkills,
-          missingSkills: analysis.missingSkills,
-          improvingSkills: analysis.improvingSkills,
-          analysis,
+          name: original || key,
+          count,
+          userHas: userSkills.some(
+            (skill) => skill.name.toLowerCase() === key
+          ),
         };
       })
-      .sort(
-        (a, b) =>
-          b.matchPercentage - a.matchPercentage
-      );
-  }, [jobs, skills]);
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }, [jobs, userSkills]);
 
-  const bestCareer = recommendations[0];
-
-  const alternativeCareers = recommendations.slice(1, 7);
-
-  const overallReadiness = useMemo(() => {
-    if (recommendations.length === 0) {
-      return 0;
-    }
-
-    const topJobs = recommendations.slice(0, 10);
-
-    const total = topJobs.reduce(
-      (sum, job) => sum + job.matchPercentage,
-      0
+  const nextSkills = useMemo(() => {
+    const userSkillMap = new Map(
+      userSkills.map((skill) => [skill.name.toLowerCase(), skill.level])
     );
 
-    return Math.round(total / topJobs.length);
-  }, [recommendations]);
-
-  const strongSkills = useMemo(() => {
-    return [...skills]
-      .filter(
-        (skill) =>
-          typeof skill.name === "string" &&
-          Number(skill.level) >= 70
-      )
-      .sort(
-        (a, b) =>
-          Number(b.level) - Number(a.level)
-      );
-  }, [skills]);
-
-  const improvingSkills = useMemo(() => {
-    return [...skills]
-      .filter(
-        (skill) =>
-          typeof skill.name === "string" &&
-          Number(skill.level) > 0 &&
-          Number(skill.level) < 70
-      )
-      .sort(
-        (a, b) =>
-          Number(b.level) - Number(a.level)
-      );
-  }, [skills]);
-
-  const skillRecommendations = useMemo(() => {
     const frequency = new Map<string, number>();
 
-    recommendations
-      .slice(0, 12)
-      .forEach((job) => {
-        job.missingSkills.forEach((skill) => {
-          frequency.set(
-            skill,
-            (frequency.get(skill) || 0) + 2
-          );
-        });
+    jobs.forEach((job) => {
+      const skills = Array.isArray(job.required_skills)
+        ? job.required_skills
+        : [];
 
-        job.improvingSkills.forEach((skill) => {
-          frequency.set(
-            skill,
-            (frequency.get(skill) || 0) + 1
-          );
-        });
+      skills.forEach((skill) => {
+        const clean = String(skill).trim();
+
+        if (!clean) {
+          return;
+        }
+
+        const key = clean.toLowerCase();
+
+        if (!userSkillMap.has(key)) {
+          frequency.set(key, (frequency.get(key) || 0) + 1);
+        } else if ((userSkillMap.get(key) || 0) < 70) {
+          frequency.set(key, (frequency.get(key) || 0) + 0.5);
+        }
       });
+    });
 
     return Array.from(frequency.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 6)
-      .map(([skill, score]) => ({
-        skill,
-        score,
+      .map(([name, demand]) => ({
+        name,
+        demand: Math.round(demand),
       }));
-  }, [recommendations]);
-
-  const careerInsights = useMemo(() => {
-    if (!bestCareer) {
-      return [
-        "Add skills to your profile to unlock personalized career insights.",
-      ];
-    }
-
-    const insights: string[] = [];
-
-    if (bestCareer.matchPercentage >= 80) {
-      insights.push(
-        `You already have a strong skill alignment with ${bestCareer.title}.`
-      );
-    } else if (bestCareer.matchPercentage >= 60) {
-      insights.push(
-        `You have a good foundation for ${bestCareer.title}, but a few skills need improvement.`
-      );
-    } else {
-      insights.push(
-        `You are building towards ${bestCareer.title}; improving your priority gaps can significantly increase your match.`
-      );
-    }
-
-    if (bestCareer.matchedSkills.length > 0) {
-      insights.push(
-        `${bestCareer.matchedSkills.length} required skills already meet the target proficiency level.`
-      );
-    }
-
-    if (bestCareer.improvingSkills.length > 0) {
-      insights.push(
-        `Focus on improving ${bestCareer.improvingSkills
-          .slice(0, 2)
-          .join(" and ")} to strengthen your profile.`
-      );
-    }
-
-    if (bestCareer.missingSkills.length > 0) {
-      insights.push(
-        `Learning ${bestCareer.missingSkills
-          .slice(0, 2)
-          .join(" and ")} can unlock additional opportunities.`
-      );
-    }
-
-    return insights;
-  }, [bestCareer]);
-
-  const getMatchLabel = (percentage: number) => {
-    if (percentage >= 85) {
-      return "Excellent Fit";
-    }
-
-    if (percentage >= 70) {
-      return "Strong Fit";
-    }
-
-    if (percentage >= 50) {
-      return "Potential Fit";
-    }
-
-    return "Needs Development";
-  };
-
-  const getMatchClass = (percentage: number) => {
-    if (percentage >= 85) {
-      return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
-    }
-
-    if (percentage >= 70) {
-      return "border-cyan-400/30 bg-cyan-400/10 text-cyan-300";
-    }
-
-    if (percentage >= 50) {
-      return "border-yellow-400/30 bg-yellow-400/10 text-yellow-300";
-    }
-
-    return "border-red-400/30 bg-red-400/10 text-red-300";
-  };
-
-  const getReadinessLabel = (value: number) => {
-    if (value >= 85) return "Career Ready";
-    if (value >= 70) return "Almost Ready";
-    if (value >= 50) return "Building Skills";
-    return "Early Stage";
-  };
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    await loadRecommendations();
-  }
+  }, [jobs, userSkills]);
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#07111f] text-white">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
+      <main className="min-h-screen bg-[#07111f] text-white">
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
+            <h2 className="text-xl font-bold">Building your career map...</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Analyzing your skills against available jobs.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-          <p className="mt-5 text-slate-400">
-            AI is analyzing your career profile...
-          </p>
+  if (error) {
+    return (
+      <main className="min-h-screen bg-[#07111f] px-6 py-20 text-white">
+        <div className="mx-auto max-w-xl rounded-3xl border border-red-400/20 bg-red-400/5 p-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-400/10 text-2xl">
+            ⚠️
+          </div>
+
+          <h1 className="text-2xl font-bold">Career engine unavailable</h1>
+
+          <p className="mt-3 text-sm leading-6 text-slate-400">{error}</p>
+
+          <Link
+            href="/profile"
+            className="mt-6 inline-flex rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+          >
+            Update Profile
+          </Link>
         </div>
       </main>
     );
@@ -306,40 +495,37 @@ export default function RecommendationsPage() {
   return (
     <main className="min-h-screen bg-[#07111f] text-white">
       {/* NAVBAR */}
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#07111f]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link
-            href="/"
-            className="text-2xl font-black tracking-tight"
-          >
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#07111f]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+          <Link href="/" className="text-2xl font-black tracking-tight">
             Skill<span className="text-cyan-400">Track</span>
           </Link>
 
-          <nav className="hidden items-center gap-6 text-sm text-slate-300 lg:flex">
+          <nav className="hidden items-center gap-7 text-sm font-medium md:flex">
             <Link
               href="/"
-              className="transition hover:text-cyan-400"
+              className="text-slate-400 transition hover:text-white"
             >
               Dashboard
             </Link>
 
             <Link
               href="/profile"
-              className="transition hover:text-cyan-400"
+              className="text-slate-400 transition hover:text-white"
             >
               Profile
             </Link>
 
             <Link
               href="/jobs"
-              className="transition hover:text-cyan-400"
+              className="text-slate-400 transition hover:text-white"
             >
               Jobs
             </Link>
 
             <Link
               href="/skill-gap"
-              className="transition hover:text-cyan-400"
+              className="text-slate-400 transition hover:text-white"
             >
               Skill Gap
             </Link>
@@ -353,7 +539,7 @@ export default function RecommendationsPage() {
 
             <Link
               href="/applications"
-              className="transition hover:text-cyan-400"
+              className="text-slate-400 transition hover:text-white"
             >
               Applications
             </Link>
@@ -361,853 +547,607 @@ export default function RecommendationsPage() {
 
           <Link
             href="/profile"
-            className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-300"
+            className="rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
           >
-            {userName}
+            Update Skills
           </Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-6 py-10">
+      <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
         {/* HERO */}
-        <section className="relative overflow-hidden rounded-3xl border border-purple-400/20 bg-gradient-to-br from-purple-500/15 via-[#0d1b2e] to-cyan-400/10 p-8 md:p-10">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[32px] border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-[#101d35] to-purple-500/10 p-7 shadow-2xl md:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
 
-          <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/10 px-4 py-2 text-xs font-bold tracking-wider text-purple-300">
-                🤖 SKILLTRACK CAREER INTELLIGENCE
+          <div className="relative grid gap-10 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                ✦ AI Career Intelligence
               </div>
 
-              <h1 className="mt-5 text-4xl font-black leading-tight md:text-5xl">
-                Discover Your
-                <span className="text-cyan-400">
-                  {" "}Best Career Path
-                </span>
+              <h1 className="max-w-3xl text-4xl font-black leading-tight md:text-6xl">
+                Your skills.
+                <br />
+                Your <span className="text-cyan-400">next career.</span>
               </h1>
 
-              <p className="mt-5 text-base leading-7 text-slate-400">
-                SkillTrack analyzes your skills, proficiency levels,
-                and job requirements to identify career opportunities
-                that fit your current profile.
+              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 md:text-lg">
+                SkillTrack analyzes your current proficiency, compares it with
+                real job requirements, and identifies the career paths where
+                you have the strongest potential.
               </p>
-            </div>
 
-            <div className="flex flex-col items-center">
-              <div className="flex h-40 w-40 items-center justify-center rounded-full border-8 border-purple-400/20 bg-purple-400/5">
-                <div className="text-center">
-                  <p className="text-4xl font-black text-purple-300">
-                    {overallReadiness}%
-                  </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href="/skill-gap"
+                  className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 transition hover:bg-cyan-300"
+                >
+                  View Skill Gap →
+                </Link>
 
-                  <p className="mt-1 text-xs uppercase tracking-wider text-slate-500">
-                    Readiness
-                  </p>
-                </div>
+                <Link
+                  href="/jobs"
+                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
+                >
+                  Explore Jobs
+                </Link>
               </div>
-
-              <p className="mt-3 text-sm font-semibold text-slate-300">
-                {getReadinessLabel(overallReadiness)}
-              </p>
             </div>
-          </div>
-        </section>
 
-        {/* SUMMARY CARDS */}
-        <section className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
-            <p className="text-sm text-slate-500">
-              Skills Analyzed
-            </p>
+            <div className="rounded-3xl border border-white/10 bg-black/20 p-6 backdrop-blur">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                Best career path
+              </p>
 
-            <p className="mt-3 text-4xl font-black">
-              {skills.length}
-            </p>
-
-            <p className="mt-2 text-xs text-slate-500">
-              From your profile
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-emerald-400/10 bg-[#0d1b2e] p-6">
-            <p className="text-sm text-slate-500">
-              Strong Skills
-            </p>
-
-            <p className="mt-3 text-4xl font-black text-emerald-400">
-              {strongSkills.length}
-            </p>
-
-            <p className="mt-2 text-xs text-slate-500">
-              70%+ proficiency
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-yellow-400/10 bg-[#0d1b2e] p-6">
-            <p className="text-sm text-slate-500">
-              Skills Improving
-            </p>
-
-            <p className="mt-3 text-4xl font-black text-yellow-400">
-              {improvingSkills.length}
-            </p>
-
-            <p className="mt-2 text-xs text-slate-500">
-              Below target level
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-cyan-400/10 bg-[#0d1b2e] p-6">
-            <p className="text-sm text-slate-500">
-              Jobs Compared
-            </p>
-
-            <p className="mt-3 text-4xl font-black text-cyan-400">
-              {jobs.length}
-            </p>
-
-            <p className="mt-2 text-xs text-slate-500">
-              Available opportunities
-            </p>
-          </div>
-        </section>
-
-        {/* BEST CAREER */}
-        {bestCareer ? (
-          <section className="mt-8 overflow-hidden rounded-3xl border border-cyan-400/20 bg-[#0d1b2e]">
-            <div className="border-b border-white/10 bg-gradient-to-r from-cyan-400/10 to-transparent p-7">
-              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-400">
-                    #1 CAREER RECOMMENDATION
-                  </p>
-
-                  <h2 className="mt-2 text-3xl font-black">
-                    {bestCareer.title}
+              {topRecommendation ? (
+                <>
+                  <h2 className="mt-3 text-2xl font-black">
+                    {topRecommendation.title}
                   </h2>
 
-                  <p className="mt-1 text-sm text-slate-500">
-                    {bestCareer.company} •{" "}
-                    {bestCareer.location || "India"}
-                  </p>
-                </div>
+                  <div className="mt-6 flex items-end gap-3">
+                    <span className="text-6xl font-black text-cyan-400">
+                      {topRecommendation.score}%
+                    </span>
 
-                <button
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/10 disabled:opacity-50"
-                >
-                  {refreshing
-                    ? "Analyzing..."
-                    : "↻ Refresh Analysis"}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid lg:grid-cols-3">
-              {/* Score */}
-              <div className="border-b border-white/10 p-7 text-center lg:border-b-0 lg:border-r">
-                <p className="text-sm text-slate-500">
-                  Compatibility Score
-                </p>
-
-                <div className="mx-auto mt-6 flex h-48 w-48 items-center justify-center rounded-full border-[12px] border-cyan-400/10">
-                  <div>
-                    <p className="text-5xl font-black text-cyan-400">
-                      {bestCareer.matchPercentage}%
-                    </p>
-
-                    <p className="mt-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                      {getMatchLabel(
-                        bestCareer.matchPercentage
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-cyan-400 transition-all"
-                    style={{
-                      width: `${bestCareer.matchPercentage}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Skill Breakdown */}
-              <div className="border-b border-white/10 p-7 lg:border-b-0 lg:border-r">
-                <h3 className="text-lg font-bold">
-                  Skill Breakdown
-                </h3>
-
-                <div className="mt-6 space-y-5">
-                  <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">
-                        Matched
-                      </span>
-
-                      <span className="font-bold text-emerald-400">
-                        {bestCareer.matchedSkills.length}
-                      </span>
-                    </div>
-
-                    <div className="mt-2 h-2 rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-emerald-400"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            bestCareer.matchedSkills.length /
-                              Math.max(
-                                1,
-                                bestCareer.required_skills
-                                  ?.length || 1
-                              ) *
-                              100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">
-                        Improving
-                      </span>
-
-                      <span className="font-bold text-yellow-400">
-                        {bestCareer.improvingSkills.length}
-                      </span>
-                    </div>
-
-                    <div className="mt-2 h-2 rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-yellow-400"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            bestCareer.improvingSkills.length /
-                              Math.max(
-                                1,
-                                bestCareer.required_skills
-                                  ?.length || 1
-                              ) *
-                              100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">
-                        Missing
-                      </span>
-
-                      <span className="font-bold text-red-400">
-                        {bestCareer.missingSkills.length}
-                      </span>
-                    </div>
-
-                    <div className="mt-2 h-2 rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-red-400"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            bestCareer.missingSkills.length /
-                              Math.max(
-                                1,
-                                bestCareer.required_skills
-                                  ?.length || 1
-                              ) *
-                              100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* AI Insight */}
-              <div className="p-7">
-                <h3 className="text-lg font-bold">
-                  Career Intelligence 🧠
-                </h3>
-
-                <div className="mt-5 space-y-4">
-                  {careerInsights.map(
-                    (insight, index) => (
-                      <div
-                        key={index}
-                        className="flex gap-3"
-                      >
-                        <span className="mt-0.5 text-cyan-400">
-                          ✦
-                        </span>
-
-                        <p className="text-sm leading-6 text-slate-400">
-                          {insight}
-                        </p>
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Skills */}
-            <div className="border-t border-white/10 p-7">
-              <div className="grid gap-6 md:grid-cols-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                    Your Strengths
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {bestCareer.matchedSkills.length === 0 ? (
-                      <span className="text-sm text-slate-500">
-                        No direct matches yet.
-                      </span>
-                    ) : (
-                      bestCareer.matchedSkills.map(
-                        (skill) => (
-                          <span
-                            key={skill}
-                            className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs text-emerald-300"
-                          >
-                            ✓ {skill}
-                          </span>
-                        )
-                      )
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-yellow-400">
-                    Improve
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {bestCareer.improvingSkills.length === 0 ? (
-                      <span className="text-sm text-slate-500">
-                        Nothing urgent.
-                      </span>
-                    ) : (
-                      bestCareer.improvingSkills.map(
-                        (skill) => (
-                          <span
-                            key={skill}
-                            className="rounded-lg bg-yellow-400/10 px-3 py-2 text-xs text-yellow-300"
-                          >
-                            ↗ {skill}
-                          </span>
-                        )
-                      )
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-red-400">
-                    Skill Gaps
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {bestCareer.missingSkills.length === 0 ? (
-                      <span className="text-sm text-slate-500">
-                        No major gaps.
-                      </span>
-                    ) : (
-                      bestCareer.missingSkills.map(
-                        (skill) => (
-                          <span
-                            key={skill}
-                            className="rounded-lg bg-red-400/10 px-3 py-2 text-xs text-red-300"
-                          >
-                            + {skill}
-                          </span>
-                        )
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <section className="mt-8 rounded-3xl border border-white/10 bg-[#0d1b2e] p-10 text-center">
-            <div className="text-5xl">🧠</div>
-
-            <h2 className="mt-5 text-2xl font-black">
-              Build your career profile
-            </h2>
-
-            <p className="mx-auto mt-2 max-w-lg text-sm text-slate-500">
-              Add skills and proficiency levels to your profile
-              before generating personalized career recommendations.
-            </p>
-
-            <Link
-              href="/profile"
-              className="mt-6 inline-block rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950"
-            >
-              Update Profile →
-            </Link>
-          </section>
-        )}
-
-        {/* LEARN NEXT */}
-        <section className="mt-6 rounded-3xl border border-purple-400/20 bg-gradient-to-br from-purple-500/10 to-[#0d1b2e] p-7">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
-                PERSONALIZED LEARNING PLAN
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black">
-                What should you learn next? 🎯
-              </h2>
-
-              <p className="mt-2 text-sm text-slate-500">
-                Skills with the highest potential to improve your
-                job compatibility.
-              </p>
-            </div>
-
-            <Link
-              href="/profile"
-              className="text-sm font-semibold text-purple-300 hover:text-purple-200"
-            >
-              Update Skills →
-            </Link>
-          </div>
-
-          <div className="mt-7 grid gap-4 md:grid-cols-3">
-            {skillRecommendations.length === 0 ? (
-              <div className="rounded-xl bg-white/[0.03] p-6 text-sm text-slate-500 md:col-span-3">
-                Add more skills and we will generate your learning
-                priorities.
-              </div>
-            ) : (
-              skillRecommendations
-                .slice(0, 3)
-                .map((item, index) => (
-                  <div
-                    key={item.skill}
-                    className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-400/10 text-lg font-black text-purple-300">
-                        {index + 1}
-                      </div>
-
-                      <span className="rounded-full bg-purple-400/10 px-3 py-1 text-[10px] font-bold uppercase text-purple-300">
-                        High Impact
-                      </span>
-                    </div>
-
-                    <h3 className="mt-5 text-lg font-bold">
-                      {item.skill}
-                    </h3>
-
-                    <p className="mt-2 text-xs leading-5 text-slate-500">
-                      Appears frequently in your strongest career
-                      opportunities.
-                    </p>
-
-                    <div className="mt-5 h-2 rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-purple-400"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            item.score * 20
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))
-            )}
-          </div>
-        </section>
-
-        {/* TOP CAREERS */}
-        <section className="mt-6 rounded-3xl border border-white/10 bg-[#0d1b2e] p-7">
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
-                CAREER OPTIONS
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black">
-                Your Top Career Matches 💼
-              </h2>
-
-              <p className="mt-2 text-sm text-slate-500">
-                Ranked from strongest to weakest compatibility.
-              </p>
-            </div>
-
-            <Link
-              href="/jobs"
-              className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
-            >
-              Explore All Jobs →
-            </Link>
-          </div>
-
-          <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {alternativeCareers.map(
-              (career, index) => (
-                <button
-                  key={career.id}
-                  onClick={() =>
-                    setSelectedCareer(career)
-                  }
-                  className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition hover:-translate-y-1 hover:border-cyan-400/30 hover:bg-white/[0.05]"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 font-black text-cyan-400">
-                      #{index + 2}
-                    </div>
-
-                    <span
-                      className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${getMatchClass(
-                        career.matchPercentage
-                      )}`}
-                    >
-                      {career.matchPercentage}%
+                    <span className="mb-2 text-sm text-slate-500">
+                      profile match
                     </span>
                   </div>
 
-                  <p className="mt-5 text-xs font-semibold text-cyan-400">
-                    {career.company}
-                  </p>
-
-                  <h3 className="mt-1 text-lg font-bold group-hover:text-cyan-300">
-                    {career.title}
-                  </h3>
-
-                  <p className="mt-1 text-xs text-slate-600">
-                    📍 {career.location || "India"}
-                  </p>
-
                   <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
                     <div
-                      className="h-full rounded-full bg-cyan-400"
+                      className="h-full rounded-full bg-gradient-to-r from-purple-400 via-cyan-400 to-emerald-400"
                       style={{
-                        width: `${career.matchPercentage}%`,
+                        width: `${topRecommendation.score}%`,
                       }}
                     />
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {career.matchedSkills
-                      .slice(0, 3)
-                      .map((skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-md bg-emerald-400/10 px-2 py-1 text-[10px] text-emerald-300"
-                        >
-                          ✓ {skill}
-                        </span>
-                      ))}
-                  </div>
-
-                  <p className="mt-5 text-xs font-semibold text-slate-600 group-hover:text-cyan-400">
-                    Click to analyze →
+                  <p className="mt-4 text-sm text-slate-400">
+                    Based on {topRecommendation.jobs.length} related job
+                    opportunities.
                   </p>
-                </button>
-              )
-            )}
+                </>
+              ) : (
+                <p className="mt-4 text-slate-400">
+                  Add skills to generate recommendations.
+                </p>
+              )}
+            </div>
           </div>
         </section>
 
-        {/* YOUR SKILL PROFILE */}
-        <section className="mt-6 rounded-3xl border border-white/10 bg-[#0d1b2e] p-7">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
-                YOUR PROFILE
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black">
-                Skill Strength
-              </h2>
-            </div>
-
-            <Link
-              href="/profile"
-              className="text-sm font-semibold text-cyan-400"
-            >
-              Manage →
-            </Link>
+        {/* QUICK STATS */}
+        <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-[#0c1a2d] p-5">
+            <p className="text-sm text-slate-500">Career Paths</p>
+            <p className="mt-2 text-3xl font-black text-cyan-400">
+              {careerRecommendations.length}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Analyzed for you</p>
           </div>
 
-          <div className="mt-7 grid gap-5 md:grid-cols-2">
-            {skills.length === 0 ? (
-              <p className="text-sm text-slate-500 md:col-span-2">
-                No skills found. Add skills from your profile.
+          <div className="rounded-2xl border border-white/10 bg-[#0c1a2d] p-5">
+            <p className="text-sm text-slate-500">Your Skills</p>
+            <p className="mt-2 text-3xl font-black text-purple-300">
+              {userSkills.length}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">In your profile</p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-[#0c1a2d] p-5">
+            <p className="text-sm text-slate-500">Jobs Analyzed</p>
+            <p className="mt-2 text-3xl font-black text-emerald-400">
+              {jobs.length}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">Available opportunities</p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-[#0c1a2d] p-5">
+            <p className="text-sm text-slate-500">Next Skills</p>
+            <p className="mt-2 text-3xl font-black text-yellow-400">
+              {nextSkills.length}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">AI-prioritized</p>
+          </div>
+        </section>
+
+        {/* CAREER PATHS */}
+        <section className="mt-10">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+                Personalized ranking
               </p>
-            ) : (
-              skills
-                .slice()
-                .sort(
-                  (a, b) =>
-                    Number(b.level) -
-                    Number(a.level)
-                )
-                .slice(0, 10)
-                .map((skill) => (
-                  <div key={skill.name}>
-                    <div className="mb-2 flex justify-between">
-                      <span className="text-sm font-semibold">
+
+              <h2 className="mt-2 text-3xl font-black">
+                Top Career Paths
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Ranked using your skills, proficiency and job requirements.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            {careerRecommendations.slice(0, 6).map((career, index) => (
+              <button
+                key={career.title}
+                onClick={() => setSelectedCareer(career)}
+                className="group rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 text-left transition hover:-translate-y-1 hover:border-cyan-400/30 hover:bg-[#102039]"
+              >
+                <div className="flex items-start justify-between gap-5">
+                  <div className="flex gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-cyan-400/10 text-lg font-black text-cyan-400">
+                      #{index + 1}
+                    </div>
+
+                    <div>
+                      <h3 className="text-xl font-black">
+                        {career.title}
+                      </h3>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        {career.jobs.length} job
+                        {career.jobs.length === 1 ? "" : "s"} found
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-2xl font-black text-cyan-400">
+                      {career.score}%
+                    </p>
+
+                    <p className="text-[11px] uppercase tracking-wider text-slate-600">
+                      Match
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-purple-400 to-cyan-400"
+                    style={{ width: `${career.score}%` }}
+                  />
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {career.matchedSkills.slice(0, 4).map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-lg bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-300"
+                    >
+                      ✓ {skill}
+                    </span>
+                  ))}
+
+                  {career.missingSkills.slice(0, 2).map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-lg bg-red-400/10 px-3 py-1.5 text-xs font-semibold text-red-300"
+                    >
+                      + {skill}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="mt-5 text-sm font-semibold text-slate-500 transition group-hover:text-cyan-400">
+                  View career analysis →
+                </p>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* TWO COLUMN INTELLIGENCE */}
+        <section className="mt-10 grid gap-6 lg:grid-cols-2">
+          {/* NEXT SKILLS */}
+          <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-7">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-yellow-400">
+                  AI Priority
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black">
+                  What should you learn next?
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  Skills that can unlock more opportunities for your profile.
+                </p>
+              </div>
+
+              <div className="text-2xl">⚡</div>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {nextSkills.map((skill, index) => (
+                <div
+                  key={skill.name}
+                  className="flex items-center gap-4 rounded-2xl border border-white/5 bg-white/[0.025] p-4"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-400/10 text-sm font-black text-yellow-400">
+                    {index + 1}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="truncate font-semibold capitalize">
                         {skill.name}
-                      </span>
+                      </p>
 
                       <span className="text-xs text-slate-500">
-                        {Number(skill.level)}%
+                        {skill.demand} demand
                       </span>
                     </div>
 
-                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
                       <div
-                        className={`h-full rounded-full ${
-                          Number(skill.level) >= 70
-                            ? "bg-emerald-400"
-                            : "bg-yellow-400"
-                        }`}
+                        className="h-full rounded-full bg-yellow-400"
                         style={{
-                          width: `${Math.max(
-                            0,
-                            Math.min(
-                              100,
-                              Number(skill.level)
-                            )
-                          )}%`,
+                          width: `${Math.min(100, skill.demand * 10)}%`,
                         }}
                       />
                     </div>
                   </div>
-                ))
-            )}
+                </div>
+              ))}
+
+              {nextSkills.length === 0 && (
+                <div className="rounded-2xl border border-white/5 p-5 text-sm text-slate-500">
+                  Your current profile already covers the detected job skills
+                  well.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* MARKET DEMAND */}
+          <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-7">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+                Market Intelligence
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black">
+                Most demanded skills
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Based on the requirements across your available jobs.
+              </p>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {marketSkills.map((skill, index) => (
+                <div key={skill.name}>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-bold text-slate-600">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+
+                      <span className="font-semibold">{skill.name}</span>
+
+                      {skill.userHas && (
+                        <span className="rounded-md bg-emerald-400/10 px-2 py-1 text-[10px] font-bold text-emerald-300">
+                          YOU HAVE
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="text-xs text-slate-500">
+                      {skill.count} jobs
+                    </span>
+                  </div>
+
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-cyan-400"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (skill.count / Math.max(1, marketSkills[0]?.count)) *
+                            100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
-        {/* FOOTER CTA */}
-        <section className="mt-6 rounded-3xl border border-cyan-400/20 bg-gradient-to-r from-cyan-400/10 via-purple-400/10 to-cyan-400/5 p-7 text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-cyan-400">
-            READY FOR YOUR NEXT STEP?
-          </p>
+        {/* CAREER ACTION PLAN */}
+        <section className="mt-10 rounded-3xl border border-purple-400/20 bg-gradient-to-br from-purple-500/10 via-[#0c1a2d] to-cyan-500/10 p-7 md:p-9">
+          <div className="max-w-3xl">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
+              Your action plan
+            </p>
 
-          <h2 className="mt-3 text-2xl font-black">
-            Turn your skill gaps into career opportunities.
-          </h2>
+            <h2 className="mt-2 text-3xl font-black">
+              Turn your skill gaps into career progress.
+            </h2>
 
-          <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
-            Improve your priority skills, explore matching jobs,
-            and track your applications — all from SkillTrack.
-          </p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              SkillTrack recommends a simple progression: identify your target
+              career, strengthen the highest-impact skills, then apply to jobs
+              where your profile already has a strong match.
+            </p>
+          </div>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-black/10 p-5">
+              <div className="text-2xl">01</div>
+              <h3 className="mt-4 font-black">Close the gaps</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Focus first on missing skills that appear frequently in job
+                requirements.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/10 p-5">
+              <div className="text-2xl">02</div>
+              <h3 className="mt-4 font-black">Increase proficiency</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Move developing skills toward 70%+ proficiency to improve job
+                compatibility.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/10 p-5">
+              <div className="text-2xl">03</div>
+              <h3 className="mt-4 font-black">Apply strategically</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Prioritize jobs with the highest calculated match percentage.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link
+              href="/profile"
+              className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+            >
+              Improve My Skills
+            </Link>
+
             <Link
               href="/jobs"
-              className="rounded-xl bg-cyan-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+              className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold"
             >
               Find Matching Jobs
             </Link>
-
-            <Link
-              href="/skill-gap"
-              className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-            >
-              Analyze Skill Gap
-            </Link>
           </div>
         </section>
+
+        {/* FOOTER */}
+        <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
+          SkillTrack • AI-powered Skill & Employment Intelligence
+        </footer>
       </div>
 
       {/* CAREER DETAIL MODAL */}
       {selectedCareer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-[#0d1b2e] p-7 shadow-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-5 backdrop-blur-sm"
+          onClick={() => setSelectedCareer(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-white/10 bg-[#0b1728] p-7 shadow-2xl md:p-9"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
-                  CAREER ANALYSIS
+                <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+                  Career Analysis
                 </p>
 
-                <h2 className="mt-2 text-2xl font-black">
+                <h2 className="mt-2 text-3xl font-black">
                   {selectedCareer.title}
                 </h2>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  {selectedCareer.company} •{" "}
-                  {selectedCareer.location || "India"}
+                <p className="mt-2 text-sm text-slate-500">
+                  {selectedCareer.jobs.length} related opportunities
                 </p>
               </div>
 
               <button
-                onClick={() =>
-                  setSelectedCareer(null)
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                onClick={() => setSelectedCareer(null)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white"
               >
                 ✕
               </button>
             </div>
 
-            <div className="mt-7 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-6 text-center">
-              <p className="text-sm text-slate-500">
-                Compatibility
-              </p>
+            <div className="mt-7 rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-5">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Career match</p>
+                  <p className="mt-1 text-4xl font-black text-cyan-400">
+                    {selectedCareer.score}%
+                  </p>
+                </div>
 
-              <p className="mt-2 text-5xl font-black text-cyan-400">
-                {selectedCareer.matchPercentage}%
-              </p>
-
-              <p className="mt-2 text-sm text-slate-400">
-                {getMatchLabel(
-                  selectedCareer.matchPercentage
-                )}
-              </p>
-            </div>
-
-            <div className="mt-6 grid gap-5 md:grid-cols-3">
-              <div className="rounded-xl bg-emerald-400/5 p-5">
-                <p className="text-xs font-bold text-emerald-400">
-                  MATCHED
-                </p>
-
-                <p className="mt-2 text-3xl font-black">
-                  {selectedCareer.matchedSkills.length}
-                </p>
+                <span className="text-3xl">🎯</span>
               </div>
 
-              <div className="rounded-xl bg-yellow-400/5 p-5">
-                <p className="text-xs font-bold text-yellow-400">
-                  IMPROVE
-                </p>
-
-                <p className="mt-2 text-3xl font-black">
-                  {selectedCareer.improvingSkills.length}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-red-400/5 p-5">
-                <p className="text-xs font-bold text-red-400">
-                  MISSING
-                </p>
-
-                <p className="mt-2 text-3xl font-black">
-                  {selectedCareer.missingSkills.length}
-                </p>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-cyan-400"
+                  style={{
+                    width: `${selectedCareer.score}%`,
+                  }}
+                />
               </div>
             </div>
 
-            <div className="mt-6 space-y-6">
+            <div className="mt-7">
+              <h3 className="font-black">Why this is recommended</h3>
+
+              <div className="mt-4 space-y-3">
+                {selectedCareer.reasons.map((reason) => (
+                  <div
+                    key={reason}
+                    className="rounded-xl border border-white/5 bg-white/[0.025] p-4 text-sm leading-6 text-slate-400"
+                  >
+                    <span className="mr-2 text-cyan-400">✦</span>
+                    {reason}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-7 grid gap-5 md:grid-cols-3">
               <div>
-                <p className="text-sm font-bold text-emerald-400">
-                  Skills You Have
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  Strong
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {selectedCareer.matchedSkills.length === 0 ? (
-                    <span className="text-sm text-slate-500">
-                      No direct matches.
+                  {selectedCareer.matchedSkills.slice(0, 8).map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs text-emerald-300"
+                    >
+                      {skill}
                     </span>
-                  ) : (
-                    selectedCareer.matchedSkills.map(
-                      (skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs text-emerald-300"
-                        >
-                          ✓ {skill}
-                        </span>
-                      )
-                    )
+                  ))}
+
+                  {selectedCareer.matchedSkills.length === 0 && (
+                    <span className="text-xs text-slate-600">
+                      No strong matches yet
+                    </span>
                   )}
                 </div>
               </div>
 
               <div>
-                <p className="text-sm font-bold text-yellow-400">
-                  Skills To Improve
+                <p className="text-xs font-bold uppercase tracking-wider text-yellow-400">
+                  Improve
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {selectedCareer.improvingSkills.length ===
-                  0 ? (
-                    <span className="text-sm text-slate-500">
-                      No immediate improvement needed.
+                  {selectedCareer.improvingSkills.slice(0, 8).map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-lg bg-yellow-400/10 px-3 py-2 text-xs text-yellow-300"
+                    >
+                      {skill}
                     </span>
-                  ) : (
-                    selectedCareer.improvingSkills.map(
-                      (skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-lg bg-yellow-400/10 px-3 py-2 text-xs text-yellow-300"
-                        >
-                          ↗ {skill}
-                        </span>
-                      )
-                    )
+                  ))}
+
+                  {selectedCareer.improvingSkills.length === 0 && (
+                    <span className="text-xs text-slate-600">
+                      Nothing urgent
+                    </span>
                   )}
                 </div>
               </div>
 
               <div>
-                <p className="text-sm font-bold text-red-400">
-                  Missing Skills
+                <p className="text-xs font-bold uppercase tracking-wider text-red-400">
+                  Missing
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {selectedCareer.missingSkills.length ===
-                  0 ? (
-                    <span className="text-sm text-slate-500">
-                      No major missing skills.
+                  {selectedCareer.missingSkills.slice(0, 8).map((skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-lg bg-red-400/10 px-3 py-2 text-xs text-red-300"
+                    >
+                      {skill}
                     </span>
-                  ) : (
-                    selectedCareer.missingSkills.map(
-                      (skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-lg bg-red-400/10 px-3 py-2 text-xs text-red-300"
-                        >
-                          + {skill}
-                        </span>
-                      )
-                    )
+                  ))}
+
+                  {selectedCareer.missingSkills.length === 0 && (
+                    <span className="text-xs text-slate-600">
+                      No major gaps
+                    </span>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="mt-7 flex gap-3">
+            <div className="mt-7">
+              <h3 className="font-black">Recommended opportunities</h3>
+
+              <div className="mt-4 space-y-3">
+                {selectedCareer.jobs.slice(0, 5).map((job) => {
+                  const gap = calculateSkillGap(
+                    userSkills,
+                    Array.isArray(job.required_skills)
+                      ? job.required_skills
+                      : []
+                  );
+
+                  return (
+                    <Link
+                      key={job.id}
+                      href={`/jobs/${job.id}`}
+                      className="flex items-center justify-between gap-4 rounded-2xl border border-white/5 bg-white/[0.025] p-4 transition hover:bg-white/5"
+                    >
+                      <div>
+                        <p className="font-bold">{job.title}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {job.company}
+                          {job.location ? ` • ${job.location}` : ""}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p className="font-black text-cyan-400">
+                          {gap.matchPercentage}%
+                        </p>
+                        <p className="text-[10px] uppercase text-slate-600">
+                          Match
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-7 flex flex-wrap gap-3">
               <Link
-                href="/jobs"
-                className="flex-1 rounded-xl bg-cyan-400 px-5 py-3 text-center text-sm font-bold text-slate-950"
+                href="/skill-gap"
+                className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
               >
-                Explore Jobs
+                Improve Skill Gap
               </Link>
 
-              <button
-                onClick={() =>
-                  setSelectedCareer(null)
-                }
-                className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white"
+              <Link
+                href="/jobs"
+                className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold"
               >
-                Close
-              </button>
+                Browse All Jobs
+              </Link>
             </div>
           </div>
         </div>
