@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
-import { calculateSkillGap, UserSkill } from "../../../lib/skillGap";
+import {
+  calculateSkillGap,
+  UserSkill,
+} from "../../../lib/skillGap";
 
 type Job = {
   id: string;
@@ -29,12 +32,11 @@ export default function JobDetailsPage() {
   const [skills, setSkills] = useState<UserSkill[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [applicationStatus, setApplicationStatus] = useState<
-    string | null
-  >(null);
+  const [applicationStatus, setApplicationStatus] =
+    useState<string | null>(null);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadJob() {
       try {
         const {
           data: { user },
@@ -53,7 +55,10 @@ export default function JobDetailsPage() {
             .maybeSingle();
 
         if (jobError) {
-          console.error(jobError.message);
+          console.error(
+            "Job loading error:",
+            jobError.message
+          );
         }
 
         if (jobData) {
@@ -98,7 +103,7 @@ export default function JobDetailsPage() {
     }
 
     if (jobId) {
-      loadData();
+      loadJob();
     }
   }, [jobId]);
 
@@ -120,38 +125,50 @@ export default function JobDetailsPage() {
     return (
       <main className="min-h-screen bg-[#07111f] p-6 text-white">
         <div className="mx-auto max-w-3xl py-20 text-center">
-          <div className="text-5xl">🔍</div>
+          <div className="text-6xl">
+            🔍
+          </div>
 
           <h1 className="mt-5 text-3xl font-black">
             Job not found
           </h1>
 
           <p className="mt-3 text-slate-500">
-            This opportunity may have been removed or is no
-            longer available.
+            This opportunity is unavailable or may have
+            been removed.
           </p>
 
           <Link
             href="/jobs"
             className="mt-7 inline-block rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950"
           >
-            Back to Jobs
+            ← Back to Jobs
           </Link>
         </div>
       </main>
     );
   }
 
+  /*
+   * IMPORTANT:
+   * After the null check above, create a stable
+   * non-null reference for TypeScript.
+   */
+  const currentJob: Job = job;
+
   const analysis = calculateSkillGap(
     skills,
-    job.required_skills || []
+    currentJob.required_skills || []
   );
 
   const matchPercentage =
     analysis.matchPercentage;
 
+  const requiredSkills =
+    currentJob.required_skills || [];
+
   const totalSkills =
-    job.required_skills?.length || 0;
+    requiredSkills.length;
 
   const matchedPercentage =
     totalSkills === 0
@@ -181,26 +198,35 @@ export default function JobDetailsPage() {
         );
 
   function getMatchLabel(value: number) {
-    if (value >= 85) return "Excellent Match";
-    if (value >= 70) return "Strong Match";
-    if (value >= 50) return "Potential Match";
+    if (value >= 85) {
+      return "Excellent Match";
+    }
+
+    if (value >= 70) {
+      return "Strong Match";
+    }
+
+    if (value >= 50) {
+      return "Potential Match";
+    }
+
     return "Needs Development";
   }
 
   function getMatchStyle(value: number) {
     if (value >= 85) {
-      return "text-emerald-300 border-emerald-400/30 bg-emerald-400/10";
+      return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
     }
 
     if (value >= 70) {
-      return "text-cyan-300 border-cyan-400/30 bg-cyan-400/10";
+      return "border-cyan-400/30 bg-cyan-400/10 text-cyan-300";
     }
 
     if (value >= 50) {
-      return "text-yellow-300 border-yellow-400/30 bg-yellow-400/10";
+      return "border-yellow-400/30 bg-yellow-400/10 text-yellow-300";
     }
 
-    return "text-red-300 border-red-400/30 bg-red-400/10";
+    return "border-red-400/30 bg-red-400/10 text-red-300";
   }
 
   async function handleApplication(
@@ -222,7 +248,6 @@ export default function JobDetailsPage() {
         alert(
           `This job is already in your Applications with status: ${applicationStatus}`
         );
-
         return;
       }
 
@@ -231,7 +256,7 @@ export default function JobDetailsPage() {
           .from("applications")
           .insert({
             user_id: user.id,
-            job_id: job.id,
+            job_id: currentJob.id,
             status,
           });
 
@@ -248,7 +273,10 @@ export default function JobDetailsPage() {
           : "Job saved to your wishlist!"
       );
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Application error:",
+        error
+      );
 
       alert(
         "Something went wrong. Please try again."
@@ -274,22 +302,46 @@ export default function JobDetailsPage() {
             </span>
           </Link>
 
-          <nav className="hidden gap-6 text-sm text-slate-300 lg:flex">
-            <Link href="/">Dashboard</Link>
-            <Link href="/profile">Profile</Link>
+          <nav className="hidden items-center gap-6 text-sm text-slate-300 lg:flex">
+            <Link
+              href="/"
+              className="transition hover:text-cyan-400"
+            >
+              Dashboard
+            </Link>
+
+            <Link
+              href="/profile"
+              className="transition hover:text-cyan-400"
+            >
+              Profile
+            </Link>
+
             <Link
               href="/jobs"
-              className="text-cyan-400"
+              className="font-bold text-cyan-400"
             >
               Jobs
             </Link>
-            <Link href="/skill-gap">
+
+            <Link
+              href="/skill-gap"
+              className="transition hover:text-cyan-400"
+            >
               Skill Gap
             </Link>
-            <Link href="/recommendations">
+
+            <Link
+              href="/recommendations"
+              className="transition hover:text-cyan-400"
+            >
               AI Career
             </Link>
-            <Link href="/applications">
+
+            <Link
+              href="/applications"
+              className="transition hover:text-cyan-400"
+            >
               Applications
             </Link>
           </nav>
@@ -308,7 +360,7 @@ export default function JobDetailsPage() {
 
         <Link
           href="/jobs"
-          className="text-sm text-cyan-400 hover:text-cyan-300"
+          className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
         >
           ← Back to Jobs
         </Link>
@@ -317,19 +369,21 @@ export default function JobDetailsPage() {
 
         <section className="mt-6 overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/10 via-[#0d1b2e] to-purple-500/10">
           <div className="p-8 md:p-10">
-            <div className="flex flex-col justify-between gap-8 lg:flex-row">
+            <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-center">
               <div className="max-w-3xl">
                 <p className="text-sm font-bold uppercase tracking-[0.2em] text-cyan-400">
-                  {job.company}
+                  {currentJob.company}
                 </p>
 
-                <h1 className="mt-4 text-4xl font-black md:text-5xl">
-                  {job.title}
+                <h1 className="mt-4 text-4xl font-black leading-tight md:text-5xl">
+                  {currentJob.title}
                 </h1>
 
                 <div className="mt-5 flex flex-wrap gap-3">
                   <span className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-400">
-                    📍 {job.location || "India"}
+                    📍{" "}
+                    {currentJob.location ||
+                      "India"}
                   </span>
 
                   <span className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-400">
@@ -346,15 +400,15 @@ export default function JobDetailsPage() {
                 </div>
 
                 <p className="mt-7 max-w-2xl text-sm leading-7 text-slate-400">
-                  {job.description ||
-                    "Explore this opportunity and compare your current skills with the requirements."}
+                  {currentJob.description ||
+                    "Explore this opportunity and compare your current skills with the job requirements."}
                 </p>
               </div>
 
-              {/* MATCH */}
+              {/* MATCH CIRCLE */}
 
               <div className="flex shrink-0 flex-col items-center">
-                <div className="flex h-44 w-44 items-center justify-center rounded-full border-[10px] border-cyan-400/15 bg-cyan-400/5">
+                <div className="flex h-48 w-48 items-center justify-center rounded-full border-[10px] border-cyan-400/15 bg-cyan-400/5">
                   <div className="text-center">
                     <p className="text-5xl font-black text-cyan-400">
                       {matchPercentage}%
@@ -376,11 +430,11 @@ export default function JobDetailsPage() {
 
             {/* ACTIONS */}
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               {applicationStatus ? (
                 <Link
                   href="/applications"
-                  className="flex-1 rounded-xl bg-emerald-400 px-6 py-4 text-center text-sm font-black text-slate-950"
+                  className="flex-1 rounded-xl bg-emerald-400 px-6 py-4 text-center text-sm font-black text-slate-950 transition hover:bg-emerald-300"
                 >
                   ✓ {applicationStatus} — View Application
                 </Link>
@@ -393,7 +447,7 @@ export default function JobDetailsPage() {
                       )
                     }
                     disabled={actionLoading}
-                    className="flex-1 rounded-xl bg-cyan-400 px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:opacity-50"
+                    className="flex-1 rounded-xl bg-cyan-400 px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {actionLoading
                       ? "Processing..."
@@ -407,7 +461,7 @@ export default function JobDetailsPage() {
                       )
                     }
                     disabled={actionLoading}
-                    className="flex-1 rounded-xl border border-purple-400/20 bg-purple-400/10 px-6 py-4 text-sm font-black text-purple-300 transition hover:bg-purple-400/20 disabled:opacity-50"
+                    className="flex-1 rounded-xl border border-purple-400/20 bg-purple-400/10 px-6 py-4 text-sm font-black text-purple-300 transition hover:bg-purple-400/20 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     ♡ Add to Wishlist
                   </button>
@@ -417,144 +471,83 @@ export default function JobDetailsPage() {
           </div>
         </section>
 
-        {/* INTELLIGENCE */}
+        {/* QUICK STATS */}
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-3">
-          {/* MATCH SCORE */}
-
-          <div className="rounded-3xl border border-white/10 bg-[#0d1b2e] p-7">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
-              SMART MATCH
+        <section className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-cyan-400/10 bg-[#0d1b2e] p-6">
+            <p className="text-sm text-slate-500">
+              Match Score
             </p>
 
-            <h2 className="mt-2 text-2xl font-black">
-              Compatibility
-            </h2>
-
-            <div className="mt-7 h-4 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-cyan-400 transition-all"
-                style={{
-                  width: `${matchPercentage}%`,
-                }}
-              />
-            </div>
-
-            <div className="mt-4 flex items-end justify-between">
-              <span className="text-3xl font-black text-cyan-400">
-                {matchPercentage}%
-              </span>
-
-              <span className="text-xs text-slate-600">
-                overall fit
-              </span>
-            </div>
+            <p className="mt-3 text-4xl font-black text-cyan-400">
+              {matchPercentage}%
+            </p>
           </div>
 
-          {/* MATCHED */}
-
-          <div className="rounded-3xl border border-emerald-400/10 bg-[#0d1b2e] p-7">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
-              MATCHED SKILLS
+          <div className="rounded-2xl border border-emerald-400/10 bg-[#0d1b2e] p-6">
+            <p className="text-sm text-slate-500">
+              Skills Ready
             </p>
 
-            <h2 className="mt-2 text-2xl font-black">
+            <p className="mt-3 text-4xl font-black text-emerald-400">
               {analysis.matchedSkills.length}
-            </h2>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {analysis.matchedSkills.length ===
-              0 ? (
-                <span className="text-sm text-slate-500">
-                  No strong matches yet.
-                </span>
-              ) : (
-                analysis.matchedSkills.map(
-                  (skill) => (
-                    <span
-                      key={skill}
-                      className="rounded-lg bg-emerald-400/10 px-3 py-2 text-xs text-emerald-300"
-                    >
-                      ✓ {skill}
-                    </span>
-                  )
-                )
-              )}
-            </div>
+            </p>
           </div>
 
-          {/* GAPS */}
-
-          <div className="rounded-3xl border border-red-400/10 bg-[#0d1b2e] p-7">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">
-              SKILL GAPS
+          <div className="rounded-2xl border border-yellow-400/10 bg-[#0d1b2e] p-6">
+            <p className="text-sm text-slate-500">
+              Skills to Improve
             </p>
 
-            <h2 className="mt-2 text-2xl font-black">
-              {analysis.missingSkills.length}
-            </h2>
+            <p className="mt-3 text-4xl font-black text-yellow-400">
+              {analysis.improvingSkills.length}
+            </p>
+          </div>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              {analysis.missingSkills.length ===
-              0 ? (
-                <span className="text-sm text-slate-500">
-                  No major missing skills.
-                </span>
-              ) : (
-                analysis.missingSkills.map(
-                  (skill) => (
-                    <span
-                      key={skill}
-                      className="rounded-lg bg-red-400/10 px-3 py-2 text-xs text-red-300"
-                    >
-                      + {skill}
-                    </span>
-                  )
-                )
-              )}
-            </div>
+          <div className="rounded-2xl border border-red-400/10 bg-[#0d1b2e] p-6">
+            <p className="text-sm text-slate-500">
+              Skills Missing
+            </p>
+
+            <p className="mt-3 text-4xl font-black text-red-400">
+              {analysis.missingSkills.length}
+            </p>
           </div>
         </section>
 
-        {/* SKILL BREAKDOWN */}
+        {/* SKILL ANALYSIS */}
 
         <section className="mt-6 rounded-3xl border border-white/10 bg-[#0d1b2e] p-7">
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
-                SKILL ANALYSIS
-              </p>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
+              SMART SKILL ANALYSIS
+            </p>
 
-              <h2 className="mt-2 text-2xl font-black">
-                How well do you fit this role?
-              </h2>
+            <h2 className="mt-2 text-2xl font-black">
+              Your compatibility breakdown
+            </h2>
 
-              <p className="mt-2 text-sm text-slate-500">
-                Your profile compared with the employer's
-                required skills.
-              </p>
-            </div>
-
-            <span className="text-sm text-slate-500">
-              {totalSkills} required skills
-            </span>
+            <p className="mt-2 text-sm text-slate-500">
+              SkillTrack compares your proficiency with the
+              requirements for this position.
+            </p>
           </div>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {/* MATCHED */}
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {/* READY */}
 
-            <div className="rounded-2xl border border-emerald-400/10 bg-emerald-400/5 p-5">
-              <div className="flex justify-between">
+            <div className="rounded-2xl border border-emerald-400/10 bg-emerald-400/5 p-6">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-emerald-300">
-                  Ready
+                  ✓ Ready
                 </span>
 
-                <span className="text-sm font-black">
+                <span className="font-black text-emerald-300">
                   {matchedPercentage}%
                 </span>
               </div>
 
-              <div className="mt-4 h-3 rounded-full bg-white/10">
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-emerald-400"
                   style={{
@@ -563,25 +556,26 @@ export default function JobDetailsPage() {
                 />
               </div>
 
-              <p className="mt-3 text-xs text-slate-600">
-                Skills meeting the target proficiency.
+              <p className="mt-3 text-xs leading-5 text-slate-600">
+                Skills where your proficiency meets the target
+                level.
               </p>
             </div>
 
-            {/* IMPROVING */}
+            {/* IMPROVE */}
 
-            <div className="rounded-2xl border border-yellow-400/10 bg-yellow-400/5 p-5">
-              <div className="flex justify-between">
+            <div className="rounded-2xl border border-yellow-400/10 bg-yellow-400/5 p-6">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-yellow-300">
-                  Improve
+                  ↗ Improve
                 </span>
 
-                <span className="text-sm font-black">
+                <span className="font-black text-yellow-300">
                   {improvingPercentage}%
                 </span>
               </div>
 
-              <div className="mt-4 h-3 rounded-full bg-white/10">
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-yellow-400"
                   style={{
@@ -590,25 +584,25 @@ export default function JobDetailsPage() {
                 />
               </div>
 
-              <p className="mt-3 text-xs text-slate-600">
-                Skills you have but need to strengthen.
+              <p className="mt-3 text-xs leading-5 text-slate-600">
+                Skills you already have but should strengthen.
               </p>
             </div>
 
-            {/* MISSING */}
+            {/* LEARN */}
 
-            <div className="rounded-2xl border border-red-400/10 bg-red-400/5 p-5">
-              <div className="flex justify-between">
+            <div className="rounded-2xl border border-red-400/10 bg-red-400/5 p-6">
+              <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-red-300">
-                  Learn
+                  + Learn
                 </span>
 
-                <span className="text-sm font-black">
+                <span className="font-black text-red-300">
                   {missingPercentage}%
                 </span>
               </div>
 
-              <div className="mt-4 h-3 rounded-full bg-white/10">
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-red-400"
                   style={{
@@ -617,10 +611,160 @@ export default function JobDetailsPage() {
                 />
               </div>
 
-              <p className="mt-3 text-xs text-slate-600">
-                Skills not yet present in your profile.
+              <p className="mt-3 text-xs leading-5 text-slate-600">
+                Skills currently missing from your profile.
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* MATCHED SKILLS */}
+
+        <section className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-3xl border border-emerald-400/10 bg-[#0d1b2e] p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+              YOUR STRENGTHS
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black">
+              Skills You Already Have
+            </h2>
+
+            <div className="mt-6 space-y-3">
+              {analysis.matchedSkills.length ===
+              0 ? (
+                <div className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-slate-500">
+                  No required skills currently meet the target
+                  proficiency.
+                </div>
+              ) : (
+                analysis.matchedSkills.map(
+                  (skill) => (
+                    <div
+                      key={skill}
+                      className="flex items-center gap-3 rounded-xl bg-emerald-400/5 p-4"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
+                        ✓
+                      </span>
+
+                      <span className="text-sm font-semibold">
+                        {skill}
+                      </span>
+
+                      <span className="ml-auto text-xs font-bold text-emerald-400">
+                        Ready
+                      </span>
+                    </div>
+                  )
+                )
+              )}
+            </div>
+          </div>
+
+          {/* IMPROVING */}
+
+          <div className="rounded-3xl border border-yellow-400/10 bg-[#0d1b2e] p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-yellow-400">
+              DEVELOPMENT AREAS
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black">
+              Skills To Improve
+            </h2>
+
+            <div className="mt-6 space-y-3">
+              {analysis.improvingSkills.length ===
+              0 ? (
+                <div className="rounded-xl border border-dashed border-white/10 p-5 text-sm text-slate-500">
+                  No immediate improvement areas.
+                </div>
+              ) : (
+                analysis.improvingSkills.map(
+                  (skill) => (
+                    <div
+                      key={skill}
+                      className="flex items-center gap-3 rounded-xl bg-yellow-400/5 p-4"
+                    >
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-400/10 text-yellow-300">
+                        ↗
+                      </span>
+
+                      <span className="text-sm font-semibold">
+                        {skill}
+                      </span>
+
+                      <span className="ml-auto text-xs font-bold text-yellow-400">
+                        Improve
+                      </span>
+                    </div>
+                  )
+                )
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* MISSING SKILLS */}
+
+        <section className="mt-6 rounded-3xl border border-red-400/10 bg-[#0d1b2e] p-7">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">
+                PRIORITY LEARNING
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black">
+                Skills You Need To Learn
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Developing these skills can increase your compatibility
+                with this position.
+              </p>
+            </div>
+
+            <Link
+              href="/profile"
+              className="text-sm font-bold text-cyan-400 hover:text-cyan-300"
+            >
+              Update Profile →
+            </Link>
+          </div>
+
+          <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {analysis.missingSkills.length ===
+            0 ? (
+              <div className="rounded-xl border border-emerald-400/10 bg-emerald-400/5 p-6 text-sm text-emerald-300 sm:col-span-2 lg:col-span-3">
+                🎉 You have all the required skills for this
+                position.
+              </div>
+            ) : (
+              analysis.missingSkills.map(
+                (skill, index) => (
+                  <div
+                    key={skill}
+                    className="rounded-2xl border border-red-400/10 bg-red-400/5 p-5"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-400/10 font-black text-red-300">
+                        {index + 1}
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-bold">
+                          {skill}
+                        </p>
+
+                        <p className="mt-1 text-[10px] uppercase tracking-wider text-red-400">
+                          Priority Skill
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )
+            )}
           </div>
         </section>
 
@@ -632,11 +776,11 @@ export default function JobDetailsPage() {
           </p>
 
           <h2 className="mt-2 text-2xl font-black">
-            Required Skills
+            Complete Skill Requirements
           </h2>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {(job.required_skills || []).map(
+          <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {requiredSkills.map(
               (skill) => {
                 const matched =
                   analysis.matchedSkills.includes(
@@ -651,25 +795,27 @@ export default function JobDetailsPage() {
                 return (
                   <div
                     key={skill}
-                    className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-4"
+                    className="rounded-xl border border-white/10 bg-white/[0.03] p-4"
                   >
-                    <span className="text-sm font-semibold">
-                      {skill}
-                    </span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold">
+                        {skill}
+                      </span>
 
-                    {matched ? (
-                      <span className="text-xs font-bold text-emerald-400">
-                        ✓ Ready
-                      </span>
-                    ) : improving ? (
-                      <span className="text-xs font-bold text-yellow-400">
-                        ↗ Improve
-                      </span>
-                    ) : (
-                      <span className="text-xs font-bold text-red-400">
-                        + Learn
-                      </span>
-                    )}
+                      {matched ? (
+                        <span className="shrink-0 text-xs font-bold text-emerald-400">
+                          ✓ Ready
+                        </span>
+                      ) : improving ? (
+                        <span className="shrink-0 text-xs font-bold text-yellow-400">
+                          ↗ Improve
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-xs font-bold text-red-400">
+                          + Learn
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               }
@@ -677,7 +823,7 @@ export default function JobDetailsPage() {
           </div>
         </section>
 
-        {/* CTA */}
+        {/* FINAL CTA */}
 
         <section className="mt-6 rounded-3xl border border-cyan-400/20 bg-gradient-to-r from-cyan-400/10 via-purple-400/10 to-cyan-400/5 p-8 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
@@ -687,28 +833,27 @@ export default function JobDetailsPage() {
           <h2 className="mt-3 text-2xl font-black md:text-3xl">
             {matchPercentage >= 70
               ? "You're ready to make your move."
-              : "Build the skills needed for your next opportunity."}
+              : "Build your skills and increase your match."}
           </h2>
 
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-            SkillTrack doesn't just show job openings — it
-            helps you understand exactly how your current skills
-            compare with the opportunity.
+            SkillTrack helps you understand not just whether a
+            job exists, but how prepared you are for it.
           </p>
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/recommendations"
-              className="rounded-xl bg-purple-400 px-6 py-3 text-sm font-bold text-slate-950"
+              className="rounded-xl bg-purple-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-purple-300"
             >
-              View Career Recommendations
+              🧠 More Career Recommendations
             </Link>
 
             <Link
-              href="/skill-gap"
-              className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold"
+              href="/applications"
+              className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold transition hover:bg-white/10"
             >
-              Analyze Skill Gap
+              View Applications →
             </Link>
           </div>
         </section>
