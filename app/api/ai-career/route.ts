@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+﻿import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
 const openai = new OpenAI({
@@ -9,10 +9,7 @@ export async function POST(request: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        {
-          error:
-            "OPENAI_API_KEY is missing from environment variables.",
-        },
+        { error: "OPENAI_API_KEY is missing." },
         { status: 500 }
       );
     }
@@ -31,44 +28,32 @@ export async function POST(request: Request) {
 
     if (!question) {
       return NextResponse.json(
-        {
-          error: "Please enter a question.",
-        },
+        { error: "Please enter a question." },
         { status: 400 }
       );
     }
 
     const response = await openai.responses.create({
       model: "gpt-5.6-luna",
-
       instructions: `
-You are SkillTrack AI, a professional career guidance assistant.
+You are SkillTrack AI, an intelligent career assistant.
 
-Your job is to help students and job seekers with:
-- career selection
-- skill gaps
-- learning roadmaps
-- job preparation
-- resumes
-- ATS
-- interviews
-- employment strategy
+Help students and job seekers with:
+- Career recommendations
+- Skill gap analysis
+- Job preparation
+- Resume improvement
+- Interview preparation
+- Learning roadmaps
+- Job applications
+- Professional development
 
-Use the user's SkillTrack profile context when provided.
-
-Important rules:
-1. Give practical and actionable advice.
-2. Do not invent user skills.
-3. Clearly distinguish current skills from recommended skills.
-4. Keep answers easy to understand.
-5. Use headings and numbered steps when useful.
-6. If the user asks what to learn, prioritize the highest-impact skills.
-7. If the user asks about jobs, use the provided job context.
-8. Do not claim that you actually applied for a job or performed an external action.
-9. If profile information is insufficient, clearly say what information is missing.
-10. You are a career assistant, not a replacement for a professional counselor.
+Use the SkillTrack user context when answering.
+Give practical, personalized and easy-to-understand answers.
+Do not invent user information.
+If information is unavailable, say so clearly.
+Use headings and bullet points when useful.
 `,
-
       input: `
 USER QUESTION:
 ${question}

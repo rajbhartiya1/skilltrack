@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -344,7 +344,7 @@ Don't try to learn everything at once. Pick one high-impact skill, build a proje
         .slice(0, 5)
         .map(
           (job, index) =>
-            `${index + 1}. **${job.title}** — ${job.company}`
+            `${index + 1}. **${job.title}** â€” ${job.company}`
         )
         .join("\n");
 
@@ -374,7 +374,7 @@ Add accurate proficiency levels for every skill.
 Focus on the skills repeatedly requested by your target jobs.
 
 **3. Build proof**
-Create 2–3 projects that demonstrate those skills.
+Create 2â€“3 projects that demonstrate those skills.
 
 **4. Improve your resume**
 Use Resume Analyzer to identify missing skills and ATS issues.
@@ -396,7 +396,7 @@ Your current target direction is **${analysis.bestCareer}**.
 
 Your resume should clearly include:
 - Your strongest technical skills
-- 2–3 relevant projects
+- 2â€“3 relevant projects
 - Technologies used in each project
 - Measurable project outcomes
 - GitHub or portfolio links
@@ -411,7 +411,7 @@ Use **Resume Analyzer** in the AI Career menu to check your ATS readiness.`;
     ) {
       return `For interview preparation, I recommend this sequence:
 
-**Step 1:** Choose your target career — ${analysis.bestCareer}
+**Step 1:** Choose your target career â€” ${analysis.bestCareer}
 
 **Step 2:** Revise your strongest skills:
 ${analysis.matched.length ? analysis.matched.slice(0, 5).join(", ") : "Your current skills"}
@@ -453,7 +453,7 @@ Current pipeline:
         ).length
       }
 
-Keep your strongest opportunities moving from Applied → Interview → Offer.`;
+Keep your strongest opportunities moving from Applied â†’ Interview â†’ Offer.`;
     }
 
     return `Based on your current profile, I can help you with:
@@ -500,21 +500,108 @@ Try asking: **"What skills should I learn next?"**`;
 
     setThinking(true);
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, 650)
-    );
+    try {
+      const context = `
+PROFILE SKILLS:
+${skills.length
+  ? skills
+      .map((skill) => `${skill.name} (${skill.level}% proficiency)`)
+      .join(", ")
+  : "No skills added yet."}
 
-    const answer = generateAnswer(text);
+CURRENT CAREER DIRECTION:
+${analysis.bestCareer}
 
-    setMessages((current) => [
-      ...current,
-      {
-        role: "assistant",
-        text: answer,
-      },
-    ]);
+CURRENT PROFILE MATCH:
+${analysis.match}%
 
-    setThinking(false);
+MATCHED SKILLS:
+${analysis.matched.length
+  ? analysis.matched.join(", ")
+  : "None"}
+
+SKILLS TO IMPROVE:
+${analysis.improving.length
+  ? analysis.improving.join(", ")
+  : "None"}
+
+MISSING SKILLS:
+${analysis.missing.length
+  ? analysis.missing.join(", ")
+  : "None"}
+
+JOBS ANALYZED:
+${jobs.length}
+
+TOP RELATED JOBS:
+${analysis.relatedJobs.length
+  ? analysis.relatedJobs
+      .slice(0, 8)
+      .map(
+        (job) =>
+          `${job.title} at ${job.company} - ${job.location || "Location not specified"}`
+      )
+      .join("\n")
+  : "No related jobs found."}
+
+APPLICATIONS:
+Total: ${applications.length}
+Wishlist: ${
+        applications.filter((a) => a.status === "Wishlist").length
+      }
+Applied: ${
+        applications.filter((a) => a.status === "Applied").length
+      }
+Interview: ${
+        applications.filter((a) => a.status === "Interview").length
+      }
+Offer: ${
+        applications.filter((a) => a.status === "Offer").length
+      }
+`;
+
+      const response = await fetch("/api/ai-career", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: text,
+          context,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "AI service could not process the request."
+        );
+      }
+
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          text:
+            data?.answer ||
+            "I could not generate an answer right now. Please try again.",
+        },
+      ]);
+    } catch (error) {
+      console.error("AI Assistant Error:", error);
+
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          text:
+            "I'm having trouble connecting to the AI service right now. Please check your API configuration and try again.",
+        },
+      ]);
+    } finally {
+      setThinking(false);
+    }
   }
 
   function renderMessage(text: string) {
@@ -982,7 +1069,7 @@ Try asking: **"What skills should I learn next?"**`;
               </p>
 
               <div className="mt-4 text-sm font-bold text-cyan-300">
-                Open Career Coach →
+                Open Career Coach â†’
               </div>
 
             </Link>
@@ -996,3 +1083,4 @@ Try asking: **"What skills should I learn next?"**`;
     </main>
   );
 }
+
