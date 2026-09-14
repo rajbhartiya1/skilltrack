@@ -1,18 +1,23 @@
 ﻿import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(request: Request) {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
       return NextResponse.json(
-        { error: "OPENAI_API_KEY is missing." },
+        {
+          error:
+            "OPENAI_API_KEY is missing. Please add it to Vercel Environment Variables.",
+        },
         { status: 500 }
       );
     }
+
+    const openai = new OpenAI({
+      apiKey,
+    });
 
     const body = await request.json();
 
@@ -35,7 +40,7 @@ export async function POST(request: Request) {
               "role" in message &&
               "text" in message
           )
-          .slice(-12)
+          .slice(-6)
           .map(
             (message: { role: string; text: string }) =>
               `${message.role === "user" ? "USER" : "SKILLTRACK AI"}: ${message.text}`
@@ -104,7 +109,9 @@ ${context}
     });
 
     return NextResponse.json({
-      answer: response.output_text,
+      answer:
+        response.output_text ||
+        "I could not generate an answer right now. Please try again.",
     });
   } catch (error) {
     console.error("AI Career API Error:", error);
