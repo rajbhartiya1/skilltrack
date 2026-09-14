@@ -13,6 +13,8 @@ type Job = {
   location: string | null;
 };
 
+type ApplicationStatus = "Wishlist" | "Applied";
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,69 +43,94 @@ export default function JobsPage() {
 
   async function saveApplication(
     job: Job,
-    status: "Wishlist" | "Applied"
+    status: ApplicationStatus
   ) {
     setActionId(`${status}-${job.id}`);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      alert("Please login first to continue.");
-      setActionId("");
-      return;
-    }
+      if (!user) {
+        alert("Please login first to continue.");
+        setActionId("");
+        return;
+      }
 
-    const { data: existingApplication, error: existingError } =
-      await supabase
+      const { data: existingApplication, error: existingError } =
+        await supabase
+          .from("applications")
+          .select("id, status")
+          .eq("user_id", user.id)
+          .eq("job_id", job.id)
+          .maybeSingle();
+
+      if (existingError) {
+        console.error(
+          "Error checking application:",
+          existingError.message
+        );
+
+        alert(existingError.message);
+        setActionId("");
+        return;
+      }
+
+      if (existingApplication) {
+        alert(
+          `You already have this job in Applications with status: ${existingApplication.status}`
+        );
+
+        setActionId("");
+        return;
+      }
+
+      const { error: insertError } = await supabase
         .from("applications")
-        .select("id, status")
-        .eq("user_id", user.id)
-        .eq("job_id", job.id)
-        .maybeSingle();
+        .insert({
+          user_id: user.id,
+          job_id: job.id,
+          status,
+        });
 
-    if (existingError) {
-      alert(existingError.message);
+      if (insertError) {
+        console.error(
+          "Error saving application:",
+          insertError.message
+        );
+
+        alert(insertError.message);
+        setActionId("");
+        return;
+      }
+
+      if (status === "Applied") {
+        alert(`${job.title} added to your applications!`);
+
+        window.location.href = "/applications";
+        return;
+      }
+
+      alert(`${job.title} saved to your wishlist!`);
+
       setActionId("");
-      return;
-    }
+    } catch (error) {
+      console.error("Unexpected error:", error);
 
-    if (existingApplication) {
-      alert(
-        `You already have this job in your Applications with status: ${existingApplication.status}`
-      );
+      alert("Something went wrong. Please try again.");
+
       setActionId("");
-      return;
     }
-
-    const { error: insertError } = await supabase
-      .from("applications")
-      .insert({
-        user_id: user.id,
-        job_id: job.id,
-        status,
-      });
-
-    if (insertError) {
-      alert(insertError.message);
-      setActionId("");
-      return;
-    }
-
-    alert(
-      status === "Applied"
-        ? `${job.title} added to your applications!`
-        : `${job.title} saved to your wishlist!`
-    );
-
-    setActionId("");
   }
 
   return (
     <main className="min-h-screen bg-[#07111f] p-6 text-white md:p-10">
       <div className="mx-auto max-w-7xl">
+
+        {/* HEADER */}
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+
           <div>
             <Link
               href="/"
@@ -112,7 +139,9 @@ export default function JobsPage() {
               ← Back to Dashboard
             </Link>
 
-            <h1 className="mt-5 text-4xl font-bold">Explore Jobs</h1>
+            <h1 className="mt-5 text-4xl font-bold">
+              Explore Jobs
+            </h1>
 
             <p className="mt-2 text-slate-400">
               Find jobs based on your skills and career goals.
@@ -125,100 +154,174 @@ export default function JobsPage() {
           >
             View My Applications →
           </Link>
+
         </div>
 
+
+        {/* LOADING */}
         {loading && (
           <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-10 text-center">
-            <p className="text-cyan-400">Loading jobs...</p>
+            <p className="text-cyan-400">
+              Loading jobs...
+            </p>
           </div>
         )}
 
+
+        {/* ERROR */}
         {!loading && error && (
           <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
+
             <h2 className="font-bold text-red-400">
               Unable to load jobs
             </h2>
 
-            <p className="mt-2 text-sm text-slate-300">{error}</p>
+            <p className="mt-2 text-sm text-slate-300">
+              {error}
+            </p>
+
           </div>
         )}
 
-        {!loading && !error && jobs.length === 0 && (
-          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-10 text-center">
-            <p className="text-slate-400">No jobs found.</p>
-          </div>
-        )}
 
-        {!loading && !error && jobs.length > 0 && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {jobs.map((job) => (
-              <div
-                key={job.id}
-                className="flex flex-col rounded-2xl border border-white/10 bg-[#0d1b2e] p-6 transition hover:-translate-y-1 hover:border-cyan-400/40"
-              >
-                <p className="text-sm font-medium text-cyan-400">
-                  {job.company}
-                </p>
+        {/* NO JOBS */}
+        {!loading &&
+          !error &&
+          jobs.length === 0 && (
+            <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-10 text-center">
 
-                <h2 className="mt-2 text-xl font-bold">{job.title}</h2>
+              <p className="text-slate-400">
+                No jobs found.
+              </p>
 
-                <p className="mt-2 text-sm text-slate-400">
-                  📍 {job.location || "India"}
-                </p>
+            </div>
+          )}
 
-                <p className="mt-5 text-sm leading-6 text-slate-400">
-                  {job.description ||
-                    "No description available for this position."}
-                </p>
 
-                <div className="mt-5">
-                  <p className="mb-3 text-sm font-semibold">
-                    Required Skills
+        {/* JOBS */}
+        {!loading &&
+          !error &&
+          jobs.length > 0 && (
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+              {jobs.map((job) => (
+
+                <div
+                  key={job.id}
+                  className="flex flex-col rounded-2xl border border-white/10 bg-[#0d1b2e] p-6 transition hover:-translate-y-1 hover:border-cyan-400/40"
+                >
+
+                  {/* COMPANY */}
+                  <p className="text-sm font-medium text-cyan-400">
+                    {job.company}
                   </p>
 
-                  <div className="flex flex-wrap gap-2">
-                    {(job.required_skills || []).map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-lg bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-300"
-                      >
-                        {skill}
-                      </span>
-                    ))}
+
+                  {/* JOB TITLE */}
+                  <h2 className="mt-2 text-xl font-bold">
+                    {job.title}
+                  </h2>
+
+
+                  {/* LOCATION */}
+                  <p className="mt-2 text-sm text-slate-400">
+                    📍 {job.location || "India"}
+                  </p>
+
+
+                  {/* DESCRIPTION */}
+                  <p className="mt-5 text-sm leading-6 text-slate-400">
+                    {job.description ||
+                      "No description available for this position."}
+                  </p>
+
+
+                  {/* REQUIRED SKILLS */}
+                  <div className="mt-5">
+
+                    <p className="mb-3 text-sm font-semibold">
+                      Required Skills
+                    </p>
+
+                    <div className="flex flex-wrap gap-2">
+
+                      {(job.required_skills || []).map(
+                        (skill) => (
+
+                          <span
+                            key={skill}
+                            className="rounded-lg bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-300"
+                          >
+                            {skill}
+                          </span>
+
+                        )
+                      )}
+
+                    </div>
+
                   </div>
+
+
+                  {/* BUTTONS */}
+                  <div className="mt-auto flex gap-3 pt-6">
+
+                    {/* WISHLIST */}
+                    <button
+                      disabled={
+                        actionId ===
+                          `Wishlist-${job.id}` ||
+                        actionId ===
+                          `Applied-${job.id}`
+                      }
+                      onClick={() =>
+                        saveApplication(
+                          job,
+                          "Wishlist"
+                        )
+                      }
+                      className="flex-1 rounded-xl border border-purple-400/30 bg-purple-400/10 px-3 py-3 text-xs font-bold text-purple-300 transition hover:bg-purple-400/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {actionId ===
+                      `Wishlist-${job.id}`
+                        ? "Saving..."
+                        : "♡ Wishlist"}
+                    </button>
+
+
+                    {/* APPLY */}
+                    <button
+                      disabled={
+                        actionId ===
+                          `Wishlist-${job.id}` ||
+                        actionId ===
+                          `Applied-${job.id}`
+                      }
+                      onClick={() =>
+                        saveApplication(
+                          job,
+                          "Applied"
+                        )
+                      }
+                      className="flex-1 rounded-xl bg-cyan-400 px-3 py-3 text-xs font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {actionId ===
+                      `Applied-${job.id}`
+                        ? "Applying..."
+                        : "Apply Now"}
+                    </button>
+
+                  </div>
+
                 </div>
 
-                <div className="mt-auto flex gap-3 pt-6">
-                  <button
-                    disabled={
-                      actionId === `Wishlist-${job.id}` ||
-                      actionId === `Applied-${job.id}`
-                    }
-                    onClick={() => saveApplication(job, "Wishlist")}
-                    className="flex-1 rounded-xl border border-purple-400/30 bg-purple-400/10 px-3 py-3 text-xs font-bold text-purple-300 transition hover:bg-purple-400/20 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {actionId === `Wishlist-${job.id}`
-                      ? "Saving..."
-                      : "♡ Wishlist"}
-                  </button>
+              ))}
 
-                  <button
-                    disabled={
-                      actionId === `Wishlist-${job.id}` ||
-                      actionId === `Applied-${job.id}`
-                    }
-                    onClick={() => saveApplication(job, "Applied")}
-                    className="flex-1 rounded-xl bg-cyan-400 px-3 py-3 text-xs font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {actionId === `Applied-${job.id}`
-                      ? "Applying..."
-                      : "Apply Now"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+            </div>
+
+          )}
+
       </div>
     </main>
   );
