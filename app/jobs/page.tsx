@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import { calculateSkillGap, UserSkill } from "../../lib/skillGap";
 
 type Job = {
   id: string;
@@ -11,41 +12,369 @@ type Job = {
   required_skills: string[] | null;
   description: string | null;
   location: string | null;
+  created_at?: string;
 };
 
-type ApplicationStatus = "Wishlist" | "Applied";
+type Application = {
+  id: string;
+  job_id: string;
+  status: "Wishlist" | "Applied" | "Interview" | "Offer";
+};
+
+type SortOption =
+  | "match"
+  | "latest"
+  | "az";
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [skills, setSkills] = useState<UserSkill[]>([]);
+  const [applications, setApplications] =
+    useState<Application[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionId, setActionId] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [selectedSkill, setSelectedSkill] =
+    useState("All Skills");
+
+  const [sortBy, setSortBy] =
+    useState<SortOption>("match");
+
+  const [actionId, setActionId] =
+    useState("");
+
+  const [showFilters, setShowFilters] =
+    useState(false);
 
   useEffect(() => {
-    async function loadJobs() {
-      const { data, error } = await supabase
-        .from("jobs")
-        .select("*")
-        .order("created_at", { ascending: false });
+    async function loadData() {
+      try {
+        setLoading(true);
+        setError("");
 
-      if (error) {
-        console.error("Error fetching jobs:", error.message);
-        setError(error.message);
-      } else {
-        setJobs(data || []);
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          window.location.href = "/login";
+          return;
+        }
+
+        /*
+         * LOAD JOBS
+         */
+
+        const {
+          data: jobsData,
+          error: jobsError,
+        } = await supabase
+          .from("jobs")
+          .select("*")
+          .order("created_at", {
+            ascending: false,
+          });
+
+        if (jobsError) {
+          throw new Error(
+            jobsError.message
+          );
+        }
+
+        setJobs((jobsData || []) as Job[]);
+
+        /*
+         * LOAD PROFILE SKILLS
+         */
+
+        const {
+          data: profileData,
+          error: profileError,
+        } = await supabase
+          .from("profiles")
+          .select("skills")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error(
+            "Profile error:",
+            profileError.message
+          );
+        }
+
+        if (
+          Array.isArray(
+            profileData?.skills
+          )
+        ) {
+          setSkills(
+            profileData.skills as UserSkill[]
+          );
+        } else {
+          setSkills([]);
+        }
+
+        /*
+         * LOAD APPLICATIONS
+         */
+
+        const {
+          data: applicationData,
+          error: applicationError,
+        } = await supabase
+          .from("applications")
+          .select(
+            "id, job_id, status"
+          )
+          .eq("user_id", user.id);
+
+        if (applicationError) {
+          console.error(
+            "Application error:",
+            applicationError.message
+          );
+        }
+
+        setApplications(
+          (applicationData ||
+            []) as Application[]
+        );
+      } catch (err) {
+        console.error(
+          "Jobs loading error:",
+          err
+        );
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load jobs."
+        );
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
 
-    loadJobs();
+    loadData();
   }, []);
+
+  /*
+   * -----------------------------------------
+   * JOB ANALYSIS
+   * -----------------------------------------
+   */
+
+  const analyzedJobs = useMemo(() => {
+    return jobs.map((job) => {
+      const analysis =
+        calculateSkillGap(
+          skills,
+          job.required_skills || []
+        );
+
+      return {
+        ...job,
+        matchPercentage:
+          analysis.matchPercentage,
+        matchedSkills:
+          analysis.matchedSkills,
+        improvingSkills:
+          analysis.improvingSkills,
+        missingSkills:
+          analysis.missingSkills,
+      };
+    });
+  }, [jobs, skills]);
+
+  /*
+   * -----------------------------------------
+   * AVAILABLE SKILLS
+   * -----------------------------------------
+   */
+
+  const availableSkills = useMemo(() => {
+    const skillSet = new Set<string>();
+
+    jobs.forEach((job) => {
+      (
+        job.required_skills || []
+      ).forEach((skill) => {
+        if (skill) {
+          skillSet.add(skill);
+        }
+      });
+    });
+
+    return Array.from(skillSet).sort();
+  }, [jobs]);
+
+  /*
+   * -----------------------------------------
+   * FILTER + SORT
+   * -----------------------------------------
+   */
+
+  const filteredJobs = useMemo(() => {
+    const query =
+      search.trim().toLowerCase();
+
+    let result =
+      analyzedJobs.filter((job) => {
+        const matchesSearch =
+          !query ||
+          job.title
+            .toLowerCase()
+            .includes(query) ||
+          job.company
+            .toLowerCase()
+            .includes(query) ||
+          (
+            job.description || ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+          (
+            job.required_skills || []
+          ).some((skill) =>
+            skill
+              .toLowerCase()
+              .includes(query)
+          );
+
+        const matchesSkill =
+          selectedSkill ===
+            "All Skills" ||
+          (
+            job.required_skills || []
+          ).some(
+            (skill) =>
+              skill === selectedSkill
+          );
+
+        return (
+          matchesSearch &&
+          matchesSkill
+        );
+      });
+
+    result = [...result].sort(
+      (a, b) => {
+        if (sortBy === "match") {
+          return (
+            b.matchPercentage -
+            a.matchPercentage
+          );
+        }
+
+        if (sortBy === "az") {
+          return a.title.localeCompare(
+            b.title
+          );
+        }
+
+        return (
+          new Date(
+            b.created_at || 0
+          ).getTime() -
+          new Date(
+            a.created_at || 0
+          ).getTime()
+        );
+      }
+    );
+
+    return result;
+  }, [
+    analyzedJobs,
+    search,
+    selectedSkill,
+    sortBy,
+  ]);
+
+  /*
+   * -----------------------------------------
+   * APPLICATION STATUS
+   * -----------------------------------------
+   */
+
+  function getApplication(
+    jobId: string
+  ) {
+    return applications.find(
+      (application) =>
+        application.job_id === jobId
+    );
+  }
+
+  /*
+   * -----------------------------------------
+   * MATCH STYLE
+   * -----------------------------------------
+   */
+
+  function getMatchStyle(
+    percentage: number
+  ) {
+    if (percentage >= 85) {
+      return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
+    }
+
+    if (percentage >= 70) {
+      return "border-cyan-400/30 bg-cyan-400/10 text-cyan-300";
+    }
+
+    if (percentage >= 50) {
+      return "border-yellow-400/30 bg-yellow-400/10 text-yellow-300";
+    }
+
+    return "border-red-400/30 bg-red-400/10 text-red-300";
+  }
+
+  function getMatchLabel(
+    percentage: number
+  ) {
+    if (percentage >= 85) {
+      return "Excellent Match";
+    }
+
+    if (percentage >= 70) {
+      return "Strong Match";
+    }
+
+    if (percentage >= 50) {
+      return "Potential Match";
+    }
+
+    return "Needs Development";
+  }
+
+  /*
+   * -----------------------------------------
+   * SAVE APPLICATION
+   * -----------------------------------------
+   */
 
   async function saveApplication(
     job: Job,
-    status: ApplicationStatus
+    status: "Wishlist" | "Applied"
   ) {
-    setActionId(`${status}-${job.id}`);
+    const existing =
+      getApplication(job.id);
+
+    if (existing) {
+      alert(
+        `This job is already in your Applications with status: ${existing.status}`
+      );
+
+      return;
+    }
+
+    setActionId(
+      `${status}-${job.id}`
+    );
 
     try {
       const {
@@ -53,275 +382,715 @@ export default function JobsPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        alert("Please login first to continue.");
-        setActionId("");
+        window.location.href =
+          "/login";
         return;
       }
 
-      const { data: existingApplication, error: existingError } =
+      const { data, error } =
         await supabase
           .from("applications")
-          .select("id, status")
-          .eq("user_id", user.id)
-          .eq("job_id", job.id)
-          .maybeSingle();
+          .insert({
+            user_id: user.id,
+            job_id: job.id,
+            status,
+          })
+          .select(
+            "id, job_id, status"
+          )
+          .single();
 
-      if (existingError) {
-        console.error(
-          "Error checking application:",
-          existingError.message
-        );
-
-        alert(existingError.message);
-        setActionId("");
+      if (error) {
+        alert(error.message);
         return;
       }
 
-      if (existingApplication) {
-        alert(
-          `You already have this job in Applications with status: ${existingApplication.status}`
+      if (data) {
+        setApplications(
+          (current) => [
+            {
+              ...(data as Application),
+            },
+            ...current,
+          ]
         );
-
-        setActionId("");
-        return;
-      }
-
-      const { error: insertError } = await supabase
-        .from("applications")
-        .insert({
-          user_id: user.id,
-          job_id: job.id,
-          status,
-        });
-
-      if (insertError) {
-        console.error(
-          "Error saving application:",
-          insertError.message
-        );
-
-        alert(insertError.message);
-        setActionId("");
-        return;
       }
 
       if (status === "Applied") {
-        alert(`${job.title} added to your applications!`);
-
-        window.location.href = "/applications";
-        return;
+        alert(
+          `${job.title} added to your applications!`
+        );
+      } else {
+        alert(
+          `${job.title} saved to your wishlist!`
+        );
       }
+    } catch (err) {
+      console.error(
+        "Application error:",
+        err
+      );
 
-      alert(`${job.title} saved to your wishlist!`);
-
-      setActionId("");
-    } catch (error) {
-      console.error("Unexpected error:", error);
-
-      alert("Something went wrong. Please try again.");
-
+      alert(
+        "Something went wrong. Please try again."
+      );
+    } finally {
       setActionId("");
     }
   }
 
+  /*
+   * -----------------------------------------
+   * LOADING
+   * -----------------------------------------
+   */
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#07111f] text-white">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
+
+          <p className="mt-5 text-sm text-slate-400">
+            Analyzing jobs for you...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  /*
+   * -----------------------------------------
+   * PAGE
+   * -----------------------------------------
+   */
+
   return (
-    <main className="min-h-screen bg-[#07111f] p-6 text-white md:p-10">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen bg-[#07111f] text-white">
+      {/* NAVBAR */}
 
-        {/* HEADER */}
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <Link
+            href="/"
+            className="text-2xl font-black tracking-tight"
+          >
+            Skill
+            <span className="text-cyan-400">
+              Track
+            </span>
+          </Link>
 
-          <div>
+          <nav className="hidden items-center gap-6 text-sm text-slate-300 lg:flex">
             <Link
               href="/"
-              className="text-sm text-cyan-400 transition hover:text-cyan-300"
+              className="transition hover:text-cyan-400"
             >
-              ← Back to Dashboard
+              Dashboard
             </Link>
 
-            <h1 className="mt-5 text-4xl font-bold">
-              Explore Jobs
-            </h1>
+            <Link
+              href="/profile"
+              className="transition hover:text-cyan-400"
+            >
+              Profile
+            </Link>
 
-            <p className="mt-2 text-slate-400">
-              Find jobs based on your skills and career goals.
-            </p>
-          </div>
+            <Link
+              href="/jobs"
+              className="font-bold text-cyan-400"
+            >
+              Jobs
+            </Link>
+
+            <Link
+              href="/skill-gap"
+              className="transition hover:text-cyan-400"
+            >
+              Skill Gap
+            </Link>
+
+            <Link
+              href="/recommendations"
+              className="transition hover:text-cyan-400"
+            >
+              AI Career
+            </Link>
+
+            <Link
+              href="/applications"
+              className="transition hover:text-cyan-400"
+            >
+              Applications
+            </Link>
+          </nav>
 
           <Link
             href="/applications"
-            className="w-fit rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
+            className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold text-cyan-300"
           >
-            View My Applications →
+            My Applications
+          </Link>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-7xl px-6 py-10">
+        {/* HEADER */}
+
+        <section>
+          <Link
+            href="/"
+            className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
+          >
+            ← Back to Dashboard
           </Link>
 
-        </div>
-
-
-        {/* LOADING */}
-        {loading && (
-          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-10 text-center">
-            <p className="text-cyan-400">
-              Loading jobs...
-            </p>
-          </div>
-        )}
-
-
-        {/* ERROR */}
-        {!loading && error && (
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
-
-            <h2 className="font-bold text-red-400">
-              Unable to load jobs
-            </h2>
-
-            <p className="mt-2 text-sm text-slate-300">
-              {error}
-            </p>
-
-          </div>
-        )}
-
-
-        {/* NO JOBS */}
-        {!loading &&
-          !error &&
-          jobs.length === 0 && (
-            <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-10 text-center">
-
-              <p className="text-slate-400">
-                No jobs found.
+          <div className="mt-5 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-400">
+                SMART JOB DISCOVERY
               </p>
 
+              <h1 className="mt-3 text-4xl font-black md:text-5xl">
+                Find Your Next Opportunity
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+                Explore opportunities ranked by how closely
+                they match your current skills.
+              </p>
             </div>
-          )}
 
+            <div className="flex gap-3">
+              <div className="rounded-xl border border-white/10 bg-[#0d1b2e] px-5 py-3 text-center">
+                <p className="text-2xl font-black text-cyan-400">
+                  {jobs.length}
+                </p>
 
-        {/* JOBS */}
-        {!loading &&
-          !error &&
-          jobs.length > 0 && (
+                <p className="text-[10px] uppercase tracking-wider text-slate-600">
+                  Jobs
+                </p>
+              </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="rounded-xl border border-white/10 bg-[#0d1b2e] px-5 py-3 text-center">
+                <p className="text-2xl font-black text-purple-300">
+                  {skills.length}
+                </p>
 
-              {jobs.map((job) => (
+                <p className="text-[10px] uppercase tracking-wider text-slate-600">
+                  Skills
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-                <div
-                  key={job.id}
-                  className="flex flex-col rounded-2xl border border-white/10 bg-[#0d1b2e] p-6 transition hover:-translate-y-1 hover:border-cyan-400/40"
+        {/* SMART SEARCH */}
+
+        <section className="mt-8 rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/10 via-[#0d1b2e] to-purple-500/10 p-6">
+          <div className="flex flex-col gap-4 lg:flex-row">
+            {/* SEARCH */}
+
+            <div className="relative flex-1">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
+                🔎
+              </span>
+
+              <input
+                value={search}
+                onChange={(event) =>
+                  setSearch(
+                    event.target.value
+                  )
+                }
+                placeholder="Search job title, company, skill..."
+                className="w-full rounded-xl border border-white/10 bg-[#07111f] py-4 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/40"
+              />
+            </div>
+
+            {/* FILTER BUTTON */}
+
+            <button
+              onClick={() =>
+                setShowFilters(
+                  !showFilters
+                )
+              }
+              className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold transition hover:bg-white/10"
+            >
+              ⚙ Filters
+            </button>
+          </div>
+
+          {/* FILTERS */}
+
+          {showFilters && (
+            <div className="mt-5 grid gap-4 border-t border-white/10 pt-5 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Filter by Skill
+                </label>
+
+                <select
+                  value={selectedSkill}
+                  onChange={(event) =>
+                    setSelectedSkill(
+                      event.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-sm text-slate-300 outline-none focus:border-cyan-400/40"
                 >
+                  <option>
+                    All Skills
+                  </option>
 
-                  {/* COMPANY */}
-                  <p className="text-sm font-medium text-cyan-400">
-                    {job.company}
-                  </p>
+                  {availableSkills.map(
+                    (skill) => (
+                      <option
+                        key={skill}
+                        value={skill}
+                      >
+                        {skill}
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
 
+              <div>
+                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Sort Jobs
+                </label>
 
-                  {/* JOB TITLE */}
-                  <h2 className="mt-2 text-xl font-bold">
-                    {job.title}
-                  </h2>
+                <select
+                  value={sortBy}
+                  onChange={(event) =>
+                    setSortBy(
+                      event.target
+                        .value as SortOption
+                    )
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-sm text-slate-300 outline-none focus:border-cyan-400/40"
+                >
+                  <option value="match">
+                    Best Match
+                  </option>
 
+                  <option value="latest">
+                    Latest
+                  </option>
 
-                  {/* LOCATION */}
-                  <p className="mt-2 text-sm text-slate-400">
-                    📍 {job.location || "India"}
-                  </p>
-
-
-                  {/* DESCRIPTION */}
-                  <p className="mt-5 text-sm leading-6 text-slate-400">
-                    {job.description ||
-                      "No description available for this position."}
-                  </p>
-
-
-                  {/* REQUIRED SKILLS */}
-                  <div className="mt-5">
-
-                    <p className="mb-3 text-sm font-semibold">
-                      Required Skills
-                    </p>
-
-                    <div className="flex flex-wrap gap-2">
-
-                      {(job.required_skills || []).map(
-                        (skill) => (
-
-                          <span
-                            key={skill}
-                            className="rounded-lg bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-300"
-                          >
-                            {skill}
-                          </span>
-
-                        )
-                      )}
-
-                    </div>
-
-                  </div>
-
-
-                  {/* BUTTONS */}
-                  <div className="mt-auto flex gap-3 pt-6">
-
-                    {/* WISHLIST */}
-                    <button
-                      disabled={
-                        actionId ===
-                          `Wishlist-${job.id}` ||
-                        actionId ===
-                          `Applied-${job.id}`
-                      }
-                      onClick={() =>
-                        saveApplication(
-                          job,
-                          "Wishlist"
-                        )
-                      }
-                      className="flex-1 rounded-xl border border-purple-400/30 bg-purple-400/10 px-3 py-3 text-xs font-bold text-purple-300 transition hover:bg-purple-400/20 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {actionId ===
-                      `Wishlist-${job.id}`
-                        ? "Saving..."
-                        : "♡ Wishlist"}
-                    </button>
-
-
-                    {/* APPLY */}
-                    <button
-                      disabled={
-                        actionId ===
-                          `Wishlist-${job.id}` ||
-                        actionId ===
-                          `Applied-${job.id}`
-                      }
-                      onClick={() =>
-                        saveApplication(
-                          job,
-                          "Applied"
-                        )
-                      }
-                      className="flex-1 rounded-xl bg-cyan-400 px-3 py-3 text-xs font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {actionId ===
-                      `Applied-${job.id}`
-                        ? "Applying..."
-                        : "Apply Now"}
-                    </button>
-
-                  </div>
-
-                </div>
-
-              ))}
-
+                  <option value="az">
+                    A → Z
+                  </option>
+                </select>
+              </div>
             </div>
-
           )}
 
+          {/* ACTIVE FILTER */}
+
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-slate-600">
+              Showing{" "}
+              <span className="font-bold text-slate-400">
+                {filteredJobs.length}
+              </span>{" "}
+              of {jobs.length} opportunities
+            </p>
+
+            {(search ||
+              selectedSkill !==
+                "All Skills") && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setSelectedSkill(
+                    "All Skills"
+                  );
+                }}
+                className="text-xs font-bold text-red-400 hover:text-red-300"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="mt-6 rounded-2xl border border-red-400/20 bg-red-400/10 p-6">
+            <p className="font-bold text-red-300">
+              Unable to load jobs
+            </p>
+
+            <p className="mt-2 text-sm text-slate-400">
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* NO RESULTS */}
+
+        {!error &&
+          filteredJobs.length ===
+            0 && (
+            <section className="mt-8 rounded-3xl border border-dashed border-white/10 bg-[#0d1b2e] p-12 text-center">
+              <div className="text-5xl">
+                🔍
+              </div>
+
+              <h2 className="mt-5 text-2xl font-black">
+                No matching jobs
+              </h2>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Try changing your search or filters.
+              </p>
+
+              <button
+                onClick={() => {
+                  setSearch("");
+                  setSelectedSkill(
+                    "All Skills"
+                  );
+                }}
+                className="mt-6 rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950"
+              >
+                Reset Search
+              </button>
+            </section>
+          )}
+
+        {/* JOB GRID */}
+
+        {!error &&
+          filteredJobs.length > 0 && (
+            <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {filteredJobs.map(
+                (job, index) => {
+                  const application =
+                    getApplication(
+                      job.id
+                    );
+
+                  const isWishlist =
+                    application?.status ===
+                    "Wishlist";
+
+                  const isApplied =
+                    application?.status ===
+                      "Applied" ||
+                    application?.status ===
+                      "Interview" ||
+                    application?.status ===
+                      "Offer";
+
+                  const isActionLoading =
+                    actionId ===
+                      `Wishlist-${job.id}` ||
+                    actionId ===
+                      `Applied-${job.id}`;
+
+                  return (
+                    <article
+                      key={job.id}
+                      className="group flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0d1b2e] transition duration-300 hover:-translate-y-1 hover:border-cyan-400/30 hover:shadow-2xl hover:shadow-cyan-400/5"
+                    >
+                      {/* TOP */}
+
+                      <div className="p-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                              {job.company}
+                            </p>
+
+                            <h2 className="mt-2 line-clamp-2 text-xl font-black leading-7">
+                              {job.title}
+                            </h2>
+
+                            <p className="mt-2 text-xs text-slate-600">
+                              📍{" "}
+                              {job.location ||
+                                "India"}
+                            </p>
+                          </div>
+
+                          {/* MATCH */}
+
+                          <div
+                            className={`shrink-0 rounded-xl border px-3 py-2 text-center ${getMatchStyle(
+                              job.matchPercentage
+                            )}`}
+                          >
+                            <p className="text-xl font-black">
+                              {job.matchPercentage}%
+                            </p>
+
+                            <p className="text-[8px] font-bold uppercase tracking-wider">
+                              Match
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* MATCH LABEL */}
+
+                        <p
+                          className={`mt-4 text-xs font-bold ${
+                            job.matchPercentage >=
+                            70
+                              ? "text-cyan-400"
+                              : job.matchPercentage >=
+                                50
+                              ? "text-yellow-400"
+                              : "text-red-400"
+                          }`}
+                        >
+                          {getMatchLabel(
+                            job.matchPercentage
+                          )}
+                        </p>
+
+                        {/* DESCRIPTION */}
+
+                        <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
+                          {job.description ||
+                            "Explore this opportunity and compare it with your current skill profile."}
+                        </p>
+
+                        {/* SKILLS */}
+
+                        <div className="mt-5">
+                          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-600">
+                            Required Skills
+                          </p>
+
+                          <div className="flex flex-wrap gap-2">
+                            {(
+                              job.required_skills ||
+                              []
+                            )
+                              .slice(0, 6)
+                              .map(
+                                (skill) => {
+                                  const matched =
+                                    job.matchedSkills.includes(
+                                      skill
+                                    );
+
+                                  const improving =
+                                    job.improvingSkills.includes(
+                                      skill
+                                    );
+
+                                  return (
+                                    <span
+                                      key={
+                                        skill
+                                      }
+                                      className={`rounded-lg px-2.5 py-1.5 text-[10px] font-semibold ${
+                                        matched
+                                          ? "bg-emerald-400/10 text-emerald-300"
+                                          : improving
+                                          ? "bg-yellow-400/10 text-yellow-300"
+                                          : "bg-white/5 text-slate-500"
+                                      }`}
+                                    >
+                                      {matched
+                                        ? "✓ "
+                                        : improving
+                                        ? "↗ "
+                                        : ""}
+                                      {skill}
+                                    </span>
+                                  );
+                                }
+                              )}
+
+                            {(
+                              job.required_skills ||
+                              []
+                            ).length > 6 && (
+                              <span className="rounded-lg bg-white/5 px-2.5 py-1.5 text-[10px] text-slate-600">
+                                +
+                                {(
+                                  job.required_skills ||
+                                  []
+                                ).length -
+                                  6}{" "}
+                                more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* GAP SUMMARY */}
+
+                        <div className="mt-5 grid grid-cols-3 gap-2">
+                          <div className="rounded-xl bg-emerald-400/5 p-3 text-center">
+                            <p className="text-lg font-black text-emerald-400">
+                              {
+                                job
+                                  .matchedSkills
+                                  .length
+                              }
+                            </p>
+
+                            <p className="text-[9px] uppercase text-slate-600">
+                              Ready
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-yellow-400/5 p-3 text-center">
+                            <p className="text-lg font-black text-yellow-400">
+                              {
+                                job
+                                  .improvingSkills
+                                  .length
+                              }
+                            </p>
+
+                            <p className="text-[9px] uppercase text-slate-600">
+                              Improve
+                            </p>
+                          </div>
+
+                          <div className="rounded-xl bg-red-400/5 p-3 text-center">
+                            <p className="text-lg font-black text-red-400">
+                              {
+                                job
+                                  .missingSkills
+                                  .length
+                              }
+                            </p>
+
+                            <p className="text-[9px] uppercase text-slate-600">
+                              Learn
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ACTIONS */}
+
+                      <div className="mt-auto border-t border-white/10 p-5">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Link
+                            href={`/jobs/${job.id}`}
+                            className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
+                          >
+                            👁 View Details
+                          </Link>
+
+                          {application ? (
+                            <Link
+                              href="/applications"
+                              className="rounded-xl bg-emerald-400/10 px-3 py-3 text-center text-xs font-bold text-emerald-300 transition hover:bg-emerald-400/20"
+                            >
+                              ✓{" "}
+                              {
+                                application.status
+                              }
+                            </Link>
+                          ) : (
+                            <button
+                              disabled={
+                                isActionLoading
+                              }
+                              onClick={() =>
+                                saveApplication(
+                                  job,
+                                  "Applied"
+                                )
+                              }
+                              className="rounded-xl bg-cyan-400 px-3 py-3 text-xs font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {actionId ===
+                              `Applied-${job.id}`
+                                ? "Applying..."
+                                : "Apply Now →"}
+                            </button>
+                          )}
+                        </div>
+
+                        {/* WISHLIST */}
+
+                        {!isApplied && (
+                          <button
+                            disabled={
+                              isActionLoading
+                            }
+                            onClick={() =>
+                              saveApplication(
+                                job,
+                                "Wishlist"
+                              )
+                            }
+                            className={`mt-3 w-full rounded-xl border px-3 py-2.5 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                              isWishlist
+                                ? "border-purple-400/30 bg-purple-400/10 text-purple-300"
+                                : "border-white/10 bg-white/5 text-slate-500 hover:bg-purple-400/10 hover:text-purple-300"
+                            }`}
+                          >
+                            {actionId ===
+                            `Wishlist-${job.id}`
+                              ? "Saving..."
+                              : isWishlist
+                              ? "♡ In Wishlist"
+                              : "♡ Add to Wishlist"}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* RANK */}
+
+                      {sortBy ===
+                        "match" &&
+                        index < 3 && (
+                          <div className="pointer-events-none absolute" />
+                        )}
+                    </article>
+                  );
+                }
+              )}
+            </section>
+          )}
+
+        {/* BOTTOM CTA */}
+
+        <section className="mt-10 rounded-3xl border border-cyan-400/20 bg-gradient-to-r from-cyan-400/10 via-purple-400/10 to-cyan-400/5 p-8 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+            SMART CAREER MATCHING
+          </p>
+
+          <h2 className="mt-3 text-2xl font-black md:text-3xl">
+            Your skills. Your gaps. Your opportunities.
+          </h2>
+
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+            SkillTrack analyzes your current proficiency against
+            employer requirements so you can focus on opportunities
+            where you have the strongest potential.
+          </p>
+
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/skill-gap"
+              className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold transition hover:bg-white/10"
+            >
+              Analyze Skill Gaps
+            </Link>
+
+            <Link
+              href="/recommendations"
+              className="rounded-xl bg-purple-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-purple-300"
+            >
+              🧠 AI Career Recommendations
+            </Link>
+          </div>
+        </section>
       </div>
     </main>
   );
