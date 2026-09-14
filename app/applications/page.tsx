@@ -119,7 +119,6 @@ export default function ApplicationsPage() {
     <main className="min-h-screen bg-[#07111f] px-6 py-8 text-white md:px-10">
       <div className="mx-auto max-w-7xl">
 
-        {/* HEADER */}
         <div className="mb-8">
           <Link
             href="/"
@@ -137,8 +136,6 @@ export default function ApplicationsPage() {
           </p>
         </div>
 
-
-        {/* COUNTS */}
         <div className="mb-8 grid gap-4 md:grid-cols-4">
 
           <div className="rounded-2xl border border-purple-500/20 bg-[#0d1b2e] p-6">
@@ -151,7 +148,6 @@ export default function ApplicationsPage() {
             </p>
           </div>
 
-
           <div className="rounded-2xl border border-cyan-500/20 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-400">
               Applied
@@ -162,7 +158,6 @@ export default function ApplicationsPage() {
             </p>
           </div>
 
-
           <div className="rounded-2xl border border-yellow-500/20 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-400">
               Interview
@@ -172,7 +167,6 @@ export default function ApplicationsPage() {
               {counts.Interview}
             </p>
           </div>
-
 
           <div className="rounded-2xl border border-green-500/20 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-400">
@@ -186,8 +180,6 @@ export default function ApplicationsPage() {
 
         </div>
 
-
-        {/* LOADING */}
         {loading && (
           <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-12 text-center">
             <p className="text-cyan-400">
@@ -196,8 +188,6 @@ export default function ApplicationsPage() {
           </div>
         )}
 
-
-        {/* ERROR */}
         {!loading && error && (
           <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6">
 
@@ -219,8 +209,6 @@ export default function ApplicationsPage() {
           </div>
         )}
 
-
-        {/* EMPTY */}
         {!loading &&
           !error &&
           applications.length === 0 && (
@@ -249,15 +237,12 @@ export default function ApplicationsPage() {
             </div>
           )}
 
-
-        {/* APPLICATION LIST */}
         {!loading &&
           !error &&
           applications.length > 0 && (
             <div className="space-y-5">
 
               {applications.map((application) => {
-
                 const job = application.job;
 
                 return (
@@ -268,26 +253,21 @@ export default function ApplicationsPage() {
 
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
 
-                      {/* JOB INFO */}
                       <div className="min-w-0">
 
                         <div className="flex flex-wrap items-center gap-3">
 
                           <h2 className="text-xl font-bold">
-                            {job?.title ||
-                              "Unknown Job"}
+                            {job?.title || "Unknown Job"}
                           </h2>
 
                           <span
                             className={`rounded-lg px-3 py-1 text-xs font-semibold ${
-                              application.status ===
-                              "Offer"
+                              application.status === "Offer"
                                 ? "bg-green-500/10 text-green-400"
-                                : application.status ===
-                                    "Interview"
+                                : application.status === "Interview"
                                   ? "bg-yellow-500/10 text-yellow-400"
-                                  : application.status ===
-                                      "Applied"
+                                  : application.status === "Applied"
                                     ? "bg-cyan-500/10 text-cyan-400"
                                     : "bg-purple-500/10 text-purple-400"
                             }`}
@@ -297,66 +277,48 @@ export default function ApplicationsPage() {
 
                         </div>
 
-
                         <p className="mt-2 text-cyan-400">
-                          {job?.company ||
-                            "Unknown Company"}
+                          {job?.company || "Unknown Company"}
                         </p>
-
 
                         <p className="mt-2 text-sm text-slate-400">
-                          📍{" "}
-                          {job?.location ||
-                            "India"}
+                          📍 {job?.location || "India"}
                         </p>
-
 
                         <p className="mt-3 text-xs text-slate-500">
                           Applied on{" "}
                           {new Date(
                             application.applied_at
-                          ).toLocaleDateString(
-                            "en-IN"
-                          )}
+                          ).toLocaleDateString("en-IN")}
                         </p>
 
                       </div>
 
-
-                      {/* ACTIONS */}
-                      <div className="flex flex-col gap-3 sm:flex-row lg:flex-row">
+                      <div className="flex flex-col gap-3 sm:flex-row">
 
                         <select
                           value={application.status}
                           onChange={(event) =>
                             handleStatusChange(
                               application.id,
-                              event.target
-                                .value as ApplicationStatus
+                              event.target.value as ApplicationStatus
                             )
                           }
                           className="rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-sm text-white outline-none focus:border-cyan-400"
                         >
-
-                          {statuses.map(
-                            (status) => (
-                              <option
-                                key={status}
-                                value={status}
-                              >
-                                {status}
-                              </option>
-                            )
-                          )}
-
+                          {statuses.map((status) => (
+                            <option
+                              key={status}
+                              value={status}
+                            >
+                              {status}
+                            </option>
+                          ))}
                         </select>
-
 
                         <button
                           onClick={() =>
-                            handleRemove(
-                              application.id
-                            )
+                            handleRemove(application.id)
                           }
                           className="rounded-xl border border-red-500/30 px-5 py-3 text-sm font-semibold text-red-400 hover:bg-red-500/10"
                         >
