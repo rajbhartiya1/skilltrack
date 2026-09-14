@@ -1,26 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getJobs } from "../lib/jobs";
 import { calculateSkillGap } from "../lib/skillGap";
+import { supabase } from "../lib/supabase";
 
-const skills = [
-  { name: "JavaScript", level: 85 },
-  { name: "React", level: 78 },
-  { name: "Next.js", level: 72 },
-  { name: "Node.js", level: 68 },
-  { name: "SQL", level: 62 },
-  { name: "Python", level: 55 },
-];
-
-const userSkills = [
-  "JavaScript",
-  "React",
-  "Next.js",
-  "Node.js",
-  "SQL",
-];
+type Skill = {
+  name: string;
+  level: number;
+};
 
 type Job = {
   id: string;
@@ -32,7 +21,28 @@ type Job = {
   created_at: string;
 };
 
-const applications = [
+type Application = {
+  id: string;
+  status: "Wishlist" | "Applied" | "Interview" | "Offer";
+  job_id: string;
+};
+
+type DashboardApplication = {
+  company: string;
+  role: string;
+  status: string;
+};
+
+const defaultSkills: Skill[] = [
+  { name: "JavaScript", level: 85 },
+  { name: "React", level: 78 },
+  { name: "Next.js", level: 72 },
+  { name: "Node.js", level: 68 },
+  { name: "SQL", level: 62 },
+  { name: "Python", level: 55 },
+];
+
+const fallbackApplications: DashboardApplication[] = [
   {
     company: "TechNova Solutions",
     role: "Junior Developer",
@@ -53,43 +63,206 @@ const applications = [
 export default function Home() {
   const router = useRouter();
 
+  const [userName, setUserName] = useState("SkillTrack User");
+  const [skills, setSkills] = useState<Skill[]>(defaultSkills);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [dashboardApplications, setDashboardApplications] =
+    useState<DashboardApplication[]>(fallbackApplications);
+
   const [loadingJobs, setLoadingJobs] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadingApplications, setLoadingApplications] = useState(true);
+
   const [jobError, setJobError] = useState("");
 
-  useEffect(() => {
-    async function loadJobs() {
-      setLoadingJobs(true);
+  const goTo = (path: string) => {
+    router.push(path);
+  };
 
-      try {
-        const data = await getJobs();
-        setJobs((data || []) as Job[]);
-      } catch (error) {
-        console.error(error);
-        setJobError("Unable to load jobs.");
-      } finally {
-        setLoadingJobs(false);
+  useEffect(() => {
+    async function loadDashboard() {
+      await Promise.all([
+        loadProfile(),
+        loadJobs(),
+        loadApplications(),
+      ]);
+    }
+
+    loadDashboard();
+  }, []);
+
+  async function loadProfile() {
+    setLoadingProfile(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoadingProfile(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("full_name, skills")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Profile error:", error.message);
+      setLoadingProfile(false);
+      return;
+    }
+
+    if (data) {
+      if (data.full_name) {
+        setUserName(data.full_name);
+      }
+
+      if (Array.isArray(data.skills) && data.skills.length > 0) {
+        const validSkills = data.skills.filter(
+          (skill: unknown): skill is Skill =>
+            typeof skill === "object" &&
+            skill !== null &&
+            "name" in skill &&
+            "level" in skill
+        );
+
+        if (validSkills.length > 0) {
+          setSkills(validSkills);
+        }
+      }
+    } else {
+      const fallbackName =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.email?.split("@")[0] ||
+        "SkillTrack User";
+
+      setUserName(fallbackName);
+
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+          id: user.id,
+          full_name: fallbackName,
+          skills: defaultSkills,
+          bio: "",
+        });
+
+      if (insertError) {
+        console.error("Profile creation error:", insertError.message);
       }
     }
 
-    loadJobs();
-  }, []);
+    setLoadingProfile(false);
+  }
 
-  const jobMatches = jobs.map((job) => {
-    const requiredSkills = Array.isArray(job.required_skills)
-      ? job.required_skills
-      : [];
+  async function loadJobs() {
+    setLoadingJobs(true);
+    setJobError("");
 
-    const gap = calculateSkillGap(userSkills, requiredSkills);
+    try {
+      const data = await getJobs();
+      setJobs((data || []) as Job[]);
+    } catch (error) {
+      console.error(error);
+      setJobError("Unable to load jobs.");
+    } finally {
+      setLoadingJobs(false);
+    }
+  }
 
-    return {
-      ...job,
-      required_skills: requiredSkills,
-      matchPercentage: gap.matchPercentage,
-      matchedSkills: gap.matchedSkills,
-      missingSkills: gap.missingSkills,
-    };
-  });
+  async function loadApplications() {
+    setLoadingApplications(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setApplications([]);
+      setLoadingApplications(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("applications")
+      .select("id, status, job_id")
+      .eq("user_id", user.id)
+      .order("applied_at", { ascending: false });
+
+    if (error) {
+      console.error("Applications error:", error.message);
+      setLoadingApplications(false);
+      return;
+    }
+
+    const applicationRows = (data || []) as Application[];
+
+    setApplications(applicationRows);
+
+    if (applicationRows.length > 0) {
+      const jobIds = applicationRows.map(
+        (application) => application.job_id
+      );
+
+      const { data: jobData } = await supabase
+        .from("jobs")
+        .select("id, title, company")
+        .in("id", jobIds);
+
+      const jobRows = jobData || [];
+
+      const combined = applicationRows
+        .slice(0, 3)
+        .map((application) => {
+          const job = jobRows.find(
+            (item) => item.id === application.job_id
+          );
+
+          return {
+            company: job?.company || "Unknown Company",
+            role: job?.title || "Unknown Job",
+            status: application.status,
+          };
+        });
+
+      setDashboardApplications(combined);
+    } else {
+      setDashboardApplications([]);
+    }
+
+    setLoadingApplications(false);
+  }
+
+  const userSkillNames = useMemo(
+    () => skills.map((skill) => skill.name),
+    [skills]
+  );
+
+  const jobMatches = useMemo(() => {
+    return jobs.map((job) => {
+      const requiredSkills = Array.isArray(job.required_skills)
+        ? job.required_skills
+        : [];
+
+      const gap = calculateSkillGap(
+        userSkillNames,
+        requiredSkills
+      );
+
+      return {
+        ...job,
+        required_skills: requiredSkills,
+        matchPercentage: gap.matchPercentage,
+        matchedSkills: gap.matchedSkills,
+        missingSkills: gap.missingSkills,
+      };
+    });
+  }, [jobs, userSkillNames]);
 
   const averageMatch =
     jobMatches.length > 0
@@ -102,20 +275,41 @@ export default function Home() {
       : 0;
 
   const topMissingSkills = Array.from(
-    new Set(jobMatches.flatMap((job) => job.missingSkills))
+    new Set(
+      jobMatches.flatMap((job) => job.missingSkills)
+    )
   ).slice(0, 3);
 
-  const goTo = (path: string) => {
-    router.push(path);
-  };
+  const applicationCount = applications.length;
+
+  const interviewCount = applications.filter(
+    (application) => application.status === "Interview"
+  ).length;
+
+  const offerCount = applications.filter(
+    (application) => application.status === "Offer"
+  ).length;
+
+  const profileCompletion = Math.min(
+    100,
+    Math.round(
+      40 +
+        (userName !== "SkillTrack User" ? 20 : 0) +
+        (skills.length > 0 ? 20 : 0) +
+        (skills.length >= 5 ? 20 : 0)
+    )
+  );
+
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
   return (
     <main className="min-h-screen bg-[#07111f] text-white">
       <div className="flex min-h-screen">
-
         {/* SIDEBAR */}
         <aside className="hidden w-64 border-r border-white/10 bg-[#0b1728] p-5 md:block">
-
           <div className="mb-10 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 text-xl font-bold text-slate-950">
               S
@@ -123,6 +317,7 @@ export default function Home() {
 
             <div>
               <h1 className="text-xl font-bold">SkillTrack</h1>
+
               <p className="text-xs text-slate-400">
                 Career Intelligence
               </p>
@@ -130,7 +325,6 @@ export default function Home() {
           </div>
 
           <nav className="space-y-2">
-
             <button
               onClick={() => goTo("/")}
               className="flex w-full items-center gap-3 rounded-xl bg-cyan-500/15 px-4 py-3 text-left text-cyan-400 transition hover:bg-cyan-500/20"
@@ -171,6 +365,13 @@ export default function Home() {
               Applications
             </button>
 
+            <button
+              onClick={() => goTo("/profile")}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-slate-400 transition hover:bg-white/5 hover:text-white"
+            >
+              <span className="text-lg">◯</span>
+              My Profile
+            </button>
           </nav>
 
           <div className="mt-10 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
@@ -179,35 +380,41 @@ export default function Home() {
             </p>
 
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-700">
-              <div className="h-full w-[82%] rounded-full bg-cyan-400" />
+              <div
+                className="h-full rounded-full bg-cyan-400"
+                style={{
+                  width: `${profileCompletion}%`,
+                }}
+              />
             </div>
 
             <p className="mt-2 text-sm font-semibold">
-              82% complete
+              {profileCompletion}% complete
             </p>
           </div>
 
           <div className="mt-6 border-t border-white/10 pt-5">
-            <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white">
-              ⚙ Settings
+            <button
+              onClick={() => goTo("/profile")}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"
+            >
+              ⚙ Profile Settings
             </button>
           </div>
-
         </aside>
 
         {/* MAIN */}
         <section className="flex-1">
-
           {/* TOP BAR */}
           <header className="flex items-center justify-between border-b border-white/10 bg-[#0b1728]/80 px-5 py-5 backdrop-blur md:px-8">
-
             <div>
               <p className="text-sm text-slate-400">
                 Career Dashboard
               </p>
 
               <h2 className="text-xl font-bold md:text-2xl">
-                Welcome back, Raj 👋
+                Welcome back,{" "}
+                {loadingProfile ? "..." : userName} 👋
               </h2>
             </div>
 
@@ -216,20 +423,26 @@ export default function Home() {
                 🔔
               </button>
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 font-bold">
-                R
-              </div>
-            </div>
+              <button
+                onClick={() => goTo("/profile")}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 font-bold"
+              >
+                {userName.charAt(0).toUpperCase()}
+              </button>
 
+              <button
+                onClick={logout}
+                className="hidden rounded-xl border border-red-500/20 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/10 sm:block"
+              >
+                Logout
+              </button>
+            </div>
           </header>
 
           <div className="space-y-7 p-5 md:p-8">
-
             {/* HERO */}
             <div className="rounded-3xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-blue-500/5 to-transparent p-6 md:p-8">
-
               <div className="max-w-3xl">
-
                 <p className="mb-2 text-sm font-medium text-cyan-400">
                   YOUR CAREER JOURNEY
                 </p>
@@ -245,7 +458,6 @@ export default function Home() {
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-
                   <button
                     onClick={() => goTo("/skill-gap")}
                     className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
@@ -259,14 +471,12 @@ export default function Home() {
                   >
                     Explore Jobs
                   </button>
-
                 </div>
               </div>
             </div>
 
             {/* CAREER SNAPSHOT */}
             <div>
-
               <div className="mb-4">
                 <h3 className="text-xl font-bold">
                   Career Snapshot
@@ -278,7 +488,6 @@ export default function Home() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
                 <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
                   <p className="text-sm text-slate-400">
                     Skills Added
@@ -313,11 +522,11 @@ export default function Home() {
                   </p>
 
                   <p className="mt-2 text-3xl font-bold">
-                    08
+                    {loadingApplications ? "..." : applicationCount}
                   </p>
 
                   <p className="mt-2 text-xs text-slate-400">
-                    2 this week
+                    Total applications
                   </p>
                 </div>
 
@@ -327,25 +536,21 @@ export default function Home() {
                   </p>
 
                   <p className="mt-2 text-3xl font-bold">
-                    03
+                    {loadingApplications ? "..." : interviewCount}
                   </p>
 
                   <p className="mt-2 text-xs text-yellow-400">
-                    1 upcoming
+                    Active interviews
                   </p>
                 </div>
-
               </div>
             </div>
 
             {/* SKILLS + SKILL GAP */}
             <div className="grid gap-6 lg:grid-cols-2">
-
               {/* MY SKILLS */}
               <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
-
                 <div className="mb-6 flex items-center justify-between">
-
                   <div>
                     <h3 className="text-lg font-bold">
                       My Skills
@@ -357,19 +562,16 @@ export default function Home() {
                   </div>
 
                   <button
-                    onClick={() => goTo("/skills")}
+                    onClick={() => goTo("/profile")}
                     className="text-sm font-semibold text-cyan-400"
                   >
-                    View all →
+                    Manage →
                   </button>
-
                 </div>
 
                 <div className="space-y-5">
-
                   {skills.map((skill) => (
                     <div key={skill.name}>
-
                       <div className="mb-2 flex justify-between text-sm">
                         <span className="font-medium">
                           {skill.name}
@@ -381,25 +583,20 @@ export default function Home() {
                       </div>
 
                       <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-
                         <div
                           className="h-full rounded-full bg-cyan-400"
                           style={{
                             width: `${skill.level}%`,
                           }}
                         />
-
                       </div>
-
                     </div>
                   ))}
-
                 </div>
               </div>
 
               {/* SKILL GAP */}
               <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
-
                 <div className="mb-5">
                   <h3 className="text-lg font-bold">
                     Skill Gap Analysis
@@ -411,11 +608,8 @@ export default function Home() {
                 </div>
 
                 <div className="flex items-center justify-center py-3">
-
                   <div className="flex h-40 w-40 items-center justify-center rounded-full border-[14px] border-cyan-400/20 border-t-cyan-400 border-r-cyan-400">
-
                     <div className="text-center">
-
                       <p className="text-3xl font-bold">
                         {averageMatch}%
                       </p>
@@ -423,22 +617,17 @@ export default function Home() {
                       <p className="text-xs text-slate-400">
                         Job Readiness
                       </p>
-
                     </div>
-
                   </div>
-
                 </div>
 
                 <div className="mt-4 space-y-3">
-
                   {topMissingSkills.length > 0 ? (
                     topMissingSkills.map((skill) => (
                       <div
                         key={skill}
                         className="flex items-center justify-between rounded-xl bg-white/5 p-3"
                       >
-
                         <div>
                           <p className="font-medium">
                             {skill}
@@ -452,7 +641,6 @@ export default function Home() {
                         <span className="rounded-lg bg-red-500/10 px-3 py-1 text-xs text-red-400">
                           Missing
                         </span>
-
                       </div>
                     ))
                   ) : (
@@ -460,7 +648,6 @@ export default function Home() {
                       Great! No major skill gaps found.
                     </div>
                   )}
-
                 </div>
 
                 <button
@@ -469,16 +656,12 @@ export default function Home() {
                 >
                   View Full Skill Gap →
                 </button>
-
               </div>
-
             </div>
 
             {/* RECOMMENDED JOBS */}
             <div>
-
               <div className="mb-4 flex items-center justify-between">
-
                 <div>
                   <h3 className="text-xl font-bold">
                     Recommended Jobs
@@ -495,7 +678,6 @@ export default function Home() {
                 >
                   View all →
                 </button>
-
               </div>
 
               {loadingJobs ? (
@@ -512,17 +694,13 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="grid gap-4 lg:grid-cols-3">
-
-                  {jobMatches.map((job) => (
+                  {jobMatches.slice(0, 3).map((job) => (
                     <div
                       key={job.id}
                       className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5 transition hover:-translate-y-1 hover:border-cyan-500/30"
                     >
-
                       <div className="flex items-start justify-between gap-3">
-
                         <div>
-
                           <p className="text-xs text-slate-500">
                             FULL TIME
                           </p>
@@ -534,11 +712,9 @@ export default function Home() {
                           <p className="mt-1 text-sm text-slate-400">
                             {job.company}
                           </p>
-
                         </div>
 
                         <div className="rounded-xl bg-green-500/10 px-3 py-2 text-center">
-
                           <p className="text-lg font-bold text-green-400">
                             {job.matchPercentage}%
                           </p>
@@ -546,9 +722,7 @@ export default function Home() {
                           <p className="text-[10px] text-green-400">
                             MATCH
                           </p>
-
                         </div>
-
                       </div>
 
                       <p className="mt-4 text-xs text-slate-500">
@@ -556,9 +730,7 @@ export default function Home() {
                       </p>
 
                       <div className="mt-5 flex flex-wrap gap-2">
-
                         {job.required_skills.map((skill) => {
-
                           const matched = job.matchedSkills.some(
                             (item) =>
                               item.toLowerCase() ===
@@ -579,12 +751,10 @@ export default function Home() {
                             </span>
                           );
                         })}
-
                       </div>
 
                       {job.missingSkills.length > 0 && (
                         <div className="mt-4 rounded-xl bg-red-500/5 p-3">
-
                           <p className="text-xs font-semibold text-red-400">
                             Skills to improve
                           </p>
@@ -592,7 +762,6 @@ export default function Home() {
                           <p className="mt-1 text-xs text-slate-400">
                             {job.missingSkills.join(", ")}
                           </p>
-
                         </div>
                       )}
 
@@ -602,20 +771,15 @@ export default function Home() {
                       >
                         View Job
                       </button>
-
                     </div>
                   ))}
-
                 </div>
               )}
-
             </div>
 
             {/* APPLICATION TRACKER */}
             <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
-
               <div className="mb-5 flex items-center justify-between">
-
                 <div>
                   <h3 className="text-lg font-bold">
                     Application Tracker
@@ -632,62 +796,62 @@ export default function Home() {
                 >
                   Manage →
                 </button>
-
               </div>
 
-              <div className="grid gap-3 md:grid-cols-3">
+              {loadingApplications ? (
+                <div className="rounded-xl bg-white/[0.03] p-6 text-center text-sm text-slate-400">
+                  Loading applications...
+                </div>
+              ) : dashboardApplications.length === 0 ? (
+                <div className="rounded-xl bg-white/[0.03] p-6 text-center text-sm text-slate-400">
+                  No applications yet. Explore jobs and apply to
+                  your first opportunity.
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-3">
+                  {dashboardApplications.map((application, index) => (
+                    <div
+                      key={`${application.company}-${index}`}
+                      className="rounded-xl border border-white/5 bg-white/[0.03] p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">
+                            {application.role}
+                          </p>
 
-                {applications.map((application) => (
-                  <div
-                    key={application.company}
-                    className="rounded-xl border border-white/5 bg-white/[0.03] p-4"
-                  >
+                          <p className="mt-1 text-xs text-slate-400">
+                            {application.company}
+                          </p>
+                        </div>
 
-                    <div className="flex items-center justify-between gap-3">
-
-                      <div>
-                        <p className="font-semibold">
-                          {application.role}
-                        </p>
-
-                        <p className="mt-1 text-xs text-slate-400">
-                          {application.company}
-                        </p>
+                        <span
+                          className={`rounded-lg px-2.5 py-1 text-xs ${
+                            application.status === "Interview"
+                              ? "bg-green-500/10 text-green-400"
+                              : application.status === "Applied"
+                                ? "bg-blue-500/10 text-blue-400"
+                                : application.status === "Offer"
+                                  ? "bg-purple-500/10 text-purple-400"
+                                  : "bg-yellow-500/10 text-yellow-400"
+                          }`}
+                        >
+                          {application.status}
+                        </span>
                       </div>
-
-                      <span
-                        className={`rounded-lg px-2.5 py-1 text-xs ${
-                          application.status === "Interview"
-                            ? "bg-green-500/10 text-green-400"
-                            : application.status === "Applied"
-                              ? "bg-blue-500/10 text-blue-400"
-                              : "bg-yellow-500/10 text-yellow-400"
-                        }`}
-                      >
-                        {application.status}
-                      </span>
-
                     </div>
-
-                  </div>
-                ))}
-
-              </div>
-
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* FOOTER */}
             <div className="border-t border-white/10 pt-6 text-center text-xs text-slate-500">
               SkillTrack • Smart Skill & Employment Tracking Platform
             </div>
-
           </div>
-
         </section>
-
       </div>
-
-      <p> hi may name </p>
     </main>
   );
 }
