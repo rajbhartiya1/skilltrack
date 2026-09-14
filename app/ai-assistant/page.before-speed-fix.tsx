@@ -501,7 +501,7 @@ Try asking: **"What skills should I learn next?"**`;
     setThinking(true);
 
     try {
-      const analyzedJobs = analysis.relatedJobs
+      const analyzedJobs = jobs
         .map((job) => {
           const result = calculateSkillGap(
             skills,
@@ -638,10 +638,7 @@ Do not claim that job requirements are unavailable when they are provided above.
         body: JSON.stringify({
           question: text,
           context,
-          conversation: [
-            ...messages.slice(-6),
-            { role: "user", text },
-          ],
+          conversation: [...messages, { role: "user", text }],
         }),
       });
 
@@ -970,45 +967,6 @@ Do not claim that job requirements are unavailable when they are provided above.
                     }`}
                   >
                     {renderMessage(message.text)}
-
-                    {message.role === "assistant" && index > 0 && (
-                      <div className="mt-5 grid gap-2 border-t border-white/10 pt-4 sm:grid-cols-2">
-                        <Link
-                          href="/jobs"
-                          className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-center text-xs font-bold text-cyan-300 transition hover:bg-cyan-400/20"
-                        >
-                          View Matching Jobs
-                        </Link>
-
-                        <Link
-                          href="/skill-gap"
-                          className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs font-bold text-slate-300 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300"
-                        >
-                          Analyze Skill Gap
-                        </Link>
-
-                        <Link
-                          href="/career-coach"
-                          className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs font-bold text-slate-300 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300"
-                        >
-                          Build Career Roadmap
-                        </Link>
-
-                        <Link
-                          href="/resume-analyzer"
-                          className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs font-bold text-slate-300 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300"
-                        >
-                          Improve Resume
-                        </Link>
-
-                        <Link
-                          href="/interview-coach"
-                          className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs font-bold text-slate-300 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 sm:col-span-2"
-                        >
-                          Practice Interview
-                        </Link>
-                      </div>
-                    )}
                   </div>
 
                 </div>
@@ -1196,8 +1154,6 @@ Do not claim that job requirements are unavailable when they are provided above.
     </main>
   );
 }
-
-
 
 
 
