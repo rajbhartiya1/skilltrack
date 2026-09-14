@@ -512,17 +512,6 @@ export default function JobsPage() {
     <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
 
       <Link
-  href="/ai-assistant"
-  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
->
-  <div className="font-semibold text-white">
-    AI Career Assistant
-  </div>
-  <div className="mt-1 text-xs text-slate-500">
-    Ask personalized career questions
-  </div>
-</Link>
-<Link
         href="/recommendations"
         className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
