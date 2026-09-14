@@ -1,0 +1,985 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { supabase } from "../../lib/supabase";
+import { calculateSkillGap, UserSkill } from "../../lib/skillGap";
+
+type Job = {
+  id: string;
+  title: string;
+  company: string;
+  required_skills: string[] | null;
+  description: string | null;
+  location: string | null;
+  created_at: string;
+};
+
+type Profile = {
+  id: string;
+  full_name: string | null;
+  skills: UserSkill[] | string[] | null;
+  bio: string | null;
+};
+
+type RoadmapSkill = {
+  name: string;
+  currentLevel: number;
+  targetLevel: number;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  reason: string;
+  impact: number;
+  status: "Learning" | "Completed";
+};
+
+function normalizeSkills(
+  skills: UserSkill[] | string[] | null | undefined
+): UserSkill[] {
+  if (!Array.isArray(skills)) {
+    return [];
+  }
+
+  return skills
+    .map((skill) => {
+      if (typeof skill === "string") {
+        return {
+          name: skill.trim(),
+          level: 70,
+        };
+      }
+
+      return {
+        name: String(skill.name || "").trim(),
+        level: Math.max(0, Math.min(100, Number(skill.level) || 0)),
+      };
+    })
+    .filter((skill) => skill.name);
+}
+
+function uniqueStrings(items: string[]) {
+  return Array.from(
+    new Map(
+      items
+        .filter(Boolean)
+        .map((item) => [item.toLowerCase(), item.trim()])
+    ).values()
+  );
+}
+
+function getPriority(
+  currentLevel: number,
+  demand: number
+): "HIGH" | "MEDIUM" | "LOW" {
+  if (currentLevel < 40 || demand >= 8) {
+    return "HIGH";
+  }
+
+  if (currentLevel < 70 || demand >= 4) {
+    return "MEDIUM";
+  }
+
+  return "LOW";
+}
+
+function getCareerName(jobTitle: string) {
+  const title = jobTitle.toLowerCase();
+
+  if (
+    title.includes("frontend") ||
+    title.includes("front-end") ||
+    title.includes("web developer")
+  ) {
+    return "Frontend Developer";
+  }
+
+  if (
+    title.includes("backend") ||
+    title.includes("back-end")
+  ) {
+    return "Backend Developer";
+  }
+
+  if (
+    title.includes("full stack") ||
+    title.includes("full-stack")
+  ) {
+    return "Full Stack Developer";
+  }
+
+  if (
+    title.includes("data analyst") ||
+    title.includes("business intelligence") ||
+    title.includes("bi developer")
+  ) {
+    return "Data Analyst";
+  }
+
+  if (
+    title.includes("data scientist") ||
+    title.includes("machine learning") ||
+    title.includes("ai engineer")
+  ) {
+    return "AI / ML Engineer";
+  }
+
+  if (
+    title.includes("cloud") ||
+    title.includes("devops") ||
+    title.includes("site reliability")
+  ) {
+    return "Cloud / DevOps Engineer";
+  }
+
+  if (
+    title.includes("cyber") ||
+    title.includes("security") ||
+    title.includes("ethical hacker")
+  ) {
+    return "Cybersecurity Engineer";
+  }
+
+  if (
+    title.includes("ui/ux") ||
+    title.includes("designer")
+  ) {
+    return "UI/UX Designer";
+  }
+
+  if (
+    title.includes("qa") ||
+    title.includes("tester")
+  ) {
+    return "QA Engineer";
+  }
+
+  if (
+    title.includes("mobile") ||
+    title.includes("android") ||
+    title.includes("ios")
+  ) {
+    return "Mobile Developer";
+  }
+
+  return "Software Developer";
+}
+
+export default function CareerCoachPage() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [selectedCareer, setSelectedCareer] = useState("");
+  const [completedSkills, setCompletedSkills] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setError("Please login first.");
+          return;
+        }
+
+        const [profileResult, jobsResult] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, full_name, skills, bio")
+            .eq("id", user.id)
+            .maybeSingle(),
+
+          supabase
+            .from("jobs")
+            .select(
+              "id, title, company, required_skills, description, location, created_at"
+            )
+            .order("created_at", { ascending: false }),
+        ]);
+
+        if (profileResult.error) {
+          throw new Error(profileResult.error.message);
+        }
+
+        if (jobsResult.error) {
+          throw new Error(jobsResult.error.message);
+        }
+
+        setProfile(profileResult.data as Profile | null);
+        setJobs((jobsResult.data || []) as Job[]);
+
+        const saved =
+          localStorage.getItem("skilltrack_completed_skills");
+
+        if (saved) {
+          try {
+            setCompletedSkills(JSON.parse(saved));
+          } catch {
+            setCompletedSkills([]);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load career coach."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  const userSkills = useMemo(() => {
+    return normalizeSkills(profile?.skills);
+  }, [profile]);
+
+  const careerOptions = useMemo(() => {
+    const careers = jobs.map((job) => getCareerName(job.title));
+
+    return uniqueStrings(careers);
+  }, [jobs]);
+
+  useEffect(() => {
+    if (!selectedCareer && careerOptions.length > 0) {
+      setSelectedCareer(careerOptions[0]);
+    }
+  }, [careerOptions, selectedCareer]);
+
+  const selectedJobs = useMemo(() => {
+    if (!selectedCareer) {
+      return [];
+    }
+
+    return jobs.filter(
+      (job) => getCareerName(job.title) === selectedCareer
+    );
+  }, [jobs, selectedCareer]);
+
+  const roadmap = useMemo(() => {
+    if (!selectedJobs.length) {
+      return [];
+    }
+
+    const userSkillMap = new Map(
+      userSkills.map((skill) => [
+        skill.name.toLowerCase(),
+        skill.level,
+      ])
+    );
+
+    const demandMap = new Map<string, number>();
+
+    selectedJobs.forEach((job) => {
+      const skills = Array.isArray(job.required_skills)
+        ? job.required_skills
+        : [];
+
+      skills.forEach((skill) => {
+        const clean = String(skill).trim();
+
+        if (!clean) {
+          return;
+        }
+
+        const key = clean.toLowerCase();
+
+        demandMap.set(
+          key,
+          (demandMap.get(key) || 0) + 1
+        );
+      });
+    });
+
+    const allSkills = uniqueStrings(
+      selectedJobs.flatMap((job) =>
+        Array.isArray(job.required_skills)
+          ? job.required_skills
+          : []
+      )
+    );
+
+    const result: RoadmapSkill[] = allSkills.map((skill) => {
+      const key = skill.toLowerCase();
+
+      const currentLevel = userSkillMap.get(key) || 0;
+
+      const demand = demandMap.get(key) || 1;
+
+      const priority = getPriority(
+        currentLevel,
+        demand
+      );
+
+      let reason = "";
+
+      if (currentLevel === 0) {
+        reason =
+          "You currently don't have this skill in your profile.";
+      } else if (currentLevel < 70) {
+        reason =
+          "You have this skill, but your proficiency should be improved.";
+      } else {
+        reason =
+          "You already have a strong foundation in this skill.";
+      }
+
+      const impact = Math.min(
+        25,
+        Math.max(
+          2,
+          Math.round(
+            (demand / Math.max(1, selectedJobs.length)) *
+              25
+          )
+        )
+      );
+
+      return {
+        name: skill,
+        currentLevel,
+        targetLevel: 70,
+        priority,
+        reason,
+        impact,
+        status: completedSkills.some(
+          (item) => item.toLowerCase() === key
+        )
+          ? "Completed"
+          : "Learning",
+      };
+    });
+
+    const priorityOrder = {
+      HIGH: 0,
+      MEDIUM: 1,
+      LOW: 2,
+    };
+
+    return result.sort((a, b) => {
+      if (
+        priorityOrder[a.priority] !==
+        priorityOrder[b.priority]
+      ) {
+        return (
+          priorityOrder[a.priority] -
+          priorityOrder[b.priority]
+        );
+      }
+
+      return b.impact - a.impact;
+    });
+  }, [
+    selectedJobs,
+    userSkills,
+    completedSkills,
+  ]);
+
+  const currentCareerMatch = useMemo(() => {
+    if (!selectedJobs.length) {
+      return 0;
+    }
+
+    const scores = selectedJobs.map((job) => {
+      const result = calculateSkillGap(
+        userSkills,
+        Array.isArray(job.required_skills)
+          ? job.required_skills
+          : []
+      );
+
+      return result.matchPercentage;
+    });
+
+    return Math.round(
+      scores.reduce(
+        (sum, score) => sum + score,
+        0
+      ) / scores.length
+    );
+  }, [selectedJobs, userSkills]);
+
+  const completedCount = roadmap.filter(
+    (skill) => skill.status === "Completed"
+  ).length;
+
+  const progressPercentage =
+    roadmap.length > 0
+      ? Math.round(
+          (completedCount / roadmap.length) * 100
+        )
+      : 0;
+
+  function toggleSkill(skillName: string) {
+    const exists = completedSkills.some(
+      (skill) =>
+        skill.toLowerCase() ===
+        skillName.toLowerCase()
+    );
+
+    const updated = exists
+      ? completedSkills.filter(
+          (skill) =>
+            skill.toLowerCase() !==
+            skillName.toLowerCase()
+        )
+      : [...completedSkills, skillName];
+
+    setCompletedSkills(updated);
+
+    localStorage.setItem(
+      "skilltrack_completed_skills",
+      JSON.stringify(updated)
+    );
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#07111f] text-white">
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto mb-5 h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
+
+            <h1 className="text-xl font-bold">
+              Building your career roadmap...
+            </h1>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Analyzing your skills and job requirements.
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen bg-[#07111f] px-5 py-20 text-white">
+        <div className="mx-auto max-w-xl rounded-3xl border border-red-400/20 bg-red-400/5 p-8 text-center">
+          <div className="text-4xl">
+            ⚠️
+          </div>
+
+          <h1 className="mt-4 text-2xl font-black">
+            Career Coach unavailable
+          </h1>
+
+          <p className="mt-3 text-sm text-slate-400">
+            {error}
+          </p>
+
+          <Link
+            href="/profile"
+            className="mt-6 inline-flex rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+          >
+            Go to Profile
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-[#07111f] text-white">
+      {/* NAVBAR */}
+
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#07111f]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+          <Link
+            href="/"
+            className="text-2xl font-black"
+          >
+            Skill<span className="text-cyan-400">
+              Track
+            </span>
+          </Link>
+
+          <nav className="hidden items-center gap-7 text-sm md:flex">
+            <Link
+              href="/"
+              className="text-slate-400 hover:text-white"
+            >
+              Dashboard
+            </Link>
+
+            <Link
+              href="/profile"
+              className="text-slate-400 hover:text-white"
+            >
+              Profile
+            </Link>
+
+            <Link
+              href="/jobs"
+              className="text-slate-400 hover:text-white"
+            >
+              Jobs
+            </Link>
+
+            <Link
+              href="/skill-gap"
+              className="text-slate-400 hover:text-white"
+            >
+              Skill Gap
+            </Link>
+
+            <Link
+              href="/recommendations"
+              className="text-slate-400 hover:text-white"
+            >
+              AI Career
+            </Link>
+
+            <Link
+              href="/career-coach"
+              className="font-bold text-cyan-400"
+            >
+              Career Coach
+            </Link>
+
+            <Link
+              href="/applications"
+              className="text-slate-400 hover:text-white"
+            >
+              Applications
+            </Link>
+          </nav>
+
+          <Link
+            href="/profile"
+            className="rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950"
+          >
+            My Skills
+          </Link>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
+        {/* HERO */}
+
+        <section className="relative overflow-hidden rounded-[32px] border border-purple-400/20 bg-gradient-to-br from-purple-500/10 via-[#101d35] to-cyan-500/10 p-7 md:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-purple-400/10 blur-3xl" />
+
+          <div className="relative grid gap-8 lg:grid-cols-[1fr_330px] lg:items-center">
+            <div>
+              <div className="inline-flex rounded-full border border-purple-400/20 bg-purple-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
+                ✦ Personal Career Coach
+              </div>
+
+              <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight md:text-6xl">
+                Build the skills
+                <br />
+                your <span className="text-cyan-400">
+                  career needs.
+                </span>
+              </h1>
+
+              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 md:text-lg">
+                Your personalized roadmap is generated from your current
+                skill levels and the requirements of available jobs.
+              </p>
+
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href="/recommendations"
+                  className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+                >
+                  AI Career Analysis
+                </Link>
+
+                <Link
+                  href="/jobs"
+                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold"
+                >
+                  Explore Jobs
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-black/20 p-6">
+              <p className="text-xs uppercase tracking-widest text-slate-500">
+                Career readiness
+              </p>
+
+              <p className="mt-3 text-6xl font-black text-cyan-400">
+                {currentCareerMatch}%
+              </p>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Current match for {selectedCareer || "your target career"}
+              </p>
+
+              <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-cyan-400"
+                  style={{
+                    width: `${currentCareerMatch}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CAREER SELECTOR */}
+
+        <section className="mt-7 rounded-3xl border border-white/10 bg-[#0c1a2d] p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+                Target Career
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black">
+                Choose your career direction
+              </h2>
+            </div>
+
+            <select
+              value={selectedCareer}
+              onChange={(event) =>
+                setSelectedCareer(event.target.value)
+              }
+              className="rounded-xl border border-white/10 bg-[#07111f] px-5 py-3 text-sm font-semibold text-white outline-none focus:border-cyan-400"
+            >
+              {careerOptions.map((career) => (
+                <option
+                  key={career}
+                  value={career}
+                >
+                  {career}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
+
+        {/* PROGRESS */}
+
+        <section className="mt-7 grid gap-5 lg:grid-cols-[1fr_280px]">
+          <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-7">
+            <div className="flex items-end justify-between gap-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-purple-400">
+                  Learning Progress
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black">
+                  {completedCount} of {roadmap.length} skills completed
+                </h2>
+              </div>
+
+              <p className="text-3xl font-black text-purple-300">
+                {progressPercentage}%
+              </p>
+            </div>
+
+            <div className="mt-6 h-3 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-purple-400 to-cyan-400 transition-all"
+                style={{
+                  width: `${progressPercentage}%`,
+                }}
+              />
+            </div>
+
+            <p className="mt-4 text-sm text-slate-500">
+              Complete roadmap skills to track your learning progress.
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-cyan-400/10 bg-cyan-400/5 p-6">
+            <p className="text-xs uppercase tracking-widest text-cyan-400">
+              Recommended order
+            </p>
+
+            <p className="mt-3 text-3xl font-black">
+              {roadmap.filter(
+                (skill) => skill.priority === "HIGH"
+              ).length}
+            </p>
+
+            <p className="mt-1 text-sm text-slate-500">
+              High-priority skills
+            </p>
+          </div>
+        </section>
+
+        {/* ROADMAP */}
+
+        <section className="mt-10">
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+              Personalized roadmap
+            </p>
+
+            <h2 className="mt-2 text-3xl font-black">
+              Your learning journey
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Start from the top. Skills are prioritized using job demand
+              and your current proficiency.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {roadmap.map((skill, index) => {
+              const priorityClass =
+                skill.priority === "HIGH"
+                  ? "bg-red-400/10 text-red-300 border-red-400/20"
+                  : skill.priority === "MEDIUM"
+                    ? "bg-yellow-400/10 text-yellow-300 border-yellow-400/20"
+                    : "bg-emerald-400/10 text-emerald-300 border-emerald-400/20";
+
+              return (
+                <div
+                  key={skill.name}
+                  className={`rounded-3xl border p-6 transition ${
+                    skill.status === "Completed"
+                      ? "border-emerald-400/20 bg-emerald-400/[0.03]"
+                      : "border-white/10 bg-[#0c1a2d]"
+                  }`}
+                >
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+                    {/* NUMBER */}
+
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-lg font-black text-cyan-400">
+                      {String(index + 1).padStart(2, "0")}
+                    </div>
+
+                    {/* MAIN */}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-xl font-black">
+                          {skill.name}
+                        </h3>
+
+                        <span
+                          className={`rounded-lg border px-2.5 py-1 text-[10px] font-black tracking-wider ${priorityClass}`}
+                        >
+                          {skill.priority}
+                        </span>
+
+                        {skill.status === "Completed" && (
+                          <span className="rounded-lg bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black text-emerald-300">
+                            ✓ COMPLETED
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        {skill.reason}
+                      </p>
+
+                      {/* LEVEL BAR */}
+
+                      <div className="mt-5">
+                        <div className="mb-2 flex justify-between text-xs">
+                          <span className="text-slate-500">
+                            Current: {skill.currentLevel}%
+                          </span>
+
+                          <span className="text-cyan-400">
+                            Target: {skill.targetLevel}%
+                          </span>
+                        </div>
+
+                        <div className="relative h-2 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-cyan-400"
+                            style={{
+                              width: `${skill.currentLevel}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* IMPACT */}
+
+                    <div className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 lg:w-40">
+                      <p className="text-xs text-slate-600">
+                        Match impact
+                      </p>
+
+                      <p className="mt-1 text-2xl font-black text-cyan-400">
+                        +{skill.impact}%
+                      </p>
+
+                      <p className="mt-1 text-[11px] text-slate-600">
+                        potential improvement
+                      </p>
+                    </div>
+
+                    {/* BUTTON */}
+
+                    <button
+                      onClick={() =>
+                        toggleSkill(skill.name)
+                      }
+                      className={`rounded-xl px-5 py-3 text-sm font-bold transition ${
+                        skill.status === "Completed"
+                          ? "border border-emerald-400/20 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20"
+                          : "bg-cyan-400 text-slate-950 hover:bg-cyan-300"
+                      }`}
+                    >
+                      {skill.status === "Completed"
+                        ? "Undo"
+                        : "Mark Complete"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {roadmap.length === 0 && (
+              <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-10 text-center">
+                <div className="text-4xl">
+                  🎯
+                </div>
+
+                <h3 className="mt-4 text-xl font-black">
+                  No roadmap available
+                </h3>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  Add skills to your profile or choose another career path.
+                </p>
+
+                <Link
+                  href="/profile"
+                  className="mt-5 inline-flex rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+                >
+                  Update Profile
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* JOB TARGETS */}
+
+        <section className="mt-10 rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-7">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                Career Targets
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black">
+                Jobs you are preparing for
+              </h2>
+            </div>
+
+            <Link
+              href="/jobs"
+              className="text-sm font-bold text-cyan-400"
+            >
+              View all jobs →
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {selectedJobs.slice(0, 6).map((job) => {
+              const match = calculateSkillGap(
+                userSkills,
+                Array.isArray(job.required_skills)
+                  ? job.required_skills
+                  : []
+              );
+
+              return (
+                <Link
+                  key={job.id}
+                  href={`/jobs/${job.id}`}
+                  className="rounded-2xl border border-white/5 bg-white/[0.025] p-5 transition hover:border-cyan-400/20 hover:bg-white/5"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-black">
+                        {job.title}
+                      </h3>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {job.company}
+                      </p>
+                    </div>
+
+                    <span className="font-black text-cyan-400">
+                      {match.matchPercentage}%
+                    </span>
+                  </div>
+
+                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-cyan-400"
+                      style={{
+                        width: `${match.matchPercentage}%`,
+                      }}
+                    />
+                  </div>
+
+                  <p className="mt-3 text-xs text-slate-600">
+                    {match.missingSkills.length} skill
+                    {match.missingSkills.length === 1
+                      ? ""
+                      : "s"} to improve
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* FINAL CTA */}
+
+        <section className="mt-10 rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-7 text-center md:p-10">
+          <div className="mx-auto max-w-2xl">
+            <div className="text-4xl">
+              🚀
+            </div>
+
+            <h2 className="mt-4 text-3xl font-black">
+              Ready to become job-ready?
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              Keep improving the highest-priority skills, then use SkillTrack
+              to find jobs where your profile has the strongest match.
+            </p>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/profile"
+                className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+              >
+                Update My Skills
+              </Link>
+
+              <Link
+                href="/jobs"
+                className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold"
+              >
+                Find Jobs
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
+          SkillTrack • Personalized Career Coach
+        </footer>
+      </div>
+    </main>
+  );
+}
