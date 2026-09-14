@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -486,7 +486,7 @@ export default function Dashboard() {
             >
               {refreshing
                 ? "Refreshing..."
-                : "↻ Refresh"}
+                : "â†» Refresh"}
             </button>
 
             <Link
@@ -518,7 +518,7 @@ export default function Dashboard() {
                 <span className="text-cyan-400">
                   {" "}{userName}
                 </span>
-                {" "}👋
+                {" "}ðŸ‘‹
               </h1>
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400 md:text-base">
@@ -532,14 +532,14 @@ export default function Dashboard() {
                   href="/recommendations"
                   className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
                 >
-                  🧠 AI Career Analysis
+                  ðŸ§  AI Career Analysis
                 </Link>
 
                 <Link
                   href="/jobs"
                   className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
                 >
-                  Explore Jobs →
+                  Explore Jobs â†’
                 </Link>
               </div>
             </div>
@@ -641,7 +641,7 @@ export default function Dashboard() {
           <div className="flex flex-col justify-between gap-7 lg:flex-row lg:items-center">
             <div className="flex gap-5">
               <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-purple-400/10 text-2xl sm:flex">
-                🧠
+                ðŸ§ 
               </div>
 
               <div>
@@ -674,7 +674,7 @@ export default function Dashboard() {
                 href="/recommendations"
                 className="rounded-xl bg-purple-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-purple-300"
               >
-                Full Analysis →
+                Full Analysis â†’
               </Link>
             </div>
           </div>
@@ -707,7 +707,7 @@ export default function Dashboard() {
                 href="/jobs"
                 className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
               >
-                View All →
+                View All â†’
               </Link>
             </div>
 
@@ -723,7 +723,7 @@ export default function Dashboard() {
                     href="/profile"
                     className="mt-4 inline-block text-sm font-bold text-cyan-400"
                   >
-                    Add Skills →
+                    Add Skills â†’
                   </Link>
                 </div>
               ) : (
@@ -748,7 +748,7 @@ export default function Dashboard() {
                           </h3>
 
                           <p className="mt-1 text-xs text-slate-600">
-                            📍 {job.location || "India"}
+                            ðŸ“ {job.location || "India"}
                           </p>
                         </div>
                       </div>
@@ -776,7 +776,7 @@ export default function Dashboard() {
                             key={skill}
                             className="rounded-lg bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-300"
                           >
-                            ✓ {skill}
+                            âœ“ {skill}
                           </span>
                         ))}
 
@@ -787,7 +787,7 @@ export default function Dashboard() {
                             key={skill}
                             className="rounded-lg bg-yellow-400/10 px-3 py-1.5 text-xs text-yellow-300"
                           >
-                            ↗ {skill}
+                            â†— {skill}
                           </span>
                         ))}
 
@@ -823,7 +823,7 @@ export default function Dashboard() {
               </div>
 
               <span className="text-2xl">
-                🎯
+                ðŸŽ¯
               </span>
             </div>
 
@@ -868,7 +868,7 @@ export default function Dashboard() {
               href="/skill-gap"
               className="mt-5 block rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-3 text-center text-sm font-bold text-red-300 transition hover:bg-red-400/10"
             >
-              Analyze Skill Gaps →
+              Analyze Skill Gaps â†’
             </Link>
           </div>
         </section>
@@ -896,7 +896,7 @@ export default function Dashboard() {
                 href="/profile"
                 className="text-sm font-semibold text-cyan-400"
               >
-                Manage →
+                Manage â†’
               </Link>
             </div>
 
@@ -989,7 +989,7 @@ export default function Dashboard() {
                 href="/applications"
                 className="text-sm font-semibold text-cyan-400"
               >
-                Open →
+                Open â†’
               </Link>
             </div>
 
@@ -997,7 +997,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between rounded-xl bg-purple-400/5 p-4">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">
-                    ♡
+                    â™¡
                   </span>
 
                   <span className="text-sm font-semibold">
@@ -1013,7 +1013,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between rounded-xl bg-cyan-400/5 p-4">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">
-                    📤
+                    ðŸ“¤
                   </span>
 
                   <span className="text-sm font-semibold">
@@ -1029,7 +1029,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between rounded-xl bg-yellow-400/5 p-4">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">
-                    🎤
+                    ðŸŽ¤
                   </span>
 
                   <span className="text-sm font-semibold">
@@ -1045,7 +1045,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between rounded-xl bg-emerald-400/5 p-4">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">
-                    🎉
+                    ðŸŽ‰
                   </span>
 
                   <span className="text-sm font-semibold">
@@ -1095,7 +1095,7 @@ export default function Dashboard() {
                 href="/recommendations"
                 className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
               >
-                AI Career →
+                AI Career â†’
               </Link>
             </div>
           </div>
@@ -1107,7 +1107,7 @@ export default function Dashboard() {
 
         <footer className="mt-10 flex flex-col justify-between gap-4 border-t border-white/10 py-6 text-xs text-slate-600 sm:flex-row">
           <p>
-            © 2026 SkillTrack • Skill Intelligence &
+            Â© 2026 SkillTrack â€¢ Skill Intelligence &
             Employment Tracking
           </p>
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -480,7 +480,7 @@ export default function SkillGapPage() {
             href="/"
             className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
           >
-            ← Back to Dashboard
+            â† Back to Dashboard
           </Link>
 
           <div className="mt-5">
@@ -808,7 +808,7 @@ export default function SkillGapPage() {
               {priorityGaps.length ===
               0 ? (
                 <div className="rounded-xl border border-emerald-400/10 bg-emerald-400/5 p-6 text-sm text-emerald-300">
-                  🎉 No major market skill gaps detected.
+                  ðŸŽ‰ No major market skill gaps detected.
                 </div>
               ) : (
                 priorityGaps.map(
@@ -830,7 +830,7 @@ export default function SkillGapPage() {
                           Appears in {skill.count} job
                           {skill.count === 1
                             ? ""
-                            : "s"} • Current level{" "}
+                            : "s"} â€¢ Current level{" "}
                           {skill.level}%
                         </p>
                       </div>
@@ -869,7 +869,7 @@ export default function SkillGapPage() {
               href="/jobs"
               className="text-sm font-bold text-cyan-400 hover:text-cyan-300"
             >
-              View All Jobs →
+              View All Jobs â†’
             </Link>
           </div>
 
@@ -896,7 +896,7 @@ export default function SkillGapPage() {
                       </h3>
 
                       <p className="mt-2 text-[11px] text-slate-600">
-                        📍{" "}
+                        ðŸ“{" "}
                         {job.location ||
                           "India"}
                       </p>
@@ -925,7 +925,7 @@ export default function SkillGapPage() {
                           key={skill}
                           className="rounded-lg bg-emerald-400/10 px-2.5 py-1.5 text-[10px] text-emerald-300"
                         >
-                          ✓ {skill}
+                          âœ“ {skill}
                         </span>
                       ))}
 
@@ -942,7 +942,7 @@ export default function SkillGapPage() {
                   </div>
 
                   <p className="mt-5 text-xs font-bold text-slate-600 transition group-hover:text-cyan-400">
-                    Analyze this job →
+                    Analyze this job â†’
                   </p>
                 </Link>
               ))
@@ -1020,7 +1020,7 @@ export default function SkillGapPage() {
 
                   <p className="mt-1 font-bold text-yellow-300">
                     {improvingSkills[0].name}{" "}
-                    — {improvingSkills[0].level}%
+                    â€” {improvingSkills[0].level}%
                   </p>
                 </div>
               )}

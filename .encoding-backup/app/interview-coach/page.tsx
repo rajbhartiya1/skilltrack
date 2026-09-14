@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -1305,7 +1305,7 @@ export default function InterviewCoachPage() {
           <div className="relative grid gap-8 lg:grid-cols-[1fr_320px] lg:items-center">
             <div>
               <div className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                ✦ AI Interview Intelligence
+                âœ¦ AI Interview Intelligence
               </div>
 
               <h1 className="mt-5 text-4xl font-black leading-tight md:text-6xl">
@@ -1439,7 +1439,7 @@ export default function InterviewCoachPage() {
             >
               {started
                 ? "Restart Interview"
-                : "Start Interview →"}
+                : "Start Interview â†’"}
             </button>
           </div>
         </section>
@@ -1515,7 +1515,7 @@ export default function InterviewCoachPage() {
                   }
                   className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-400 hover:bg-white/10"
                 >
-                  💡 {showHint ? "Hide Hint" : "Show Hint"}
+                  ðŸ’¡ {showHint ? "Hide Hint" : "Show Hint"}
                 </button>
 
                 <button
@@ -1523,7 +1523,7 @@ export default function InterviewCoachPage() {
                   disabled={!answer.trim()}
                   className="ml-auto rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Evaluate Answer →
+                  Evaluate Answer â†’
                 </button>
               </div>
 
@@ -1679,7 +1679,7 @@ export default function InterviewCoachPage() {
                           key={item}
                           className="rounded-xl border border-emerald-400/10 bg-emerald-400/5 p-4 text-sm leading-6 text-slate-400"
                         >
-                          ✓ {item}
+                          âœ“ {item}
                         </div>
                       )
                     )}
@@ -1749,8 +1749,8 @@ export default function InterviewCoachPage() {
                 >
                   {questionIndex >=
                   currentQuestions.length - 1
-                    ? "Finish Interview →"
-                    : "Next Question →"}
+                    ? "Finish Interview â†’"
+                    : "Next Question â†’"}
                 </button>
               </div>
             </div>
@@ -1762,7 +1762,7 @@ export default function InterviewCoachPage() {
         {sessionComplete && (
           <section className="mt-8 rounded-[32px] border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-[#0c1a2d] to-purple-500/10 p-7 text-center md:p-12">
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-cyan-400/10 text-4xl">
-              🏆
+              ðŸ†
             </div>
 
             <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
@@ -1841,7 +1841,7 @@ export default function InterviewCoachPage() {
           <div className="grid gap-7 md:grid-cols-3">
             <div>
               <p className="text-3xl">
-                🎯
+                ðŸŽ¯
               </p>
 
               <h3 className="mt-4 font-black">
@@ -1855,7 +1855,7 @@ export default function InterviewCoachPage() {
 
             <div>
               <p className="text-3xl">
-                📄
+                ðŸ“„
               </p>
 
               <h3 className="mt-4 font-black">
@@ -1869,7 +1869,7 @@ export default function InterviewCoachPage() {
 
             <div>
               <p className="text-3xl">
-                🚀
+                ðŸš€
               </p>
 
               <h3 className="mt-4 font-black">
@@ -1884,7 +1884,7 @@ export default function InterviewCoachPage() {
         </section>
 
         <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
-          SkillTrack • AI Interview Intelligence
+          SkillTrack â€¢ AI Interview Intelligence
         </footer>
       </div>
     </main>

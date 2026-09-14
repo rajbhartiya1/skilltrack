@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -52,7 +52,7 @@ export default function LoginPage() {
             href="/"
             className="inline-flex items-center gap-2 text-sm text-cyan-400 hover:text-cyan-300"
           >
-            ← SkillTrack
+            â† SkillTrack
           </Link>
 
           <div className="mt-8">

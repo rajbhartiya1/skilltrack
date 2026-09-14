@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -29,7 +29,7 @@ const STATUS_CONFIG: Record<
 > = {
   Wishlist: {
     label: "Wishlist",
-    icon: "♡",
+    icon: "â™¡",
     description: "Jobs you want to apply for",
     color: "purple",
     badge: "bg-purple-400/10 text-purple-300 border-purple-400/20",
@@ -37,7 +37,7 @@ const STATUS_CONFIG: Record<
 
   Applied: {
     label: "Applied",
-    icon: "📤",
+    icon: "ðŸ“¤",
     description: "Applications you submitted",
     color: "cyan",
     badge: "bg-cyan-400/10 text-cyan-300 border-cyan-400/20",
@@ -45,7 +45,7 @@ const STATUS_CONFIG: Record<
 
   Interview: {
     label: "Interview",
-    icon: "🎤",
+    icon: "ðŸŽ¤",
     description: "Interview opportunities",
     color: "yellow",
     badge: "bg-yellow-400/10 text-yellow-300 border-yellow-400/20",
@@ -53,7 +53,7 @@ const STATUS_CONFIG: Record<
 
   Offer: {
     label: "Offer",
-    icon: "🎉",
+    icon: "ðŸŽ‰",
     description: "Offers you received",
     color: "emerald",
     badge: "bg-emerald-400/10 text-emerald-300 border-emerald-400/20",
@@ -453,7 +453,7 @@ export default function ApplicationsPage() {
             href="/"
             className="text-sm text-cyan-400 transition hover:text-cyan-300"
           >
-            ← Back to Dashboard
+            â† Back to Dashboard
           </Link>
 
           <div className="mt-5 flex flex-col justify-between gap-6 md:flex-row md:items-end">
@@ -476,7 +476,7 @@ export default function ApplicationsPage() {
               href="/jobs"
               className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-sm font-bold text-cyan-300 transition hover:bg-cyan-400/20"
             >
-              Explore Jobs →
+              Explore Jobs â†’
             </Link>
           </div>
         </section>
@@ -512,7 +512,7 @@ export default function ApplicationsPage() {
               </p>
 
               <span className="text-xl">
-                ♡
+                â™¡
               </span>
             </div>
 
@@ -528,7 +528,7 @@ export default function ApplicationsPage() {
               </p>
 
               <span className="text-xl">
-                📤
+                ðŸ“¤
               </span>
             </div>
 
@@ -544,7 +544,7 @@ export default function ApplicationsPage() {
               </p>
 
               <span className="text-xl">
-                🎤
+                ðŸŽ¤
               </span>
             </div>
 
@@ -560,7 +560,7 @@ export default function ApplicationsPage() {
               </p>
 
               <span className="text-xl">
-                🎉
+                ðŸŽ‰
               </span>
             </div>
 
@@ -742,14 +742,14 @@ export default function ApplicationsPage() {
                               </div>
 
                               <span className="cursor-grab text-slate-700 group-hover:text-slate-400">
-                                ⋮⋮
+                                â‹®â‹®
                               </span>
                             </div>
 
                             {/* LOCATION */}
 
                             <p className="mt-3 text-[11px] text-slate-600">
-                              📍{" "}
+                              ðŸ“{" "}
                               {job?.location ||
                                 "India"}
                             </p>
@@ -874,19 +874,19 @@ export default function ApplicationsPage() {
 
             <div className="flex flex-wrap gap-2">
               <div className="rounded-xl bg-purple-400/10 px-4 py-3 text-xs font-semibold text-purple-300">
-                ♡ Save
+                â™¡ Save
               </div>
 
               <div className="rounded-xl bg-cyan-400/10 px-4 py-3 text-xs font-semibold text-cyan-300">
-                📤 Apply
+                ðŸ“¤ Apply
               </div>
 
               <div className="rounded-xl bg-yellow-400/10 px-4 py-3 text-xs font-semibold text-yellow-300">
-                🎤 Interview
+                ðŸŽ¤ Interview
               </div>
 
               <div className="rounded-xl bg-emerald-400/10 px-4 py-3 text-xs font-semibold text-emerald-300">
-                🎉 Offer
+                ðŸŽ‰ Offer
               </div>
             </div>
           </div>
@@ -912,7 +912,7 @@ export default function ApplicationsPage() {
             href="/jobs"
             className="mt-6 inline-block rounded-xl bg-cyan-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
           >
-            Explore Jobs →
+            Explore Jobs â†’
           </Link>
         </section>
       </div>

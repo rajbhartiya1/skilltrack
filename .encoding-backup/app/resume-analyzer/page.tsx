@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ChangeEvent, useMemo, useState } from "react";
 import Link from "next/link";
@@ -326,7 +326,7 @@ export default function ResumeAnalyzerPage() {
       !safeText.toLowerCase().includes("project")
     ) {
       suggestions.push(
-        "Add 2–3 strong projects with technologies and measurable outcomes."
+        "Add 2â€“3 strong projects with technologies and measurable outcomes."
       );
     }
 
@@ -472,7 +472,7 @@ export default function ResumeAnalyzerPage() {
 
           <div className="relative">
             <div className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-              ✦ AI Resume Intelligence
+              âœ¦ AI Resume Intelligence
             </div>
 
             <h1 className="mt-5 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
@@ -586,7 +586,7 @@ export default function ResumeAnalyzerPage() {
               />
 
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-400/10 text-3xl">
-                📄
+                ðŸ“„
               </div>
 
               {fileName ? (
@@ -610,7 +610,7 @@ export default function ResumeAnalyzerPage() {
                   </p>
 
                   <p className="mt-3 text-xs text-slate-600">
-                    TXT • PDF • DOC • DOCX
+                    TXT â€¢ PDF â€¢ DOC â€¢ DOCX
                   </p>
                 </>
               )}
@@ -627,7 +627,7 @@ export default function ResumeAnalyzerPage() {
               >
                 {loading
                   ? "Analyzing..."
-                  : "Analyze Resume →"}
+                  : "Analyze Resume â†’"}
               </button>
 
               {fileName && (
@@ -726,7 +726,7 @@ export default function ResumeAnalyzerPage() {
                         key={skill}
                         className="rounded-xl bg-emerald-400/10 px-4 py-2.5 text-sm font-semibold text-emerald-300"
                       >
-                        ✓ {skill}
+                        âœ“ {skill}
                       </span>
                     )
                   )}
@@ -787,7 +787,7 @@ export default function ResumeAnalyzerPage() {
                         className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 text-sm leading-6 text-slate-400"
                       >
                         <span className="mr-2 text-emerald-400">
-                          ✓
+                          âœ“
                         </span>
 
                         {item}
@@ -858,7 +858,7 @@ export default function ResumeAnalyzerPage() {
 
             <section className="mt-7 rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-7 text-center md:p-10">
               <div className="text-4xl">
-                🚀
+                ðŸš€
               </div>
 
               <h2 className="mt-4 text-3xl font-black">
@@ -899,7 +899,7 @@ export default function ResumeAnalyzerPage() {
         {!analysis && (
           <section className="mt-7 rounded-3xl border border-white/10 bg-[#0c1a2d] p-8 text-center">
             <div className="text-5xl">
-              🤖
+              ðŸ¤–
             </div>
 
             <h2 className="mt-5 text-2xl font-black">
@@ -914,7 +914,7 @@ export default function ResumeAnalyzerPage() {
         )}
 
         <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
-          SkillTrack • AI Resume Intelligence
+          SkillTrack â€¢ AI Resume Intelligence
         </footer>
       </div>
     </main>

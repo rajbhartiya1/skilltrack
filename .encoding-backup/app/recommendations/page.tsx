@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -485,7 +485,7 @@ export default function RecommendationsPage() {
       <main className="min-h-screen bg-[#07111f] px-6 py-20 text-white">
         <div className="mx-auto max-w-xl rounded-3xl border border-red-400/20 bg-red-400/5 p-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-400/10 text-2xl">
-            ⚠️
+            âš ï¸
           </div>
 
           <h1 className="text-2xl font-bold">
@@ -582,7 +582,7 @@ export default function RecommendationsPage() {
           <div className="relative grid gap-10 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
-                ✦ AI Career Intelligence
+                âœ¦ AI Career Intelligence
               </div>
 
               <h1 className="max-w-3xl text-4xl font-black leading-tight md:text-6xl">
@@ -605,7 +605,7 @@ export default function RecommendationsPage() {
                   href="/skill-gap"
                   className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 transition hover:bg-cyan-300"
                 >
-                  View Skill Gap →
+                  View Skill Gap â†’
                 </Link>
 
                 <Link
@@ -795,7 +795,7 @@ export default function RecommendationsPage() {
                           key={skill}
                           className="rounded-lg bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-300"
                         >
-                          ✓ {skill}
+                          âœ“ {skill}
                         </span>
                       ))}
 
@@ -812,7 +812,7 @@ export default function RecommendationsPage() {
                   </div>
 
                   <p className="mt-5 text-sm font-semibold text-slate-500 transition group-hover:text-cyan-400">
-                    View career analysis →
+                    View career analysis â†’
                   </p>
                 </button>
               )
@@ -843,7 +843,7 @@ export default function RecommendationsPage() {
               </div>
 
               <div className="text-2xl">
-                ⚡
+                âš¡
               </div>
             </div>
 
@@ -1042,7 +1042,7 @@ export default function RecommendationsPage() {
         {/* FOOTER */}
 
         <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
-          SkillTrack • AI-powered Skill & Employment Intelligence
+          SkillTrack â€¢ AI-powered Skill & Employment Intelligence
         </footer>
       </div>
 
@@ -1076,7 +1076,7 @@ export default function RecommendationsPage() {
                 onClick={() => setSelectedCareer(null)}
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -1093,7 +1093,7 @@ export default function RecommendationsPage() {
                 </div>
 
                 <span className="text-3xl">
-                  🎯
+                  ðŸŽ¯
                 </span>
               </div>
 
@@ -1119,7 +1119,7 @@ export default function RecommendationsPage() {
                     className="rounded-xl border border-white/5 bg-white/[0.025] p-4 text-sm leading-6 text-slate-400"
                   >
                     <span className="mr-2 text-cyan-400">
-                      ✦
+                      âœ¦
                     </span>
 
                     {reason}
@@ -1235,7 +1235,7 @@ export default function RecommendationsPage() {
                           <p className="mt-1 text-xs text-slate-500">
                             {job.company}
                             {job.location
-                              ? ` • ${job.location}`
+                              ? ` â€¢ ${job.location}`
                               : ""}
                           </p>
                         </div>

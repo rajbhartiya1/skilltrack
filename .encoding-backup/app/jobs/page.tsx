@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -542,7 +542,7 @@ export default function JobsPage() {
             href="/"
             className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
           >
-            ← Back to Dashboard
+            â† Back to Dashboard
           </Link>
 
           <div className="mt-5 flex flex-col justify-between gap-6 md:flex-row md:items-end">
@@ -593,7 +593,7 @@ export default function JobsPage() {
 
             <div className="relative flex-1">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-                🔎
+                ðŸ”Ž
               </span>
 
               <input
@@ -618,7 +618,7 @@ export default function JobsPage() {
               }
               className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold transition hover:bg-white/10"
             >
-              ⚙ Filters
+              âš™ Filters
             </button>
           </div>
 
@@ -681,7 +681,7 @@ export default function JobsPage() {
                   </option>
 
                   <option value="az">
-                    A → Z
+                    A â†’ Z
                   </option>
                 </select>
               </div>
@@ -738,7 +738,7 @@ export default function JobsPage() {
             0 && (
             <section className="mt-8 rounded-3xl border border-dashed border-white/10 bg-[#0d1b2e] p-12 text-center">
               <div className="text-5xl">
-                🔍
+                ðŸ”
               </div>
 
               <h2 className="mt-5 text-2xl font-black">
@@ -812,7 +812,7 @@ export default function JobsPage() {
                             </h2>
 
                             <p className="mt-2 text-xs text-slate-600">
-                              📍{" "}
+                              ðŸ“{" "}
                               {job.location ||
                                 "India"}
                             </p>
@@ -899,9 +899,9 @@ export default function JobsPage() {
                                       }`}
                                     >
                                       {matched
-                                        ? "✓ "
+                                        ? "âœ“ "
                                         : improving
-                                        ? "↗ "
+                                        ? "â†— "
                                         : ""}
                                       {skill}
                                     </span>
@@ -981,7 +981,7 @@ export default function JobsPage() {
                             href={`/jobs/${job.id}`}
                             className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
                           >
-                            👁 View Details
+                            ðŸ‘ View Details
                           </Link>
 
                           {application ? (
@@ -989,7 +989,7 @@ export default function JobsPage() {
                               href="/applications"
                               className="rounded-xl bg-emerald-400/10 px-3 py-3 text-center text-xs font-bold text-emerald-300 transition hover:bg-emerald-400/20"
                             >
-                              ✓{" "}
+                              âœ“{" "}
                               {
                                 application.status
                               }
@@ -1010,7 +1010,7 @@ export default function JobsPage() {
                               {actionId ===
                               `Applied-${job.id}`
                                 ? "Applying..."
-                                : "Apply Now →"}
+                                : "Apply Now â†’"}
                             </button>
                           )}
                         </div>
@@ -1038,8 +1038,8 @@ export default function JobsPage() {
                             `Wishlist-${job.id}`
                               ? "Saving..."
                               : isWishlist
-                              ? "♡ In Wishlist"
-                              : "♡ Add to Wishlist"}
+                              ? "â™¡ In Wishlist"
+                              : "â™¡ Add to Wishlist"}
                           </button>
                         )}
                       </div>
@@ -1087,7 +1087,7 @@ export default function JobsPage() {
               href="/recommendations"
               className="rounded-xl bg-purple-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-purple-300"
             >
-              🧠 AI Career Recommendations
+              ðŸ§  AI Career Recommendations
             </Link>
           </div>
         </section>

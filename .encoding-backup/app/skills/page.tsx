@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -79,7 +79,7 @@ export default function SkillsPage() {
               href="/"
               className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
             >
-              <span className="text-lg">▦</span>
+              <span className="text-lg">â–¦</span>
               Dashboard
             </Link>
 
@@ -87,7 +87,7 @@ export default function SkillsPage() {
               href="/skills"
               className="flex w-full items-center gap-3 rounded-xl bg-cyan-500/15 px-4 py-3 text-cyan-400"
             >
-              <span className="text-lg">◎</span>
+              <span className="text-lg">â—Ž</span>
               My Skills
             </Link>
 
@@ -95,7 +95,7 @@ export default function SkillsPage() {
               href="/skill-gap"
               className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
             >
-              <span className="text-lg">◈</span>
+              <span className="text-lg">â—ˆ</span>
               Skill Gap
             </Link>
 
@@ -103,7 +103,7 @@ export default function SkillsPage() {
               href="/jobs"
               className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
             >
-              <span className="text-lg">▣</span>
+              <span className="text-lg">â–£</span>
               Jobs
             </Link>
 
@@ -111,7 +111,7 @@ export default function SkillsPage() {
               href="/applications"
               className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
             >
-              <span className="text-lg">✓</span>
+              <span className="text-lg">âœ“</span>
               Applications
             </Link>
 
@@ -385,7 +385,7 @@ export default function SkillsPage() {
               href="/"
               className="inline-block text-sm font-semibold text-cyan-400 hover:text-cyan-300"
             >
-              ← Back to Dashboard
+              â† Back to Dashboard
             </Link>
 
           </div>

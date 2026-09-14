@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -465,7 +465,7 @@ export default function CareerCoachPage() {
       <main className="min-h-screen bg-[#07111f] px-5 py-20 text-white">
         <div className="mx-auto max-w-xl rounded-3xl border border-red-400/20 bg-red-400/5 p-8 text-center">
           <div className="text-4xl">
-            ⚠️
+            âš ï¸
           </div>
 
           <h1 className="mt-4 text-2xl font-black">
@@ -571,7 +571,7 @@ export default function CareerCoachPage() {
           <div className="relative grid gap-8 lg:grid-cols-[1fr_330px] lg:items-center">
             <div>
               <div className="inline-flex rounded-full border border-purple-400/20 bg-purple-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
-                ✦ Personal Career Coach
+                âœ¦ Personal Career Coach
               </div>
 
               <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight md:text-6xl">
@@ -772,7 +772,7 @@ export default function CareerCoachPage() {
 
                         {skill.status === "Completed" && (
                           <span className="rounded-lg bg-emerald-400/10 px-2.5 py-1 text-[10px] font-black text-emerald-300">
-                            ✓ COMPLETED
+                            âœ“ COMPLETED
                           </span>
                         )}
                       </div>
@@ -845,7 +845,7 @@ export default function CareerCoachPage() {
             {roadmap.length === 0 && (
               <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-10 text-center">
                 <div className="text-4xl">
-                  🎯
+                  ðŸŽ¯
                 </div>
 
                 <h3 className="mt-4 text-xl font-black">
@@ -885,7 +885,7 @@ export default function CareerCoachPage() {
               href="/jobs"
               className="text-sm font-bold text-cyan-400"
             >
-              View all jobs →
+              View all jobs â†’
             </Link>
           </div>
 
@@ -946,7 +946,7 @@ export default function CareerCoachPage() {
         <section className="mt-10 rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-7 text-center md:p-10">
           <div className="mx-auto max-w-2xl">
             <div className="text-4xl">
-              🚀
+              ðŸš€
             </div>
 
             <h2 className="mt-4 text-3xl font-black">
@@ -977,7 +977,7 @@ export default function CareerCoachPage() {
         </section>
 
         <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
-          SkillTrack • Personalized Career Coach
+          SkillTrack â€¢ Personalized Career Coach
         </footer>
       </div>
     </main>

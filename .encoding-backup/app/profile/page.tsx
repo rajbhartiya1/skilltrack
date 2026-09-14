@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -437,7 +437,7 @@ export default function ProfilePage() {
       }
 
       showMessage(
-        "Profile and skills saved successfully! 🎉",
+        "Profile and skills saved successfully! ðŸŽ‰",
         "success"
       );
     } catch (error) {
@@ -560,7 +560,7 @@ export default function ProfilePage() {
             href="/"
             className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
           >
-            ← Back to Dashboard
+            â† Back to Dashboard
           </Link>
 
           <div className="mt-5">
@@ -631,7 +631,7 @@ export default function ProfilePage() {
             </p>
 
             <p className="mt-1 text-xs text-slate-600">
-              40–69% proficiency
+              40â€“69% proficiency
             </p>
           </div>
 
@@ -874,7 +874,7 @@ export default function ProfilePage() {
             {skills.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center">
                 <div className="text-4xl">
-                  🧠
+                  ðŸ§ 
                 </div>
 
                 <p className="mt-4 font-bold">
@@ -1040,7 +1040,7 @@ export default function ProfilePage() {
             >
               {saving
                 ? "Saving Profile..."
-                : "Save Profile ✓"}
+                : "Save Profile âœ“"}
             </button>
           </div>
         </section>
@@ -1053,7 +1053,7 @@ export default function ProfilePage() {
             className="rounded-2xl border border-red-400/10 bg-red-400/5 p-6 transition hover:border-red-400/30"
           >
             <p className="text-2xl">
-              🎯
+              ðŸŽ¯
             </p>
 
             <h3 className="mt-3 font-black">
@@ -1070,7 +1070,7 @@ export default function ProfilePage() {
             className="rounded-2xl border border-purple-400/10 bg-purple-400/5 p-6 transition hover:border-purple-400/30"
           >
             <p className="text-2xl">
-              🧠
+              ðŸ§ 
             </p>
 
             <h3 className="mt-3 font-black">
@@ -1087,7 +1087,7 @@ export default function ProfilePage() {
             className="rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-6 transition hover:border-cyan-400/30"
           >
             <p className="text-2xl">
-              💼
+              ðŸ’¼
             </p>
 
             <h3 className="mt-3 font-black">
