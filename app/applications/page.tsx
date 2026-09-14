@@ -1,103 +1,64 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { DragEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  Application,
+  ApplicationStatus,
   getApplications,
   removeApplication,
   updateApplicationStatus,
-  ApplicationStatus,
-  Application,
 } from "../../lib/applications";
 
-const STATUSES: ApplicationStatus[] = [
-  "Wishlist",
-  "Applied",
-  "Interview",
-  "Offer",
+const columns: {
+  status: ApplicationStatus;
+  title: string;
+  description: string;
+}[] = [
+  {
+    status: "Wishlist",
+    title: "Wishlist",
+    description: "Jobs you want to apply for",
+  },
+  {
+    status: "Applied",
+    title: "Applied",
+    description: "Applications you have submitted",
+  },
+  {
+    status: "Interview",
+    title: "Interview",
+    description: "Companies that invited you",
+  },
+  {
+    status: "Offer",
+    title: "Offer",
+    description: "Offers received",
+  },
 ];
 
-const STATUS_CONFIG: Record<
-  ApplicationStatus,
-  {
-    label: string;
-    icon: string;
-    description: string;
-    color: string;
-    badge: string;
-  }
-> = {
-  Wishlist: {
-    label: "Wishlist",
-    icon: "♡",
-    description: "Jobs you want to apply for",
-    color: "purple",
-    badge: "bg-purple-400/10 text-purple-300 border-purple-400/20",
-  },
-
-  Applied: {
-    label: "Applied",
-    icon: "📤",
-    description: "Applications you submitted",
-    color: "cyan",
-    badge: "bg-cyan-400/10 text-cyan-300 border-cyan-400/20",
-  },
-
-  Interview: {
-    label: "Interview",
-    icon: "🎤",
-    description: "Interview opportunities",
-    color: "yellow",
-    badge: "bg-yellow-400/10 text-yellow-300 border-yellow-400/20",
-  },
-
-  Offer: {
-    label: "Offer",
-    icon: "🎉",
-    description: "Offers you received",
-    color: "emerald",
-    badge: "bg-emerald-400/10 text-emerald-300 border-emerald-400/20",
-  },
-};
-
 export default function ApplicationsPage() {
-  const [applications, setApplications] = useState<Application[]>(
-    []
-  );
-
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [updating, setUpdating] = useState<string | null>(null);
   const [draggedApplication, setDraggedApplication] =
-    useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState("");
-  const [deletingId, setDeletingId] = useState("");
+    useState<Application | null>(null);
+  const [message, setMessage] = useState("");
 
   async function loadApplications() {
-    try {
-      setError("");
+    setLoading(true);
 
-      const result = await getApplications();
+    const result = await getApplications();
 
-      if (result.error) {
-        setError(result.error);
-        setApplications([]);
-      } else {
-        setApplications(
-          (result.data || []) as Application[]
-        );
-      }
-    } catch (err) {
-      console.error(
-        "Applications loading error:",
-        err
-      );
-
-      setError(
-        "Unable to load your applications."
-      );
-    } finally {
-      setLoading(false);
+    if (result.error) {
+      setMessage(result.error);
+      setApplications([]);
+    } else {
+      setApplications(result.data);
+      setMessage("");
     }
+
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -107,281 +68,192 @@ export default function ApplicationsPage() {
   const groupedApplications = useMemo(() => {
     return {
       Wishlist: applications.filter(
-        (application) =>
-          application.status === "Wishlist"
+        (application) => application.status === "Wishlist"
       ),
-
       Applied: applications.filter(
-        (application) =>
-          application.status === "Applied"
+        (application) => application.status === "Applied"
       ),
-
       Interview: applications.filter(
-        (application) =>
-          application.status === "Interview"
+        (application) => application.status === "Interview"
       ),
-
       Offer: applications.filter(
-        (application) =>
-          application.status === "Offer"
+        (application) => application.status === "Offer"
       ),
     };
   }, [applications]);
 
   const totalApplications = applications.length;
 
-  const progressPercentage = useMemo(() => {
-    if (totalApplications === 0) {
-      return 0;
-    }
-
-    const weightedScore =
-      groupedApplications.Applied.length * 1 +
-      groupedApplications.Interview.length * 2 +
-      groupedApplications.Offer.length * 3;
-
-    const maximumScore =
-      totalApplications * 3;
-
-    return Math.min(
-      100,
-      Math.round(
-        (weightedScore / maximumScore) * 100
-      )
-    );
-  }, [
-    totalApplications,
-    groupedApplications,
-  ]);
-
-  function handleDragStart(
-    applicationId: string
-  ) {
-    setDraggedApplication(applicationId);
-  }
-
-  function handleDragEnd() {
-    setDraggedApplication(null);
-  }
-
-  async function handleDrop(
-    newStatus: ApplicationStatus
-  ) {
-    if (!draggedApplication) {
-      return;
-    }
-
-    const applicationId =
-      draggedApplication;
-
-    const application = applications.find(
-      (item) =>
-        item.id === applicationId
-    );
-
-    setDraggedApplication(null);
-
-    if (!application) {
-      return;
-    }
-
-    if (application.status === newStatus) {
-      return;
-    }
-
-    const oldStatus = application.status;
-
-    setApplications((current) =>
-      current.map((item) =>
-        item.id === applicationId
-          ? {
-              ...item,
-              status: newStatus,
-            }
-          : item
-      )
-    );
-
-    setUpdatingId(applicationId);
-
-    const result =
-      await updateApplicationStatus(
-        applicationId,
-        newStatus
-      );
-
-    setUpdatingId("");
-
-    if (!result.success) {
-      setApplications((current) =>
-        current.map((item) =>
-          item.id === applicationId
-            ? {
-                ...item,
-                status: oldStatus,
-              }
-            : item
+  const interviewRate =
+    totalApplications > 0
+      ? Math.round(
+          (groupedApplications.Interview.length /
+            totalApplications) *
+            100
         )
-      );
+      : 0;
 
-      alert(
-        result.message ||
-          "Unable to update application."
-      );
-    }
-  }
+  const offerRate =
+    totalApplications > 0
+      ? Math.round(
+          (groupedApplications.Offer.length /
+            totalApplications) *
+            100
+        )
+      : 0;
 
-  async function handleStatusChange(
+  const activeApplications =
+    groupedApplications.Applied.length +
+    groupedApplications.Interview.length;
+
+  async function changeStatus(
     applicationId: string,
     newStatus: ApplicationStatus
   ) {
-    const application = applications.find(
-      (item) =>
-        item.id === applicationId
+    const currentApplication = applications.find(
+      (application) => application.id === applicationId
     );
 
-    if (!application) {
+    if (!currentApplication) {
       return;
     }
 
-    if (application.status === newStatus) {
+    if (currentApplication.status === newStatus) {
       return;
     }
 
-    const oldStatus = application.status;
+    setUpdating(applicationId);
+    setMessage("");
+
+    const result = await updateApplicationStatus(
+      applicationId,
+      newStatus
+    );
+
+    if (!result.success) {
+      setMessage(result.message);
+      setUpdating(null);
+      return;
+    }
 
     setApplications((current) =>
-      current.map((item) =>
-        item.id === applicationId
+      current.map((application) =>
+        application.id === applicationId
           ? {
-              ...item,
+              ...application,
               status: newStatus,
             }
-          : item
+          : application
       )
     );
 
-    setUpdatingId(applicationId);
+    setUpdating(null);
+    setMessage(`Moved to ${newStatus}.`);
 
-    const result =
-      await updateApplicationStatus(
-        applicationId,
-        newStatus
-      );
-
-    setUpdatingId("");
-
-    if (!result.success) {
-      setApplications((current) =>
-        current.map((item) =>
-          item.id === applicationId
-            ? {
-                ...item,
-                status: oldStatus,
-              }
-            : item
-        )
-      );
-
-      alert(
-        result.message ||
-          "Unable to update application."
-      );
-    }
+    setTimeout(() => {
+      setMessage("");
+    }, 2500);
   }
 
-  async function handleDelete(
-    applicationId: string
-  ) {
-    const application =
-      applications.find(
-        (item) =>
-          item.id === applicationId
-      );
-
-    if (!application) {
-      return;
-    }
-
-    const jobTitle =
-      application.job?.title ||
-      "this application";
-
+  async function handleRemove(applicationId: string) {
     const confirmed = window.confirm(
-      `Remove "${jobTitle}" from your application tracker?`
+      "Remove this application from your tracker?"
     );
 
     if (!confirmed) {
       return;
     }
 
-    setDeletingId(applicationId);
+    setUpdating(applicationId);
+    setMessage("");
 
-    const result =
-      await removeApplication(
-        applicationId
-      );
-
-    setDeletingId("");
+    const result = await removeApplication(applicationId);
 
     if (!result.success) {
-      alert(
-        result.message ||
-          "Unable to remove application."
-      );
-
+      setMessage(result.message);
+      setUpdating(null);
       return;
     }
 
     setApplications((current) =>
       current.filter(
-        (item) =>
-          item.id !== applicationId
+        (application) => application.id !== applicationId
       )
     );
+
+    setUpdating(null);
+    setMessage("Application removed.");
+
+    setTimeout(() => {
+      setMessage("");
+    }, 2500);
   }
 
-  function formatDate(dateString: string) {
-    if (!dateString) {
-      return "Recently";
-    }
+  function handleDragStart(
+    event: DragEvent<HTMLDivElement>,
+    application: Application
+  ) {
+    setDraggedApplication(application);
 
-    const date = new Date(dateString);
-
-    if (Number.isNaN(date.getTime())) {
-      return "Recently";
-    }
-
-    return date.toLocaleDateString(
-      "en-IN",
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData(
+      "text/plain",
+      application.id
     );
   }
 
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#07111f] text-white">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
+  function handleDragEnd() {
+    setDraggedApplication(null);
+  }
 
-          <p className="mt-5 text-sm text-slate-400">
-            Loading your application tracker...
-          </p>
-        </div>
-      </main>
-    );
+  function handleDragOver(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }
+
+  async function handleDrop(
+    event: DragEvent<HTMLDivElement>,
+    status: ApplicationStatus
+  ) {
+    event.preventDefault();
+
+    const applicationId =
+      event.dataTransfer.getData("text/plain");
+
+    const application =
+      draggedApplication ||
+      applications.find(
+        (item) => item.id === applicationId
+      );
+
+    if (!application) {
+      return;
+    }
+
+    setDraggedApplication(null);
+
+    await changeStatus(application.id, status);
+  }
+
+  function formatDate(date: string) {
+    if (!date) {
+      return "Recently";
+    }
+
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   }
 
   return (
-    <main className="min-h-screen bg-[#07111f] text-white">
-      {/* NAVBAR */}
+    <main className="min-h-screen bg-[#06101d] text-white">
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
+      {/* NAVBAR */}
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+
           <Link
             href="/"
             className="text-2xl font-black tracking-tight"
@@ -392,19 +264,13 @@ export default function ApplicationsPage() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-6 text-sm text-slate-300 lg:flex">
+          <nav className="hidden items-center gap-7 text-sm text-slate-300 lg:flex">
+
             <Link
               href="/"
               className="transition hover:text-cyan-400"
             >
               Dashboard
-            </Link>
-
-            <Link
-              href="/profile"
-              className="transition hover:text-cyan-400"
-            >
-              Profile
             </Link>
 
             <Link
@@ -414,508 +280,540 @@ export default function ApplicationsPage() {
               Jobs
             </Link>
 
-            <Link
-              href="/skill-gap"
-              className="transition hover:text-cyan-400"
-            >
-              Skill Gap
-            </Link>
+            <div className="group relative">
 
-            <Link
-              href="/recommendations"
-              className="transition hover:text-cyan-400"
-            >
-              AI Career
-            </Link>
+              <button
+                type="button"
+                className="flex items-center gap-2 py-3 transition hover:text-cyan-400"
+              >
+                AI Career
+
+                <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
+                  ▼
+                </span>
+              </button>
+
+              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+
+                <Link
+                  href="/recommendations"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                >
+                  <div className="font-semibold text-white">
+                    Career Recommendations
+                  </div>
+
+                  <div className="mt-1 text-xs text-slate-500">
+                    Discover careers matching your skills
+                  </div>
+                </Link>
+
+                <Link
+                  href="/skill-gap"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                >
+                  <div className="font-semibold text-white">
+                    Skill Gap Analysis
+                  </div>
+
+                  <div className="mt-1 text-xs text-slate-500">
+                    Find missing and improving skills
+                  </div>
+                </Link>
+
+                <Link
+                  href="/career-coach"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                >
+                  <div className="font-semibold text-white">
+                    Career Coach
+                  </div>
+
+                  <div className="mt-1 text-xs text-slate-500">
+                    Build your career roadmap
+                  </div>
+                </Link>
+
+                <Link
+                  href="/resume-analyzer"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                >
+                  <div className="font-semibold text-white">
+                    Resume Analyzer
+                  </div>
+
+                  <div className="mt-1 text-xs text-slate-500">
+                    Check ATS and resume readiness
+                  </div>
+                </Link>
+
+                <Link
+                  href="/interview-coach"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                >
+                  <div className="font-semibold text-white">
+                    Interview Coach
+                  </div>
+
+                  <div className="mt-1 text-xs text-slate-500">
+                    Practice role-based interviews
+                  </div>
+                </Link>
+
+              </div>
+            </div>
 
             <Link
               href="/applications"
-              className="font-bold text-cyan-400"
+              className="font-semibold text-cyan-400"
             >
               Applications
             </Link>
+
+            <Link
+              href="/profile"
+              className="transition hover:text-cyan-400"
+            >
+              Profile
+            </Link>
+
           </nav>
 
           <Link
-            href="/jobs"
-            className="rounded-xl bg-cyan-400 px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-300"
+            href="/profile"
+            className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
           >
-            + Find Jobs
+            My Profile
           </Link>
+
         </div>
       </header>
 
+      {/* PAGE */}
       <div className="mx-auto max-w-7xl px-6 py-10">
-        {/* HEADER */}
 
-        <section className="mb-8">
-          <Link
-            href="/"
-            className="text-sm text-cyan-400 transition hover:text-cyan-300"
-          >
-            ← Back to Dashboard
-          </Link>
+        {/* HERO */}
+        <section className="mb-8 rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-[#0b2030] via-[#0a1728] to-[#10142b] p-8 shadow-2xl shadow-cyan-500/5">
 
-          <div className="mt-5 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-400">
-                EMPLOYMENT TRACKER
-              </p>
+          <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
 
-              <h1 className="mt-2 text-4xl font-black md:text-5xl">
-                Application Pipeline
+            <div className="max-w-3xl">
+
+              <div className="mb-4 inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">
+                Employment Tracker
+              </div>
+
+              <h1 className="text-4xl font-black tracking-tight md:text-5xl">
+                Track every opportunity.
+                <span className="block text-cyan-400">
+                  Move toward employment.
+                </span>
               </h1>
 
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                Manage your job search from the first saved
-                opportunity to the final offer.
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">
+                Manage your job applications from wishlist to offer
+                and keep your entire employment journey organized in
+                one place.
               </p>
+
             </div>
 
             <Link
               href="/jobs"
-              className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-3 text-sm font-bold text-cyan-300 transition hover:bg-cyan-400/20"
+              className="inline-flex shrink-0 items-center justify-center rounded-2xl bg-cyan-400 px-6 py-4 font-bold text-slate-950 transition hover:bg-cyan-300"
             >
-              Explore Jobs →
+              Explore Jobs
             </Link>
+
           </div>
+
         </section>
 
-        {/* ERROR */}
-
-        {error && (
-          <div className="mb-6 rounded-2xl border border-red-400/20 bg-red-400/10 p-5">
-            <p className="font-semibold text-red-300">
-              Unable to load applications
-            </p>
-
-            <p className="mt-1 text-sm text-slate-400">
-              {error}
-            </p>
-
-            <button
-              onClick={loadApplications}
-              className="mt-4 rounded-lg bg-red-400/10 px-4 py-2 text-xs font-bold text-red-300 hover:bg-red-400/20"
-            >
-              Try Again
-            </button>
+        {/* MESSAGE */}
+        {message && (
+          <div className="mb-6 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-4 text-sm text-cyan-300">
+            {message}
           </div>
         )}
 
-        {/* SUMMARY */}
+        {/* STATS */}
+        <section className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-purple-400/10 bg-[#0d1b2e] p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">
-                Wishlist
-              </p>
+          <div className="rounded-2xl border border-white/10 bg-[#0b1728] p-6">
+            <p className="text-sm text-slate-500">
+              Total Tracked
+            </p>
 
-              <span className="text-xl">
-                ♡
-              </span>
-            </div>
+            <p className="mt-2 text-4xl font-black">
+              {totalApplications}
+            </p>
 
-            <p className="mt-3 text-4xl font-black text-purple-300">
-              {groupedApplications.Wishlist.length}
+            <p className="mt-2 text-xs text-slate-500">
+              All opportunities
             </p>
           </div>
 
-          <div className="rounded-2xl border border-cyan-400/10 bg-[#0d1b2e] p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">
-                Applied
-              </p>
+          <div className="rounded-2xl border border-white/10 bg-[#0b1728] p-6">
+            <p className="text-sm text-slate-500">
+              Active Applications
+            </p>
 
-              <span className="text-xl">
-                📤
-              </span>
-            </div>
+            <p className="mt-2 text-4xl font-black text-cyan-400">
+              {activeApplications}
+            </p>
 
-            <p className="mt-3 text-4xl font-black text-cyan-300">
-              {groupedApplications.Applied.length}
+            <p className="mt-2 text-xs text-slate-500">
+              Applied + Interview
             </p>
           </div>
 
-          <div className="rounded-2xl border border-yellow-400/10 bg-[#0d1b2e] p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">
-                Interviews
-              </p>
+          <div className="rounded-2xl border border-white/10 bg-[#0b1728] p-6">
+            <p className="text-sm text-slate-500">
+              Interview Rate
+            </p>
 
-              <span className="text-xl">
-                🎤
-              </span>
-            </div>
+            <p className="mt-2 text-4xl font-black">
+              {interviewRate}%
+            </p>
 
-            <p className="mt-3 text-4xl font-black text-yellow-300">
-              {groupedApplications.Interview.length}
+            <p className="mt-2 text-xs text-slate-500">
+              Tracked opportunities
             </p>
           </div>
 
-          <div className="rounded-2xl border border-emerald-400/10 bg-[#0d1b2e] p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-500">
-                Offers
-              </p>
+          <div className="rounded-2xl border border-white/10 bg-[#0b1728] p-6">
+            <p className="text-sm text-slate-500">
+              Offer Rate
+            </p>
 
-              <span className="text-xl">
-                🎉
-              </span>
-            </div>
+            <p className="mt-2 text-4xl font-black text-emerald-400">
+              {offerRate}%
+            </p>
 
-            <p className="mt-3 text-4xl font-black text-emerald-300">
-              {groupedApplications.Offer.length}
+            <p className="mt-2 text-xs text-slate-500">
+              Tracked opportunities
             </p>
           </div>
+
         </section>
 
-        {/* SEARCH PROGRESS */}
+        {/* INSTRUCTION */}
+        <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 
-        <section className="mt-6 rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-purple-300">
-                CAREER PROGRESS
-              </p>
+          <div>
+            <h2 className="text-2xl font-black">
+              Application Pipeline
+            </h2>
 
-              <h2 className="mt-2 text-xl font-black">
-                Job Search Momentum
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Your pipeline progresses as applications move
-                toward interviews and offers.
-              </p>
-            </div>
-
-            <div className="text-left md:text-right">
-              <p className="text-3xl font-black text-cyan-400">
-                {progressPercentage}%
-              </p>
-
-              <p className="text-xs text-slate-600">
-                Pipeline Progress
-              </p>
-            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Drag a job card between columns to update its status.
+            </p>
           </div>
 
-          <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-purple-400 via-cyan-400 to-emerald-400 transition-all duration-500"
-              style={{
-                width: `${progressPercentage}%`,
-              }}
-            />
-          </div>
-        </section>
+          <button
+            onClick={loadApplications}
+            disabled={loading}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:bg-white/10 disabled:opacity-50"
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+
+        </div>
 
         {/* KANBAN */}
+        {loading ? (
+          <section className="grid gap-5 lg:grid-cols-4">
 
-        <section className="mt-8">
-          <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-            <div>
-              <h2 className="text-2xl font-black">
-                Your Applications
-              </h2>
+            {columns.map((column) => (
+              <div
+                key={column.status}
+                className="min-h-[420px] animate-pulse rounded-3xl border border-white/10 bg-[#0a1626] p-4"
+              >
+                <div className="h-6 w-28 rounded bg-white/10" />
 
-              <p className="mt-1 text-sm text-slate-500">
-                Drag a card to another column to update its status.
-              </p>
-            </div>
+                <div className="mt-6 h-40 rounded-2xl bg-white/5" />
 
-            <p className="text-sm text-slate-500">
-              {totalApplications}{" "}
-              {totalApplications === 1
-                ? "application"
-                : "applications"}
-            </p>
-          </div>
+                <div className="mt-4 h-40 rounded-2xl bg-white/5" />
+              </div>
+            ))}
 
-          <div className="grid gap-5 xl:grid-cols-4">
-            {STATUSES.map((status) => {
-              const config =
-                STATUS_CONFIG[status];
+          </section>
+        ) : (
+          <section className="grid gap-5 lg:grid-cols-4">
+
+            {columns.map((column) => {
 
               const items =
-                groupedApplications[status];
+                groupedApplications[column.status];
 
               return (
                 <div
-                  key={status}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                  }}
-                  onDrop={() =>
-                    handleDrop(status)
+                  key={column.status}
+                  onDragOver={handleDragOver}
+                  onDrop={(event) =>
+                    handleDrop(event, column.status)
                   }
-                  className="flex min-h-[420px] flex-col rounded-2xl border border-white/10 bg-[#0b1728] p-4"
+                  className="min-h-[430px] rounded-3xl border border-white/10 bg-[#091524] p-4 transition hover:border-cyan-400/20"
                 >
+
                   {/* COLUMN HEADER */}
+                  <div className="mb-5 flex items-start justify-between gap-3">
 
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl">
-                          {config.icon}
-                        </span>
+                    <div>
+                      <h3 className="font-bold text-white">
+                        {column.title}
+                      </h3>
 
-                        <h3 className="font-bold">
-                          {config.label}
-                        </h3>
-                      </div>
-
-                      <span
-                        className={`flex h-7 min-w-7 items-center justify-center rounded-lg border px-2 text-xs font-black ${config.badge}`}
-                      >
-                        {items.length}
-                      </span>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        {column.description}
+                      </p>
                     </div>
 
-                    <p className="mt-2 text-[11px] leading-5 text-slate-600">
-                      {config.description}
-                    </p>
+                    <div className="flex h-8 min-w-8 items-center justify-center rounded-full bg-white/5 px-2 text-sm font-bold text-slate-300">
+                      {items.length}
+                    </div>
+
                   </div>
 
                   {/* CARDS */}
+                  <div className="space-y-3">
 
-                  <div className="flex flex-1 flex-col gap-3">
-                    {items.length === 0 ? (
-                      <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-white/10 p-6 text-center">
-                        <span className="text-3xl opacity-40">
-                          {config.icon}
-                        </span>
+                    {items.map((application) => {
 
-                        <p className="mt-3 text-xs text-slate-600">
-                          No jobs here yet
-                        </p>
+                      const job = application.job;
 
-                        <p className="mt-1 text-[10px] text-slate-700">
-                          Drag jobs into this column
-                        </p>
-                      </div>
-                    ) : (
-                      items.map((application) => {
-                        const job =
-                          application.job;
+                      return (
+                        <div
+                          key={application.id}
+                          draggable
+                          onDragStart={(event) =>
+                            handleDragStart(
+                              event,
+                              application
+                            )
+                          }
+                          onDragEnd={handleDragEnd}
+                          className={`group cursor-grab rounded-2xl border border-white/10 bg-[#0d1c2e] p-4 shadow-lg transition hover:-translate-y-1 hover:border-cyan-400/30 hover:bg-[#102238] active:cursor-grabbing ${
+                            draggedApplication?.id ===
+                            application.id
+                              ? "scale-[0.98] opacity-50"
+                              : ""
+                          }`}
+                        >
 
-                        const isUpdating =
-                          updatingId ===
-                          application.id;
+                          <div className="flex items-start justify-between gap-3">
 
-                        const isDeleting =
-                          deletingId ===
-                          application.id;
+                            <div className="min-w-0">
 
-                        return (
-                          <div
-                            key={application.id}
-                            draggable={!isUpdating}
-                            onDragStart={() =>
-                              handleDragStart(
-                                application.id
-                              )
-                            }
-                            onDragEnd={
-                              handleDragEnd
-                            }
-                            className={`group rounded-xl border border-white/10 bg-[#0d1b2e] p-4 transition ${
-                              draggedApplication ===
-                              application.id
-                                ? "scale-95 opacity-40"
-                                : "hover:-translate-y-0.5 hover:border-cyan-400/30"
-                            }`}
-                          >
-                            {/* COMPANY */}
+                              <h4 className="truncate font-bold text-white">
+                                {job?.title ||
+                                  "Unknown Position"}
+                              </h4>
 
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="truncate text-[11px] font-bold uppercase tracking-wider text-cyan-400">
-                                  {job?.company ||
-                                    "Company"}
-                                </p>
+                              <p className="mt-1 truncate text-sm text-cyan-300">
+                                {job?.company ||
+                                  "Unknown Company"}
+                              </p>
 
-                                <h4 className="mt-1 line-clamp-2 text-sm font-bold leading-5">
-                                  {job?.title ||
-                                    "Job Position"}
-                                </h4>
-                              </div>
+                            </div>
 
-                              <span className="cursor-grab text-slate-700 group-hover:text-slate-400">
-                                ⋮⋮
+                            <div className="text-slate-600 transition group-hover:text-cyan-400">
+                              ::
+                            </div>
+
+                          </div>
+
+                          <div className="mt-4 space-y-2">
+
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                              <span className="text-slate-600">
+                                Location
+                              </span>
+
+                              <span className="truncate text-slate-400">
+                                {job?.location ||
+                                  "India"}
                               </span>
                             </div>
 
-                            {/* LOCATION */}
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                              <span className="text-slate-600">
+                                Added
+                              </span>
 
-                            <p className="mt-3 text-[11px] text-slate-600">
-                              📍{" "}
-                              {job?.location ||
-                                "India"}
-                            </p>
-
-                            {/* DATE */}
-
-                            <p className="mt-2 text-[11px] text-slate-600">
-                              Added{" "}
-                              {formatDate(
-                                application.applied_at
-                              )}
-                            </p>
-
-                            {/* STATUS SELECT */}
-
-                            <div className="mt-4">
-                              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                                Status
-                              </label>
-
-                              <select
-                                value={
-                                  application.status
-                                }
-                                disabled={
-                                  isUpdating
-                                }
-                                onChange={(event) =>
-                                  handleStatusChange(
-                                    application.id,
-                                    event.target
-                                      .value as ApplicationStatus
-                                  )
-                                }
-                                className="w-full rounded-lg border border-white/10 bg-[#07111f] px-3 py-2 text-xs text-slate-300 outline-none transition focus:border-cyan-400/40"
-                              >
-                                {STATUSES.map(
-                                  (
-                                    option
-                                  ) => (
-                                    <option
-                                      key={
-                                        option
-                                      }
-                                      value={
-                                        option
-                                      }
-                                    >
-                                      {
-                                        option
-                                      }
-                                    </option>
-                                  )
+                              <span className="text-slate-400">
+                                {formatDate(
+                                  application.applied_at
                                 )}
-                              </select>
+                              </span>
                             </div>
 
-                            {/* ACTIONS */}
+                          </div>
 
-                            <div className="mt-4 flex items-center gap-2">
-                              {job?.id && (
-                                <Link
-                                  href={`/jobs`}
-                                  className="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-center text-[11px] font-semibold text-slate-400 transition hover:bg-white/10 hover:text-white"
-                                >
-                                  View Jobs
-                                </Link>
-                              )}
+                          {/* QUICK STATUS */}
+                          <div className="mt-4 flex gap-2">
 
+                            {column.status !== "Wishlist" && (
                               <button
                                 onClick={() =>
-                                  handleDelete(
-                                    application.id
+                                  changeStatus(
+                                    application.id,
+                                    "Wishlist"
                                   )
                                 }
                                 disabled={
-                                  isDeleting
+                                  updating ===
+                                  application.id
                                 }
-                                className="rounded-lg border border-red-400/10 bg-red-400/5 px-3 py-2 text-[11px] font-semibold text-red-400 transition hover:bg-red-400/10 disabled:opacity-40"
+                                className="flex-1 rounded-lg border border-white/10 px-2 py-2 text-[11px] font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white disabled:opacity-40"
                               >
-                                {isDeleting
-                                  ? "..."
-                                  : "Remove"}
+                                Wishlist
                               </button>
-                            </div>
-
-                            {isUpdating && (
-                              <p className="mt-3 text-center text-[10px] text-cyan-400">
-                                Updating status...
-                              </p>
                             )}
+
+                            {column.status !== "Applied" && (
+                              <button
+                                onClick={() =>
+                                  changeStatus(
+                                    application.id,
+                                    "Applied"
+                                  )
+                                }
+                                disabled={
+                                  updating ===
+                                  application.id
+                                }
+                                className="flex-1 rounded-lg border border-white/10 px-2 py-2 text-[11px] font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white disabled:opacity-40"
+                              >
+                                Applied
+                              </button>
+                            )}
+
+                            {column.status !== "Interview" && (
+                              <button
+                                onClick={() =>
+                                  changeStatus(
+                                    application.id,
+                                    "Interview"
+                                  )
+                                }
+                                disabled={
+                                  updating ===
+                                  application.id
+                                }
+                                className="flex-1 rounded-lg border border-white/10 px-2 py-2 text-[11px] font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white disabled:opacity-40"
+                              >
+                                Interview
+                              </button>
+                            )}
+
+                            {column.status !== "Offer" && (
+                              <button
+                                onClick={() =>
+                                  changeStatus(
+                                    application.id,
+                                    "Offer"
+                                  )
+                                }
+                                disabled={
+                                  updating ===
+                                  application.id
+                                }
+                                className="flex-1 rounded-lg border border-white/10 px-2 py-2 text-[11px] font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white disabled:opacity-40"
+                              >
+                                Offer
+                              </button>
+                            )}
+
                           </div>
-                        );
-                      })
+
+                          {/* REMOVE */}
+                          <button
+                            onClick={() =>
+                              handleRemove(application.id)
+                            }
+                            disabled={
+                              updating === application.id
+                            }
+                            className="mt-3 w-full rounded-lg px-2 py-2 text-xs font-semibold text-red-400/70 transition hover:bg-red-400/10 hover:text-red-400 disabled:opacity-40"
+                          >
+                            Remove from Tracker
+                          </button>
+
+                        </div>
+                      );
+                    })}
+
+                    {/* EMPTY STATE */}
+                    {items.length === 0 && (
+                      <div className="flex min-h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 px-5 text-center">
+
+                        <div className="text-sm font-semibold text-slate-500">
+                          No opportunities here
+                        </div>
+
+                        <div className="mt-1 text-xs leading-5 text-slate-600">
+                          Drag a job card here to move it
+                        </div>
+
+                      </div>
                     )}
+
                   </div>
+
                 </div>
               );
             })}
-          </div>
-        </section>
 
-        {/* HOW IT WORKS */}
+          </section>
+        )}
 
-        <section className="mt-8 rounded-3xl border border-purple-400/20 bg-gradient-to-r from-purple-500/10 via-[#0d1b2e] to-cyan-400/10 p-7">
-          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+        {/* BOTTOM CTA */}
+        <section className="mt-10 rounded-3xl border border-white/10 bg-[#0b1728] p-8">
+
+          <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
-                HOW IT WORKS
+
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+                Keep moving forward
               </p>
 
               <h2 className="mt-2 text-2xl font-black">
-                Manage your complete job search in one place.
+                Improve your skills and unlock better opportunities.
               </h2>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Save interesting opportunities, apply to suitable
-                jobs, move successful applications to interviews,
-                and track offers as they arrive.
+                Use SkillTrack AI to identify skill gaps, improve your
+                profile, analyze your resume, and prepare for interviews.
               </p>
+
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <div className="rounded-xl bg-purple-400/10 px-4 py-3 text-xs font-semibold text-purple-300">
-                ♡ Save
-              </div>
+            <div className="flex flex-wrap gap-3">
 
-              <div className="rounded-xl bg-cyan-400/10 px-4 py-3 text-xs font-semibold text-cyan-300">
-                📤 Apply
-              </div>
+              <Link
+                href="/skill-gap"
+                className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold transition hover:bg-white/10"
+              >
+                Skill Gap
+              </Link>
 
-              <div className="rounded-xl bg-yellow-400/10 px-4 py-3 text-xs font-semibold text-yellow-300">
-                🎤 Interview
-              </div>
+              <Link
+                href="/recommendations"
+                className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+              >
+                AI Career
+              </Link>
 
-              <div className="rounded-xl bg-emerald-400/10 px-4 py-3 text-xs font-semibold text-emerald-300">
-                🎉 Offer
-              </div>
             </div>
+
           </div>
+
         </section>
 
-        {/* CTA */}
-
-        <section className="mt-6 rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-7 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
-            KEEP MOVING FORWARD
-          </p>
-
-          <h2 className="mt-3 text-2xl font-black">
-            Find your next opportunity.
-          </h2>
-
-          <p className="mx-auto mt-2 max-w-xl text-sm text-slate-500">
-            Use your SkillTrack recommendations to discover jobs
-            that match your current skills.
-          </p>
-
-          <Link
-            href="/jobs"
-            className="mt-6 inline-block rounded-xl bg-cyan-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
-          >
-            Explore Jobs →
-          </Link>
-        </section>
       </div>
+
     </main>
   );
 }

@@ -481,114 +481,49 @@ export default function JobsPage() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-7 text-sm text-slate-300 lg:flex">
+          <nav className="hidden items-center gap-6 text-sm text-slate-300 lg:flex">
+            <Link
+              href="/"
+              className="transition hover:text-cyan-400"
+            >
+              Dashboard
+            </Link>
 
-  <Link
-    href="/"
-    className="transition hover:text-cyan-400"
-  >
-    Dashboard
-  </Link>
+            <Link
+              href="/profile"
+              className="transition hover:text-cyan-400"
+            >
+              Profile
+            </Link>
 
-  <Link
-    href="/jobs"
-    className="transition hover:text-cyan-400"
-  >
-    Jobs
-  </Link>
+            <Link
+              href="/jobs"
+              className="font-bold text-cyan-400"
+            >
+              Jobs
+            </Link>
 
-  <div className="group relative">
+            <Link
+              href="/skill-gap"
+              className="transition hover:text-cyan-400"
+            >
+              Skill Gap
+            </Link>
 
-    <button
-      type="button"
-      className="flex items-center gap-2 py-3 transition hover:text-cyan-400"
-    >
-      AI Career
-      <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        ▼
-      </span>
-    </button>
+            <Link
+              href="/recommendations"
+              className="transition hover:text-cyan-400"
+            >
+              AI Career
+            </Link>
 
-    <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
-
-      <Link
-        href="/recommendations"
-        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
-      >
-        <div className="font-semibold text-white">
-          Career Recommendations
-        </div>
-        <div className="mt-1 text-xs text-slate-500">
-          Find the best career path for your skills
-        </div>
-      </Link>
-
-      <Link
-        href="/skill-gap"
-        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
-      >
-        <div className="font-semibold text-white">
-          Skill Gap Analysis
-        </div>
-        <div className="mt-1 text-xs text-slate-500">
-          Discover missing and improving skills
-        </div>
-      </Link>
-
-      <Link
-        href="/career-coach"
-        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
-      >
-        <div className="font-semibold text-white">
-          Career Coach
-        </div>
-        <div className="mt-1 text-xs text-slate-500">
-          Build your personalized career roadmap
-        </div>
-      </Link>
-
-      <Link
-        href="/resume-analyzer"
-        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
-      >
-        <div className="font-semibold text-white">
-          Resume Analyzer
-        </div>
-        <div className="mt-1 text-xs text-slate-500">
-          Check your resume and ATS readiness
-        </div>
-      </Link>
-
-      <Link
-        href="/interview-coach"
-        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
-      >
-        <div className="font-semibold text-white">
-          Interview Coach
-        </div>
-        <div className="mt-1 text-xs text-slate-500">
-          Practice interview questions
-        </div>
-      </Link>
-
-    </div>
-  </div>
-
-  <Link
-    href="/applications"
-    className="transition hover:text-cyan-400"
-  >
-    Applications
-  </Link>
-
-  <Link
-    href="/profile"
-    className="transition hover:text-cyan-400"
-  >
-    Profile
-  </Link>
-
-</nav>
+            <Link
+              href="/applications"
+              className="transition hover:text-cyan-400"
+            >
+              Applications
+            </Link>
+          </nav>
 
           <Link
             href="/applications"
