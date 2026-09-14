@@ -1,854 +1,648 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getJobs } from "../lib/jobs";
-import { calculateSkillGap } from "../lib/skillGap";
+import Link from "next/link";
 import { supabase } from "../lib/supabase";
-
-type Skill = {
-  name: string;
-  level: number;
-};
+import { getJobs } from "../lib/jobs";
+import { getApplications } from "../lib/applications";
+import { calculateSkillGap, UserSkill } from "../lib/skillGap";
 
 type Job = {
   id: string;
   title: string;
   company: string;
-  required_skills: string[];
-  description: string;
-  location: string;
-  created_at: string;
+  required_skills: string[] | null;
+  description: string | null;
+  location: string | null;
+};
+
+type Profile = {
+  full_name: string | null;
+  bio: string | null;
+  skills: UserSkill[] | null;
 };
 
 type Application = {
   id: string;
   status: "Wishlist" | "Applied" | "Interview" | "Offer";
   job_id: string;
+  job: {
+    id: string;
+    title: string;
+    company: string;
+    location: string | null;
+    description: string | null;
+  } | null;
 };
 
-type DashboardApplication = {
-  company: string;
-  role: string;
-  status: string;
-};
-
-const defaultSkills: Skill[] = [
-  { name: "JavaScript", level: 85 },
-  { name: "React", level: 78 },
-  { name: "Next.js", level: 72 },
-  { name: "Node.js", level: 68 },
-  { name: "SQL", level: 62 },
-  { name: "Python", level: 55 },
-];
-
-const fallbackApplications: DashboardApplication[] = [
-  {
-    company: "TechNova Solutions",
-    role: "Junior Developer",
-    status: "Interview",
-  },
-  {
-    company: "Digital Labs",
-    role: "Frontend Developer",
-    status: "Applied",
-  },
-  {
-    company: "Insight Analytics",
-    role: "Data Analyst",
-    status: "Wishlist",
-  },
-];
-
-export default function Home() {
-  const router = useRouter();
-
+export default function Dashboard() {
   const [userName, setUserName] = useState("SkillTrack User");
-  const [skills, setSkills] = useState<Skill[]>(defaultSkills);
+  const [skills, setSkills] = useState<UserSkill[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
-  const [dashboardApplications, setDashboardApplications] =
-    useState<DashboardApplication[]>(fallbackApplications);
-
-  const [loadingJobs, setLoadingJobs] = useState(true);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [loadingApplications, setLoadingApplications] = useState(true);
-
-  const [jobError, setJobError] = useState("");
-
-  const goTo = (path: string) => {
-    router.push(path);
-  };
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadDashboard() {
-      await Promise.all([
-        loadProfile(),
-        loadJobs(),
-        loadApplications(),
-      ]);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, bio, skills")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const profileData = profile as Profile | null;
+
+        if (profileData?.full_name) {
+          setUserName(profileData.full_name);
+        } else if (user.user_metadata?.full_name) {
+          setUserName(user.user_metadata.full_name);
+        } else if (user.email) {
+          setUserName(user.email.split("@")[0]);
+        }
+
+        if (Array.isArray(profileData?.skills)) {
+          setSkills(profileData.skills);
+        }
+
+        const jobsData = await getJobs();
+        setJobs(jobsData as Job[]);
+
+        const applicationsResult = await getApplications();
+
+        if (applicationsResult.data) {
+          setApplications(applicationsResult.data as Application[]);
+        }
+      } catch (error) {
+        console.error("Dashboard loading error:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadDashboard();
   }, []);
 
-  async function loadProfile() {
-    setLoadingProfile(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setLoadingProfile(false);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("full_name, skills")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Profile error:", error.message);
-      setLoadingProfile(false);
-      return;
-    }
-
-    if (data) {
-      if (data.full_name) {
-        setUserName(data.full_name);
-      }
-
-      if (Array.isArray(data.skills) && data.skills.length > 0) {
-        const validSkills = data.skills.filter(
-          (skill: unknown): skill is Skill =>
-            typeof skill === "object" &&
-            skill !== null &&
-            "name" in skill &&
-            "level" in skill
-        );
-
-        if (validSkills.length > 0) {
-          setSkills(validSkills);
-        }
-      }
-    } else {
-      const fallbackName =
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        user.email?.split("@")[0] ||
-        "SkillTrack User";
-
-      setUserName(fallbackName);
-
-      const { error: insertError } = await supabase
-        .from("profiles")
-        .insert({
-          id: user.id,
-          full_name: fallbackName,
-          skills: defaultSkills,
-          bio: "",
-        });
-
-      if (insertError) {
-        console.error("Profile creation error:", insertError.message);
-      }
-    }
-
-    setLoadingProfile(false);
-  }
-
-  async function loadJobs() {
-    setLoadingJobs(true);
-    setJobError("");
-
-    try {
-      const data = await getJobs();
-      setJobs((data || []) as Job[]);
-    } catch (error) {
-      console.error(error);
-      setJobError("Unable to load jobs.");
-    } finally {
-      setLoadingJobs(false);
-    }
-  }
-
-  async function loadApplications() {
-    setLoadingApplications(true);
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setApplications([]);
-      setLoadingApplications(false);
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from("applications")
-      .select("id, status, job_id")
-      .eq("user_id", user.id)
-      .order("applied_at", { ascending: false });
-
-    if (error) {
-      console.error("Applications error:", error.message);
-      setLoadingApplications(false);
-      return;
-    }
-
-    const applicationRows = (data || []) as Application[];
-
-    setApplications(applicationRows);
-
-    if (applicationRows.length > 0) {
-      const jobIds = applicationRows.map(
-        (application) => application.job_id
-      );
-
-      const { data: jobData } = await supabase
-        .from("jobs")
-        .select("id, title, company")
-        .in("id", jobIds);
-
-      const jobRows = jobData || [];
-
-      const combined = applicationRows
-        .slice(0, 3)
-        .map((application) => {
-          const job = jobRows.find(
-            (item) => item.id === application.job_id
-          );
-
-          return {
-            company: job?.company || "Unknown Company",
-            role: job?.title || "Unknown Job",
-            status: application.status,
-          };
-        });
-
-      setDashboardApplications(combined);
-    } else {
-      setDashboardApplications([]);
-    }
-
-    setLoadingApplications(false);
-  }
-
-  const userSkillNames = useMemo(
-    () => skills.map((skill) => skill.name),
-    [skills]
-  );
-
-  const jobMatches = useMemo(() => {
-    return jobs.map((job) => {
-      const requiredSkills = Array.isArray(job.required_skills)
-        ? job.required_skills
-        : [];
-
-      const gap = calculateSkillGap(
-        userSkillNames,
-        requiredSkills
-      );
-
-      return {
-        ...job,
-        required_skills: requiredSkills,
-        matchPercentage: gap.matchPercentage,
-        matchedSkills: gap.matchedSkills,
-        missingSkills: gap.missingSkills,
-      };
-    });
-  }, [jobs, userSkillNames]);
-
-  const averageMatch =
-    jobMatches.length > 0
-      ? Math.round(
-          jobMatches.reduce(
-            (total, job) => total + job.matchPercentage,
-            0
-          ) / jobMatches.length
-        )
-      : 0;
-
-  const topMissingSkills = Array.from(
-    new Set(
-      jobMatches.flatMap((job) => job.missingSkills)
-    )
-  ).slice(0, 3);
-
-  const applicationCount = applications.length;
-
-  const interviewCount = applications.filter(
-    (application) => application.status === "Interview"
-  ).length;
-
-  const offerCount = applications.filter(
-    (application) => application.status === "Offer"
-  ).length;
-
-  const profileCompletion = Math.min(
-    100,
-    Math.round(
-      40 +
-        (userName !== "SkillTrack User" ? 20 : 0) +
-        (skills.length > 0 ? 20 : 0) +
-        (skills.length >= 5 ? 20 : 0)
-    )
-  );
-
-  async function logout() {
+  async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = "/login";
   }
 
+  const readiness = useMemo(() => {
+    if (skills.length === 0) {
+      return 0;
+    }
+
+    const totalSkillLevel = skills.reduce(
+      (total, skill) => total + Number(skill.level || 0),
+      0
+    );
+
+    return Math.min(
+      100,
+      Math.round(totalSkillLevel / skills.length)
+    );
+  }, [skills]);
+
+  const topJobs = useMemo(() => {
+    return jobs
+      .map((job) => {
+        const gap = calculateSkillGap(
+          skills,
+          job.required_skills || []
+        );
+
+        return {
+          ...job,
+          matchPercentage: gap.matchPercentage,
+          matchedSkills: gap.matchedSkills,
+          missingSkills: gap.missingSkills,
+          improvingSkills: gap.improvingSkills,
+        };
+      })
+      .sort((a, b) => b.matchPercentage - a.matchPercentage)
+      .slice(0, 3);
+  }, [jobs, skills]);
+
+  const priorityGaps = useMemo(() => {
+    const gapCount = new Map<string, number>();
+
+    jobs.forEach((job) => {
+      const gap = calculateSkillGap(
+        skills,
+        job.required_skills || []
+      );
+
+      gap.missingSkills.forEach((skill) => {
+        const current = gapCount.get(skill) || 0;
+        gapCount.set(skill, current + 1);
+      });
+
+      gap.improvingSkills.forEach((skill) => {
+        const current = gapCount.get(skill) || 0;
+        gapCount.set(skill, current + 1);
+      });
+    });
+
+    return Array.from(gapCount.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([skill]) => skill);
+  }, [jobs, skills]);
+
+  const applicationStats = {
+    wishlist: applications.filter(
+      (application) => application.status === "Wishlist"
+    ).length,
+
+    applied: applications.filter(
+      (application) => application.status === "Applied"
+    ).length,
+
+    interview: applications.filter(
+      (application) => application.status === "Interview"
+    ).length,
+
+    offer: applications.filter(
+      (application) => application.status === "Offer"
+    ).length,
+  };
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#07111f] text-white">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
+          <p className="mt-4 text-slate-400">
+            Loading your SkillTrack dashboard...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#07111f] text-white">
-      <div className="flex min-h-screen">
-        {/* SIDEBAR */}
-        <aside className="hidden w-64 border-r border-white/10 bg-[#0b1728] p-5 md:block">
-          <div className="mb-10 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 text-xl font-bold text-slate-950">
-              S
-            </div>
+      {/* Navbar */}
+      <header className="border-b border-white/10 bg-[#07111f]/95">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <Link
+            href="/"
+            className="text-2xl font-black tracking-tight"
+          >
+            Skill<span className="text-cyan-400">Track</span>
+          </Link>
 
-            <div>
-              <h1 className="text-xl font-bold">SkillTrack</h1>
-
-              <p className="text-xs text-slate-400">
-                Career Intelligence
-              </p>
-            </div>
-          </div>
-
-          <nav className="space-y-2">
-            <button
-              onClick={() => goTo("/")}
-              className="flex w-full items-center gap-3 rounded-xl bg-cyan-500/15 px-4 py-3 text-left text-cyan-400 transition hover:bg-cyan-500/20"
+          <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
+            <Link
+              href="/"
+              className="text-cyan-400"
             >
-              <span className="text-lg">▦</span>
               Dashboard
-            </button>
+            </Link>
 
-            <button
-              onClick={() => goTo("/skills")}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-slate-400 transition hover:bg-white/5 hover:text-white"
+            <Link
+              href="/profile"
+              className="transition hover:text-cyan-400"
             >
-              <span className="text-lg">◎</span>
-              My Skills
-            </button>
+              Profile
+            </Link>
 
-            <button
-              onClick={() => goTo("/skill-gap")}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-slate-400 transition hover:bg-white/5 hover:text-white"
+            <Link
+              href="/jobs"
+              className="transition hover:text-cyan-400"
             >
-              <span className="text-lg">◈</span>
-              Skill Gap
-            </button>
-
-            <button
-              onClick={() => goTo("/jobs")}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-slate-400 transition hover:bg-white/5 hover:text-white"
-            >
-              <span className="text-lg">▣</span>
               Jobs
-            </button>
+            </Link>
 
-            <button
-              onClick={() => goTo("/applications")}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-slate-400 transition hover:bg-white/5 hover:text-white"
+            <Link
+              href="/skill-gap"
+              className="transition hover:text-cyan-400"
             >
-              <span className="text-lg">✓</span>
+              Skill Gap
+            </Link>
+
+            <Link
+              href="/applications"
+              className="transition hover:text-cyan-400"
+            >
               Applications
-            </button>
-
-            <button
-              onClick={() => goTo("/profile")}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-slate-400 transition hover:bg-white/5 hover:text-white"
-            >
-              <span className="text-lg">◯</span>
-              My Profile
-            </button>
+            </Link>
           </nav>
 
-          <div className="mt-10 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4">
-            <p className="text-xs text-slate-400">
-              Profile completion
-            </p>
+          <button
+            onClick={handleLogout}
+            className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
+          >
+            Logout
+          </button>
+        </div>
+      </header>
 
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-700">
-              <div
-                className="h-full rounded-full bg-cyan-400"
-                style={{
-                  width: `${profileCompletion}%`,
-                }}
-              />
-            </div>
+      <div className="mx-auto max-w-7xl px-6 py-10">
+        {/* Welcome */}
+        <section className="mb-8 rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/10 via-[#0d1b2e] to-purple-500/10 p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
+            Career Dashboard
+          </p>
 
-            <p className="mt-2 text-sm font-semibold">
-              {profileCompletion}% complete
-            </p>
-          </div>
+          <h1 className="mt-3 text-3xl font-black md:text-4xl">
+            Welcome back, {userName} 👋
+          </h1>
 
-          <div className="mt-6 border-t border-white/10 pt-5">
-            <button
-              onClick={() => goTo("/profile")}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-white/5 hover:text-white"
+          <p className="mt-3 max-w-2xl text-slate-400">
+            Track your skills, discover suitable jobs, identify skill gaps,
+            and move closer to your career goals.
+          </p>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href="/profile"
+              className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
             >
-              ⚙ Profile Settings
-            </button>
-          </div>
-        </aside>
+              Update Skills
+            </Link>
 
-        {/* MAIN */}
-        <section className="flex-1">
-          {/* TOP BAR */}
-          <header className="flex items-center justify-between border-b border-white/10 bg-[#0b1728]/80 px-5 py-5 backdrop-blur md:px-8">
-            <div>
-              <p className="text-sm text-slate-400">
-                Career Dashboard
+            <Link
+              href="/jobs"
+              className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+            >
+              Explore Jobs
+            </Link>
+          </div>
+        </section>
+
+        {/* Stats */}
+        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+            <p className="text-sm text-slate-400">
+              Job Readiness
+            </p>
+
+            <div className="mt-3 flex items-end justify-between">
+              <p className="text-4xl font-black text-cyan-400">
+                {readiness}%
               </p>
 
-              <h2 className="text-xl font-bold md:text-2xl">
-                Welcome back,{" "}
-                {loadingProfile ? "..." : userName} 👋
-              </h2>
+              <span className="text-2xl">🎯</span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 hover:bg-white/10">
-                🔔
-              </button>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-cyan-400 transition-all"
+                style={{ width: `${readiness}%` }}
+              />
+            </div>
+          </div>
 
-              <button
-                onClick={() => goTo("/profile")}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 font-bold"
+          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+            <p className="text-sm text-slate-400">
+              Your Skills
+            </p>
+
+            <p className="mt-3 text-4xl font-black">
+              {skills.length}
+            </p>
+
+            <p className="mt-2 text-xs text-slate-500">
+              Skills added to your profile
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+            <p className="text-sm text-slate-400">
+              Applications
+            </p>
+
+            <p className="mt-3 text-4xl font-black">
+              {applications.length}
+            </p>
+
+            <p className="mt-2 text-xs text-slate-500">
+              Total tracked applications
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+            <p className="text-sm text-slate-400">
+              Available Jobs
+            </p>
+
+            <p className="mt-3 text-4xl font-black">
+              {jobs.length}
+            </p>
+
+            <p className="mt-2 text-xs text-slate-500">
+              Jobs in SkillTrack
+            </p>
+          </div>
+        </section>
+
+        {/* Main Grid */}
+        <section className="mt-8 grid gap-6 lg:grid-cols-3">
+          {/* Recommended Jobs */}
+          <div className="lg:col-span-2 rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">
+                  Recommended Jobs 🚀
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Based on your current skills
+                </p>
+              </div>
+
+              <Link
+                href="/jobs"
+                className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
               >
-                {userName.charAt(0).toUpperCase()}
-              </button>
-
-              <button
-                onClick={logout}
-                className="hidden rounded-xl border border-red-500/20 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/10 sm:block"
-              >
-                Logout
-              </button>
+                View all →
+              </Link>
             </div>
-          </header>
 
-          <div className="space-y-7 p-5 md:p-8">
-            {/* HERO */}
-            <div className="rounded-3xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-blue-500/5 to-transparent p-6 md:p-8">
-              <div className="max-w-3xl">
-                <p className="mb-2 text-sm font-medium text-cyan-400">
-                  YOUR CAREER JOURNEY
-                </p>
+            <div className="mt-6 space-y-4">
+              {topJobs.length === 0 && (
+                <div className="rounded-xl border border-dashed border-white/10 p-6 text-center">
+                  <p className="text-slate-400">
+                    Add skills to your profile to get job recommendations.
+                  </p>
 
-                <h3 className="text-2xl font-bold md:text-4xl">
-                  Turn your skills into your next opportunity.
-                </h3>
-
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 md:text-base">
-                  Track your skills, discover career gaps, find
-                  matching jobs and manage your applications — all in
-                  one place.
-                </p>
-
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button
-                    onClick={() => goTo("/skill-gap")}
-                    className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
+                  <Link
+                    href="/profile"
+                    className="mt-4 inline-block text-sm font-semibold text-cyan-400"
                   >
-                    Analyze Skill Gap
-                  </button>
-
-                  <button
-                    onClick={() => goTo("/jobs")}
-                    className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold hover:bg-white/10"
-                  >
-                    Explore Jobs
-                  </button>
+                    Add Skills →
+                  </Link>
                 </div>
-              </div>
+              )}
+
+              {topJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] p-5 transition hover:border-cyan-400/30"
+                >
+                  <div className="flex flex-col justify-between gap-4 sm:flex-row">
+                    <div>
+                      <p className="text-xs font-semibold text-cyan-400">
+                        {job.company}
+                      </p>
+
+                      <h3 className="mt-1 text-lg font-bold">
+                        {job.title}
+                      </h3>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        📍 {job.location || "India"}
+                      </p>
+                    </div>
+
+                    <div className="flex h-fit items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2">
+                      <span className="text-xl">🎯</span>
+
+                      <div>
+                        <p className="text-lg font-black text-cyan-400">
+                          {job.matchPercentage}%
+                        </p>
+
+                        <p className="text-[10px] uppercase text-slate-500">
+                          Match
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {job.matchedSkills.slice(0, 4).map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-lg bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-300"
+                      >
+                        ✓ {skill}
+                      </span>
+                    ))}
+
+                    {job.improvingSkills.slice(0, 2).map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-lg bg-yellow-400/10 px-3 py-1.5 text-xs text-yellow-300"
+                      >
+                        ↗ {skill}
+                      </span>
+                    ))}
+
+                    {job.missingSkills.slice(0, 2).map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-lg bg-red-400/10 px-3 py-1.5 text-xs text-red-300"
+                      >
+                        + {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* CAREER SNAPSHOT */}
-            <div>
-              <div className="mb-4">
-                <h3 className="text-xl font-bold">
-                  Career Snapshot
-                </h3>
+          {/* Skill Gaps */}
+          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">
+                  Priority Skills
+                </h2>
 
-                <p className="text-sm text-slate-400">
-                  Your current career progress
+                <p className="mt-1 text-sm text-slate-500">
+                  Skills worth improving
                 </p>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
-                  <p className="text-sm text-slate-400">
-                    Skills Added
-                  </p>
-
-                  <p className="mt-2 text-3xl font-bold">
-                    {skills.length}
-                  </p>
-
-                  <p className="mt-2 text-xs text-cyan-400">
-                    Active skills
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
-                  <p className="text-sm text-slate-400">
-                    Average Job Match
-                  </p>
-
-                  <p className="mt-2 text-3xl font-bold">
-                    {averageMatch}%
-                  </p>
-
-                  <p className="mt-2 text-xs text-green-400">
-                    Based on current jobs
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
-                  <p className="text-sm text-slate-400">
-                    Applications
-                  </p>
-
-                  <p className="mt-2 text-3xl font-bold">
-                    {loadingApplications ? "..." : applicationCount}
-                  </p>
-
-                  <p className="mt-2 text-xs text-slate-400">
-                    Total applications
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5">
-                  <p className="text-sm text-slate-400">
-                    Interviews
-                  </p>
-
-                  <p className="mt-2 text-3xl font-bold">
-                    {loadingApplications ? "..." : interviewCount}
-                  </p>
-
-                  <p className="mt-2 text-xs text-yellow-400">
-                    Active interviews
-                  </p>
-                </div>
-              </div>
+              <span className="text-2xl">🧠</span>
             </div>
 
-            {/* SKILLS + SKILL GAP */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* MY SKILLS */}
-              <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
-                <div className="mb-6 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold">
-                      My Skills
-                    </h3>
+            <div className="mt-6 space-y-3">
+              {priorityGaps.length === 0 && (
+                <p className="rounded-xl bg-white/[0.03] p-4 text-sm text-slate-400">
+                  No major skill gaps detected yet.
+                </p>
+              )}
 
-                    <p className="text-sm text-slate-400">
-                      Current proficiency
+              {priorityGaps.map((skill, index) => (
+                <div
+                  key={skill}
+                  className="flex items-center gap-3 rounded-xl bg-white/[0.03] p-4"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-400/10 text-sm font-bold text-purple-300">
+                    {index + 1}
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">
+                      {skill}
+                    </p>
+
+                    <p className="text-xs text-slate-500">
+                      Recommended for your target jobs
                     </p>
                   </div>
-
-                  <button
-                    onClick={() => goTo("/profile")}
-                    className="text-sm font-semibold text-cyan-400"
-                  >
-                    Manage →
-                  </button>
                 </div>
+              ))}
+            </div>
 
-                <div className="space-y-5">
-                  {skills.map((skill) => (
-                    <div key={skill.name}>
-                      <div className="mb-2 flex justify-between text-sm">
-                        <span className="font-medium">
-                          {skill.name}
-                        </span>
+            <Link
+              href="/skill-gap"
+              className="mt-5 block rounded-xl border border-purple-400/20 bg-purple-400/10 px-4 py-3 text-center text-sm font-semibold text-purple-300 transition hover:bg-purple-400/20"
+            >
+              View Full Skill Gap →
+            </Link>
+          </div>
+        </section>
 
-                        <span className="text-slate-400">
-                          {skill.level}%
-                        </span>
-                      </div>
+        {/* Skills + Applications */}
+        <section className="mt-6 grid gap-6 lg:grid-cols-2">
+          {/* Skills */}
+          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">
+                Your Skills 💻
+              </h2>
 
-                      <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                        <div
-                          className="h-full rounded-full bg-cyan-400"
-                          style={{
-                            width: `${skill.level}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <Link
+                href="/profile"
+                className="text-sm font-semibold text-cyan-400"
+              >
+                Manage →
+              </Link>
+            </div>
 
-              {/* SKILL GAP */}
-              <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
-                <div className="mb-5">
-                  <h3 className="text-lg font-bold">
-                    Skill Gap Analysis
-                  </h3>
+            <div className="mt-6 space-y-4">
+              {skills.length === 0 && (
+                <p className="text-sm text-slate-500">
+                  No skills added yet.
+                </p>
+              )}
 
-                  <p className="text-sm text-slate-400">
-                    Skills you should improve next
-                  </p>
-                </div>
+              {skills.slice(0, 6).map((skill) => (
+                <div key={skill.name}>
+                  <div className="mb-2 flex justify-between">
+                    <span className="text-sm font-medium">
+                      {skill.name}
+                    </span>
 
-                <div className="flex items-center justify-center py-3">
-                  <div className="flex h-40 w-40 items-center justify-center rounded-full border-[14px] border-cyan-400/20 border-t-cyan-400 border-r-cyan-400">
-                    <div className="text-center">
-                      <p className="text-3xl font-bold">
-                        {averageMatch}%
-                      </p>
+                    <span className="text-xs text-slate-500">
+                      {skill.level}%
+                    </span>
+                  </div>
 
-                      <p className="text-xs text-slate-400">
-                        Job Readiness
-                      </p>
-                    </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-purple-400"
+                      style={{
+                        width: `${Math.max(
+                          0,
+                          Math.min(100, skill.level)
+                        )}%`,
+                      }}
+                    />
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <div className="mt-4 space-y-3">
-                  {topMissingSkills.length > 0 ? (
-                    topMissingSkills.map((skill) => (
-                      <div
-                        key={skill}
-                        className="flex items-center justify-between rounded-xl bg-white/5 p-3"
-                      >
-                        <div>
-                          <p className="font-medium">
-                            {skill}
-                          </p>
+          {/* Applications */}
+          <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">
+                Application Tracker 📋
+              </h2>
 
-                          <p className="text-xs text-slate-400">
-                            Required by recommended jobs
-                          </p>
-                        </div>
-
-                        <span className="rounded-lg bg-red-500/10 px-3 py-1 text-xs text-red-400">
-                          Missing
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="rounded-xl bg-green-500/10 p-4 text-center text-sm text-green-400">
-                      Great! No major skill gaps found.
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => goTo("/skill-gap")}
-                  className="mt-5 w-full rounded-xl border border-cyan-500/30 py-2.5 text-sm font-semibold text-cyan-400 hover:bg-cyan-500/10"
-                >
-                  View Full Skill Gap →
-                </button>
-              </div>
+              <Link
+                href="/applications"
+                className="text-sm font-semibold text-cyan-400"
+              >
+                Open →
+              </Link>
             </div>
 
-            {/* RECOMMENDED JOBS */}
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div className="rounded-xl bg-purple-400/10 p-5">
+                <p className="text-sm text-purple-300">
+                  Wishlist
+                </p>
+
+                <p className="mt-2 text-3xl font-black">
+                  {applicationStats.wishlist}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-cyan-400/10 p-5">
+                <p className="text-sm text-cyan-300">
+                  Applied
+                </p>
+
+                <p className="mt-2 text-3xl font-black">
+                  {applicationStats.applied}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-yellow-400/10 p-5">
+                <p className="text-sm text-yellow-300">
+                  Interview
+                </p>
+
+                <p className="mt-2 text-3xl font-black">
+                  {applicationStats.interview}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-emerald-400/10 p-5">
+                <p className="text-sm text-emerald-300">
+                  Offer
+                </p>
+
+                <p className="mt-2 text-3xl font-black">
+                  {applicationStats.offer}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Career Action */}
+        <section className="mt-6 rounded-2xl border border-white/10 bg-gradient-to-r from-purple-500/10 to-cyan-400/10 p-6">
+          <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
             <div>
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold">
-                    Recommended Jobs
-                  </h3>
+              <p className="text-sm font-semibold text-purple-300">
+                YOUR NEXT MOVE
+              </p>
 
-                  <p className="text-sm text-slate-400">
-                    Jobs based on your current skills
-                  </p>
-                </div>
+              <h2 className="mt-2 text-2xl font-bold">
+                Build the skills that employers are looking for.
+              </h2>
 
-                <button
-                  onClick={() => goTo("/jobs")}
-                  className="text-sm font-semibold text-cyan-400"
-                >
-                  View all →
-                </button>
-              </div>
-
-              {loadingJobs ? (
-                <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-8 text-center text-slate-400">
-                  Loading jobs from Supabase...
-                </div>
-              ) : jobError ? (
-                <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center text-red-400">
-                  {jobError}
-                </div>
-              ) : jobs.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-8 text-center text-slate-400">
-                  No jobs found in Supabase.
-                </div>
-              ) : (
-                <div className="grid gap-4 lg:grid-cols-3">
-                  {jobMatches.slice(0, 3).map((job) => (
-                    <div
-                      key={job.id}
-                      className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-5 transition hover:-translate-y-1 hover:border-cyan-500/30"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs text-slate-500">
-                            FULL TIME
-                          </p>
-
-                          <h4 className="mt-2 font-bold">
-                            {job.title}
-                          </h4>
-
-                          <p className="mt-1 text-sm text-slate-400">
-                            {job.company}
-                          </p>
-                        </div>
-
-                        <div className="rounded-xl bg-green-500/10 px-3 py-2 text-center">
-                          <p className="text-lg font-bold text-green-400">
-                            {job.matchPercentage}%
-                          </p>
-
-                          <p className="text-[10px] text-green-400">
-                            MATCH
-                          </p>
-                        </div>
-                      </div>
-
-                      <p className="mt-4 text-xs text-slate-500">
-                        📍 {job.location}
-                      </p>
-
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        {job.required_skills.map((skill) => {
-                          const matched = job.matchedSkills.some(
-                            (item) =>
-                              item.toLowerCase() ===
-                              skill.toLowerCase()
-                          );
-
-                          return (
-                            <span
-                              key={skill}
-                              className={`rounded-lg px-2.5 py-1 text-xs ${
-                                matched
-                                  ? "bg-cyan-500/10 text-cyan-400"
-                                  : "bg-red-500/10 text-red-400"
-                              }`}
-                            >
-                              {matched ? "✓ " : "✗ "}
-                              {skill}
-                            </span>
-                          );
-                        })}
-                      </div>
-
-                      {job.missingSkills.length > 0 && (
-                        <div className="mt-4 rounded-xl bg-red-500/5 p-3">
-                          <p className="text-xs font-semibold text-red-400">
-                            Skills to improve
-                          </p>
-
-                          <p className="mt-1 text-xs text-slate-400">
-                            {job.missingSkills.join(", ")}
-                          </p>
-                        </div>
-                      )}
-
-                      <button
-                        onClick={() => goTo("/jobs")}
-                        className="mt-5 w-full rounded-xl border border-cyan-500/30 py-2.5 text-sm font-semibold text-cyan-400 hover:bg-cyan-500/10"
-                      >
-                        View Job
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="mt-2 max-w-2xl text-sm text-slate-400">
+                Use SkillTrack to identify your gaps, improve your
+                proficiency, and find jobs that match your current level.
+              </p>
             </div>
 
-            {/* APPLICATION TRACKER */}
-            <div className="rounded-2xl border border-white/10 bg-[#0d1b2e] p-6">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold">
-                    Application Tracker
-                  </h3>
-
-                  <p className="text-sm text-slate-400">
-                    Keep track of your job applications
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => goTo("/applications")}
-                  className="text-sm font-semibold text-cyan-400"
-                >
-                  Manage →
-                </button>
-              </div>
-
-              {loadingApplications ? (
-                <div className="rounded-xl bg-white/[0.03] p-6 text-center text-sm text-slate-400">
-                  Loading applications...
-                </div>
-              ) : dashboardApplications.length === 0 ? (
-                <div className="rounded-xl bg-white/[0.03] p-6 text-center text-sm text-slate-400">
-                  No applications yet. Explore jobs and apply to
-                  your first opportunity.
-                </div>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-3">
-                  {dashboardApplications.map((application, index) => (
-                    <div
-                      key={`${application.company}-${index}`}
-                      className="rounded-xl border border-white/5 bg-white/[0.03] p-4"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="font-semibold">
-                            {application.role}
-                          </p>
-
-                          <p className="mt-1 text-xs text-slate-400">
-                            {application.company}
-                          </p>
-                        </div>
-
-                        <span
-                          className={`rounded-lg px-2.5 py-1 text-xs ${
-                            application.status === "Interview"
-                              ? "bg-green-500/10 text-green-400"
-                              : application.status === "Applied"
-                                ? "bg-blue-500/10 text-blue-400"
-                                : application.status === "Offer"
-                                  ? "bg-purple-500/10 text-purple-400"
-                                  : "bg-yellow-500/10 text-yellow-400"
-                          }`}
-                        >
-                          {application.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* FOOTER */}
-            <div className="border-t border-white/10 pt-6 text-center text-xs text-slate-500">
-              SkillTrack • Smart Skill & Employment Tracking Platform
-            </div>
+            <Link
+              href="/skill-gap"
+              className="whitespace-nowrap rounded-xl bg-purple-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-purple-300"
+            >
+              Analyze My Skills →
+            </Link>
           </div>
         </section>
       </div>
