@@ -1,6 +1,37 @@
 ﻿import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
+function createFallbackAnswer(question: string) {
+  const normalizedQuestion = question.toLowerCase();
+
+  if (
+    normalizedQuestion.includes("skill") ||
+    normalizedQuestion.includes("learn")
+  ) {
+    return "Start with one high-impact skill from your target jobs, then build a small project that proves it. Review your Skill Gap Analysis and focus on the first two missing skills before adding more topics.";
+  }
+
+  if (
+    normalizedQuestion.includes("resume") ||
+    normalizedQuestion.includes("cv")
+  ) {
+    return "Use Resume Analyzer to check your ATS match, then add measurable project results and the skills required by your target jobs. Keep the resume focused and easy to scan.";
+  }
+
+  if (normalizedQuestion.includes("interview")) {
+    return "Choose a target role in Interview Coach, practice one question at a time, and improve answers with specific examples using the STAR structure.";
+  }
+
+  if (
+    normalizedQuestion.includes("job") ||
+    normalizedQuestion.includes("career")
+  ) {
+    return "Review your strongest job matches, apply where your current skills already align, and use the missing-skill list to improve your next applications.";
+  }
+
+  return "I can still help you plan your career. Review your profile, update your skills, check Skill Gap Analysis, and choose one target job to work toward.";
+}
+
 export async function POST(request: Request) {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -56,7 +87,7 @@ export async function POST(request: Request) {
     }
 
     const response = await openai.responses.create({
-      model: "gpt-5.6-luna",
+      model: "gpt-4o-mini",
 
       instructions: `
 You are SkillTrack AI, a personalized multilingual career assistant for students and job seekers in India.
@@ -118,10 +149,10 @@ ${context}
 
     return NextResponse.json(
       {
-        error:
-          "AI service could not process the request. Please try again.",
+        answer: createFallbackAnswer("career guidance"),
+        fallback: true,
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }

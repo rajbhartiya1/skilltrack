@@ -102,14 +102,6 @@ function detectSkills(text: string) {
   return found;
 }
 
-function extractKeywords(text: string, targetSkills: string[]) {
-  const lower = text.toLowerCase();
-
-  return targetSkills.filter((skill) =>
-    lower.includes(skill.toLowerCase())
-  );
-}
-
 function calculateAtsScore(
   text: string,
   foundSkills: string[],

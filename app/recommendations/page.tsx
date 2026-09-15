@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { calculateSkillGap, UserSkill } from "../../lib/skillGap";
+import TopNav from "../../components/TopNav";
 
 type Job = {
   id: string;
@@ -485,7 +486,7 @@ export default function RecommendationsPage() {
       <main className="min-h-screen bg-[#0B1F3A] px-6 py-20 text-white">
         <div className="mx-auto max-w-xl rounded-3xl border border-red-400/20 bg-red-400/5 p-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-red-400/10 text-2xl">
-            âš ï¸
+            š ï¸
           </div>
 
           <h1 className="text-2xl font-bold">
@@ -509,9 +510,10 @@ export default function RecommendationsPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
+      <TopNav />
       {/* NAVBAR */}
 
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0B1F3A]/90 backdrop-blur-xl">
+      <header className="hidden sticky top-0 z-30 border-b border-white/10 bg-[#0B1F3A]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <Link
             href="/"
@@ -544,7 +546,7 @@ export default function RecommendationsPage() {
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        v
       </span>
     </button>
 
@@ -658,7 +660,7 @@ export default function RecommendationsPage() {
           <div className="relative grid gap-10 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
             <div>
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-600/20 bg-blue-600/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
-                âœ¦ AI Career Intelligence
+                œ¦ AI Career Intelligence
               </div>
 
               <h1 className="max-w-3xl text-4xl font-black leading-tight md:text-6xl">
@@ -681,7 +683,7 @@ export default function RecommendationsPage() {
                   href="/skill-gap"
                   className="rounded-xl bg-blue-600 px-5 py-3 font-bold text-slate-950 transition hover:bg-blue-500"
                 >
-                  View Skill Gap â†’
+                  View Skill Gap †’
                 </Link>
 
                 <Link
@@ -871,7 +873,7 @@ export default function RecommendationsPage() {
                           key={skill}
                           className="rounded-lg bg-teal-500/10 px-3 py-1.5 text-xs font-semibold text-teal-300"
                         >
-                          âœ“ {skill}
+                          œ“ {skill}
                         </span>
                       ))}
 
@@ -888,7 +890,7 @@ export default function RecommendationsPage() {
                   </div>
 
                   <p className="mt-5 text-sm font-semibold text-slate-500 transition group-hover:text-blue-600">
-                    View career analysis â†’
+                    View career analysis †’
                   </p>
                 </button>
               )
@@ -919,7 +921,7 @@ export default function RecommendationsPage() {
               </div>
 
               <div className="text-2xl">
-                âš¡
+                š¡
               </div>
             </div>
 
@@ -1118,7 +1120,7 @@ export default function RecommendationsPage() {
         {/* FOOTER */}
 
         <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
-          SkillTrack â€¢ AI-powered Skill & Employment Intelligence
+          SkillTrack * AI-powered Skill & Employment Intelligence
         </footer>
       </div>
 
@@ -1152,7 +1154,7 @@ export default function RecommendationsPage() {
                 onClick={() => setSelectedCareer(null)}
                 className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-slate-400 transition hover:bg-white/10 hover:text-white"
               >
-                âœ•
+                œ•
               </button>
             </div>
 
@@ -1169,7 +1171,7 @@ export default function RecommendationsPage() {
                 </div>
 
                 <span className="text-3xl">
-                  ðŸŽ¯
+                  Target
                 </span>
               </div>
 
@@ -1195,7 +1197,7 @@ export default function RecommendationsPage() {
                     className="rounded-xl border border-white/5 bg-white/[0.025] p-4 text-sm leading-6 text-slate-400"
                   >
                     <span className="mr-2 text-blue-600">
-                      âœ¦
+                      œ¦
                     </span>
 
                     {reason}
@@ -1311,7 +1313,7 @@ export default function RecommendationsPage() {
                           <p className="mt-1 text-xs text-slate-500">
                             {job.company}
                             {job.location
-                              ? ` â€¢ ${job.location}`
+                              ? ` * ${job.location}`
                               : ""}
                           </p>
                         </div>

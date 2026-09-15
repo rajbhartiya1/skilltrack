@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -437,7 +437,7 @@ export default function Dashboard() {
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        v
       </span>
     </button>
 
@@ -541,7 +541,7 @@ export default function Dashboard() {
             >
               {refreshing
                 ? "Refreshing..."
-                : "â†» Refresh"}
+                : "†» Refresh"}
             </button>
 
             <Link
@@ -594,7 +594,7 @@ export default function Dashboard() {
                   href="/jobs"
                   className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
                 >
-                  Explore Jobs â†’
+                  Explore Jobs †’
                 </Link>
               </div>
             </div>
@@ -729,7 +729,7 @@ export default function Dashboard() {
                 href="/recommendations"
                 className="rounded-xl bg-purple-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-purple-300"
               >
-                Full Analysis â†’
+                Full Analysis †’
               </Link>
             </div>
           </div>
@@ -762,7 +762,7 @@ export default function Dashboard() {
                 href="/jobs"
                 className="text-sm font-semibold text-blue-600 hover:text-blue-300"
               >
-                View All â†’
+                View All †’
               </Link>
             </div>
 
@@ -778,7 +778,7 @@ export default function Dashboard() {
                     href="/profile"
                     className="mt-4 inline-block text-sm font-bold text-blue-600"
                   >
-                    Add Skills â†’
+                    Add Skills †’
                   </Link>
                 </div>
               ) : (
@@ -831,7 +831,7 @@ export default function Dashboard() {
                             key={skill}
                             className="rounded-lg bg-teal-500/10 px-3 py-1.5 text-xs text-teal-300"
                           >
-                            âœ“ {skill}
+                            œ“ {skill}
                           </span>
                         ))}
 
@@ -842,7 +842,7 @@ export default function Dashboard() {
                             key={skill}
                             className="rounded-lg bg-yellow-400/10 px-3 py-1.5 text-xs text-yellow-300"
                           >
-                            â†— {skill}
+                            †— {skill}
                           </span>
                         ))}
 
@@ -923,7 +923,7 @@ export default function Dashboard() {
               href="/skill-gap"
               className="mt-5 block rounded-xl border border-red-400/20 bg-red-400/5 px-4 py-3 text-center text-sm font-bold text-red-300 transition hover:bg-red-400/10"
             >
-              Analyze Skill Gaps â†’
+              Analyze Skill Gaps †’
             </Link>
           </div>
         </section>
@@ -951,7 +951,7 @@ export default function Dashboard() {
                 href="/profile"
                 className="text-sm font-semibold text-blue-600"
               >
-                Manage â†’
+                Manage †’
               </Link>
             </div>
 
@@ -1044,7 +1044,7 @@ export default function Dashboard() {
                 href="/applications"
                 className="text-sm font-semibold text-blue-600"
               >
-                Open â†’
+                Open †’
               </Link>
             </div>
 
@@ -1052,7 +1052,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between rounded-xl bg-purple-400/5 p-4">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">
-                    â™¡
+                    ™¡
                   </span>
 
                   <span className="text-sm font-semibold">
@@ -1150,7 +1150,7 @@ export default function Dashboard() {
                 href="/recommendations"
                 className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
               >
-                AI Career â†’
+                AI Career †’
               </Link>
             </div>
           </div>
@@ -1162,7 +1162,7 @@ export default function Dashboard() {
 
         <footer className="mt-10 flex flex-col justify-between gap-4 border-t border-white/10 py-6 text-xs text-slate-600 sm:flex-row">
           <p>
-            Â© 2026 SkillTrack â€¢ Skill Intelligence &
+            (c) 2026 SkillTrack * Skill Intelligence &
             Employment Tracking
           </p>
 

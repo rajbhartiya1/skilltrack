@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -344,7 +344,7 @@ Don't try to learn everything at once. Pick one high-impact skill, build a proje
         .slice(0, 5)
         .map(
           (job, index) =>
-            `${index + 1}. **${job.title}** â€” ${job.company}`
+            `${index + 1}. **${job.title}** - ${job.company}`
         )
         .join("\n");
 
@@ -374,7 +374,7 @@ Add accurate proficiency levels for every skill.
 Focus on the skills repeatedly requested by your target jobs.
 
 **3. Build proof**
-Create 2â€“3 projects that demonstrate those skills.
+Create 2-3 projects that demonstrate those skills.
 
 **4. Improve your resume**
 Use Resume Analyzer to identify missing skills and ATS issues.
@@ -396,7 +396,7 @@ Your current target direction is **${analysis.bestCareer}**.
 
 Your resume should clearly include:
 - Your strongest technical skills
-- 2â€“3 relevant projects
+- 2-3 relevant projects
 - Technologies used in each project
 - Measurable project outcomes
 - GitHub or portfolio links
@@ -411,7 +411,7 @@ Use **Resume Analyzer** in the AI Career menu to check your ATS readiness.`;
     ) {
       return `For interview preparation, I recommend this sequence:
 
-**Step 1:** Choose your target career â€” ${analysis.bestCareer}
+**Step 1:** Choose your target career - ${analysis.bestCareer}
 
 **Step 2:** Revise your strongest skills:
 ${analysis.matched.length ? analysis.matched.slice(0, 5).join(", ") : "Your current skills"}
@@ -453,7 +453,7 @@ Current pipeline:
         ).length
       }
 
-Keep your strongest opportunities moving from Applied â†’ Interview â†’ Offer.`;
+Keep your strongest opportunities moving from Applied †’ Interview †’ Offer.`;
     }
 
     return `Based on your current profile, I can help you with:
@@ -1140,7 +1140,7 @@ Do not claim that job requirements are unavailable when they are provided above.
               </p>
 
               <div className="mt-4 text-sm font-bold text-blue-300">
-                Open Career Coach â†’
+                Open Career Coach †’
               </div>
 
             </Link>

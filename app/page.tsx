@@ -1,10 +1,12 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { getJobs } from "../lib/jobs";
 import { getApplications } from "../lib/applications";
+import TopNav from "../components/TopNav";
 import {
   calculateSkillGap,
   UserSkill,
@@ -58,6 +60,7 @@ const COLORS = {
 };
 
 export default function Dashboard() {
+  const router = useRouter();
   const [userName, setUserName] = useState("SkillTrack User");
   const [skills, setSkills] = useState<UserSkill[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -65,14 +68,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  async function loadDashboard() {
+  const loadDashboard = useCallback(async () => {
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.href = "/login";
+        router.replace("/login");
         return;
       }
 
@@ -126,11 +129,13 @@ export default function Dashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }
+  }, [router]);
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    queueMicrotask(() => {
+      void loadDashboard();
+    });
+  }, [loadDashboard]);
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -139,7 +144,7 @@ export default function Dashboard() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    window.location.href = "/login";
+    router.replace("/login");
   }
 
   const recommendedJobs =
@@ -398,8 +403,9 @@ export default function Dashboard() {
         backgroundColor: COLORS.navy,
       }}
     >
+      <TopNav />
       <header
-        className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-xl"
+        className="hidden sticky top-0 z-50 border-b border-white/10 backdrop-blur-xl"
         style={{
           backgroundColor:
             "rgba(11,31,58,0.96)",

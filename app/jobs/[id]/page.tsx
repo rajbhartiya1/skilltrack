@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import {
   calculateSkillGap,
   UserSkill,
 } from "../../../lib/skillGap";
+import TopNav from "../../../components/TopNav";
 
 type Job = {
   id: string;
@@ -26,6 +27,7 @@ type Profile = {
 
 export default function JobDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const jobId = params.id as string;
 
   const [job, setJob] = useState<Job | null>(null);
@@ -43,7 +45,7 @@ export default function JobDetailsPage() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          window.location.href = "/login";
+          router.replace("/login");
           return;
         }
 
@@ -105,7 +107,7 @@ export default function JobDetailsPage() {
     if (jobId) {
       loadJob();
     }
-  }, [jobId]);
+  }, [jobId, router]);
 
   if (loading) {
     return (
@@ -240,7 +242,7 @@ export default function JobDetailsPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.href = "/login";
+        router.replace("/login");
         return;
       }
 
@@ -272,6 +274,10 @@ export default function JobDetailsPage() {
           ? "Application submitted successfully!"
           : "Job saved to your wishlist!"
       );
+
+      if (status === "Applied") {
+        router.push("/applications");
+      }
     } catch (error) {
       console.error(
         "Application error:",
@@ -288,9 +294,10 @@ export default function JobDetailsPage() {
 
   return (
     <main className="min-h-screen bg-[#07111f] text-white">
+      <TopNav />
       {/* NAVBAR */}
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
+      <header className="hidden sticky top-0 z-40 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
             href="/"

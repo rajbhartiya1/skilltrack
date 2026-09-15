@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import {
   calculateSkillGap,
@@ -67,7 +66,6 @@ function normalizeSkills(
 }
 
 export default function SkillGapPage() {
-  const router = useRouter();
   const [skills, setSkills] = useState<UserSkill[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [userName, setUserName] =
@@ -87,7 +85,7 @@ export default function SkillGapPage() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          router.replace("/login");
+          window.location.href = "/login";
           return;
         }
 
@@ -157,7 +155,7 @@ export default function SkillGapPage() {
     }
 
     loadData();
-  }, [router]);
+  }, []);
 
   const analyzedJobs =
     useMemo<AnalyzedJob[]>(() => {
@@ -415,7 +413,7 @@ export default function SkillGapPage() {
             </h1>
 
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
-              Hi {userName}. Here&apos;s how your current
+              Hi {userName}. Here's how your current
               skill profile compares with the technology
               job market.
             </p>
@@ -460,7 +458,7 @@ export default function SkillGapPage() {
               </p>
 
               <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-                How prepared are you for today&apos;s jobs?
+                How prepared are you for today's jobs?
               </h2>
 
               <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">

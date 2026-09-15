@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import TopNav from "../../components/TopNav";
 
 type Skill = {
   name: string;
@@ -63,6 +65,7 @@ function normalizeSkills(value: unknown): Skill[] {
 }
 
 export default function SkillsPage() {
+  const router = useRouter();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,11 +79,7 @@ export default function SkillsPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    loadSkills();
-  }, []);
-
-  async function loadSkills() {
+  const loadSkills = useCallback(async () => {
     setLoading(true);
     setErrorMessage("");
 
@@ -95,7 +94,7 @@ export default function SkillsPage() {
       }
 
       if (!user) {
-        window.location.href = "/login";
+        router.replace("/login");
         return;
       }
 
@@ -121,7 +120,13 @@ export default function SkillsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadSkills();
+    });
+  }, [loadSkills]);
 
   async function saveSkills(updatedSkills: Skill[]) {
     setSaving(true);
@@ -139,7 +144,7 @@ export default function SkillsPage() {
       }
 
       if (!user) {
-        window.location.href = "/login";
+        router.replace("/login");
         return false;
       }
 
@@ -402,9 +407,10 @@ export default function SkillsPage() {
 
   return (
     <main className="min-h-screen bg-[#07111F] text-white">
+      <TopNav />
       <div className="flex min-h-screen">
         {/* SIDEBAR */}
-        <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-[#0B1F3A] p-5 md:block">
+        <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-[#0B1F3A] p-5 md:hidden">
           <div className="mb-10 flex items-center gap-3">
             <Link
               href="/"
@@ -703,7 +709,7 @@ export default function SkillsPage() {
                 </p>
 
                 <p className="mt-2 text-3xl font-bold">
-                  {loading ? "—" : skills.length}
+                  {loading ? "-" : skills.length}
                 </p>
 
                 <p className="mt-2 text-xs text-blue-400">
@@ -718,7 +724,7 @@ export default function SkillsPage() {
 
                 <p className="mt-2 text-3xl font-bold">
                   {loading
-                    ? "—"
+                    ? "-"
                     : `${averageProficiency}%`}
                 </p>
 
@@ -734,7 +740,7 @@ export default function SkillsPage() {
 
                 <p className="mt-2 truncate text-2xl font-bold">
                   {loading
-                    ? "—"
+                    ? "-"
                     : strongestSkill?.name || "None"}
                 </p>
 
@@ -883,7 +889,14 @@ export default function SkillsPage() {
               href="/"
               className="inline-block text-sm font-semibold text-blue-400 transition hover:text-cyan-300"
             >
-              ← Back to Dashboard
+              &larr; Back to Dashboard
+            </Link>
+
+            <Link
+              href="/skill-gap"
+              className="ml-5 inline-block text-sm font-semibold text-teal-300 transition hover:text-teal-200"
+            >
+              Continue to Skill Gap
             </Link>
           </div>
         </section>

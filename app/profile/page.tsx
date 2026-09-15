@@ -1,8 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import TopNav from "../../components/TopNav";
 
 type UserSkill = {
   name: string;
@@ -76,6 +78,7 @@ function normalizeSkills(
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
 
@@ -114,7 +117,7 @@ export default function ProfilePage() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          window.location.href = "/login";
+          router.replace("/login");
           return;
         }
 
@@ -197,7 +200,7 @@ export default function ProfilePage() {
     }
 
     loadProfile();
-  }, []);
+  }, [router]);
 
   const averageSkillLevel = useMemo(() => {
     if (skills.length === 0) {
@@ -227,13 +230,6 @@ export default function ProfilePage() {
       (skill) =>
         Number(skill.level) >= 40 &&
         Number(skill.level) < 70
-    ).length;
-  }, [skills]);
-
-  const beginnerSkills = useMemo(() => {
-    return skills.filter(
-      (skill) =>
-        Number(skill.level) < 40
     ).length;
   }, [skills]);
 
@@ -437,7 +433,7 @@ export default function ProfilePage() {
       }
 
       showMessage(
-        "Profile and skills saved successfully! ðŸŽ‰",
+        "Profile and skills saved successfully!",
         "success"
       );
     } catch (error) {
@@ -462,8 +458,7 @@ export default function ProfilePage() {
 
     await supabase.auth.signOut();
 
-    window.location.href =
-      "/login";
+      router.replace("/login");
   }
 
   if (loading) {
@@ -482,9 +477,10 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
+      <TopNav />
       {/* NAVBAR */}
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+      <header className="hidden sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
             href="/"
@@ -520,7 +516,7 @@ export default function ProfilePage() {
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        v
       </span>
     </button>
 
@@ -636,7 +632,7 @@ export default function ProfilePage() {
             href="/"
             className="text-sm font-semibold text-blue-600 hover:text-blue-300"
           >
-            â† Back to Dashboard
+            &larr; Back to Dashboard
           </Link>
 
           <div className="mt-5">
@@ -707,7 +703,7 @@ export default function ProfilePage() {
             </p>
 
             <p className="mt-1 text-xs text-slate-600">
-              40â€“69% proficiency
+              40-69% proficiency
             </p>
           </div>
 
@@ -950,7 +946,7 @@ export default function ProfilePage() {
             {skills.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center">
                 <div className="text-4xl">
-                  ðŸ§ 
+                  Skills
                 </div>
 
                 <p className="mt-4 font-bold">
@@ -1104,7 +1100,7 @@ export default function ProfilePage() {
               </h2>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Your saved skill levels power SkillTrack's job
+                Your saved skill levels power SkillTrack&apos;s job
                 matching, skill-gap analysis and career recommendations.
               </p>
             </div>
@@ -1116,20 +1112,37 @@ export default function ProfilePage() {
             >
               {saving
                 ? "Saving Profile..."
-                : "Save Profile âœ“"}
+                : "Save Profile"}
             </button>
           </div>
         </section>
 
         {/* NEXT ACTIONS */}
 
-        <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <section className="mt-6 grid gap-4 md:grid-cols-4">
+          <Link
+            href="/skills"
+            className="rounded-2xl border border-teal-400/10 bg-teal-400/5 p-6 transition hover:border-teal-400/30"
+          >
+            <p className="text-2xl">
+              Skills
+            </p>
+
+            <h3 className="mt-3 font-black">
+              Add Skills
+            </h3>
+
+            <p className="mt-2 text-xs leading-5 text-slate-600">
+              Add and update your proficiency levels.
+            </p>
+          </Link>
+
           <Link
             href="/skill-gap"
             className="rounded-2xl border border-red-400/10 bg-red-400/5 p-6 transition hover:border-red-400/30"
           >
             <p className="text-2xl">
-              ðŸŽ¯
+              Target
             </p>
 
             <h3 className="mt-3 font-black">
@@ -1146,7 +1159,7 @@ export default function ProfilePage() {
             className="rounded-2xl border border-purple-400/10 bg-purple-400/5 p-6 transition hover:border-purple-400/30"
           >
             <p className="text-2xl">
-              ðŸ§ 
+              Skills
             </p>
 
             <h3 className="mt-3 font-black">
@@ -1163,7 +1176,7 @@ export default function ProfilePage() {
             className="rounded-2xl border border-blue-600/10 bg-blue-600/5 p-6 transition hover:border-blue-600/30"
           >
             <p className="text-2xl">
-              ðŸ’¼
+              Career
             </p>
 
             <h3 className="mt-3 font-black">

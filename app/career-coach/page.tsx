@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { calculateSkillGap, UserSkill } from "../../lib/skillGap";
+import TopNav from "../../components/TopNav";
 
 type Job = {
   id: string;
@@ -249,7 +250,9 @@ export default function CareerCoachPage() {
 
   useEffect(() => {
     if (!selectedCareer && careerOptions.length > 0) {
-      setSelectedCareer(careerOptions[0]);
+      queueMicrotask(() => {
+        setSelectedCareer(careerOptions[0]);
+      });
     }
   }, [careerOptions, selectedCareer]);
 
@@ -465,7 +468,7 @@ export default function CareerCoachPage() {
       <main className="min-h-screen bg-[#0B1F3A] px-5 py-20 text-white">
         <div className="mx-auto max-w-xl rounded-3xl border border-red-400/20 bg-red-400/5 p-8 text-center">
           <div className="text-4xl">
-            âš ï¸
+            š ï¸
           </div>
 
           <h1 className="mt-4 text-2xl font-black">
@@ -489,9 +492,10 @@ export default function CareerCoachPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
+      <TopNav />
       {/* NAVBAR */}
 
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0B1F3A]/90 backdrop-blur-xl">
+      <header className="hidden sticky top-0 z-30 border-b border-white/10 bg-[#0B1F3A]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <Link
             href="/"
@@ -526,7 +530,7 @@ export default function CareerCoachPage() {
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        v
       </span>
     </button>
 
@@ -640,7 +644,7 @@ export default function CareerCoachPage() {
           <div className="relative grid gap-8 lg:grid-cols-[1fr_330px] lg:items-center">
             <div>
               <div className="inline-flex rounded-full border border-purple-400/20 bg-purple-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
-                âœ¦ Personal Career Coach
+                œ¦ Personal Career Coach
               </div>
 
               <h1 className="mt-5 max-w-3xl text-4xl font-black leading-tight md:text-6xl">
@@ -841,7 +845,7 @@ export default function CareerCoachPage() {
 
                         {skill.status === "Completed" && (
                           <span className="rounded-lg bg-teal-500/10 px-2.5 py-1 text-[10px] font-black text-teal-300">
-                            âœ“ COMPLETED
+                            œ“ COMPLETED
                           </span>
                         )}
                       </div>
@@ -914,7 +918,7 @@ export default function CareerCoachPage() {
             {roadmap.length === 0 && (
               <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-10 text-center">
                 <div className="text-4xl">
-                  ðŸŽ¯
+                  Target
                 </div>
 
                 <h3 className="mt-4 text-xl font-black">
@@ -954,7 +958,7 @@ export default function CareerCoachPage() {
               href="/jobs"
               className="text-sm font-bold text-blue-600"
             >
-              View all jobs â†’
+              View all jobs †’
             </Link>
           </div>
 
@@ -1015,7 +1019,7 @@ export default function CareerCoachPage() {
         <section className="mt-10 rounded-3xl border border-blue-600/20 bg-blue-600/5 p-7 text-center md:p-10">
           <div className="mx-auto max-w-2xl">
             <div className="text-4xl">
-              ðŸš€
+              Roadmap
             </div>
 
             <h2 className="mt-4 text-3xl font-black">
@@ -1046,7 +1050,7 @@ export default function CareerCoachPage() {
         </section>
 
         <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
-          SkillTrack â€¢ Personalized Career Coach
+          SkillTrack * Personalized Career Coach
         </footer>
       </div>
     </main>

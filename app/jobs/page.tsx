@@ -1,9 +1,12 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { calculateSkillGap, UserSkill } from "../../lib/skillGap";
+import { cleanDisplayText } from "../../lib/text";
+import TopNav from "../../components/TopNav";
 
 type Job = {
   id: string;
@@ -27,6 +30,7 @@ type SortOption =
   | "az";
 
 export default function JobsPage() {
+  const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [skills, setSkills] = useState<UserSkill[]>([]);
   const [applications, setApplications] =
@@ -59,7 +63,7 @@ export default function JobsPage() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          window.location.href = "/login";
+            router.replace("/login");
           return;
         }
 
@@ -159,7 +163,7 @@ export default function JobsPage() {
     }
 
     loadData();
-  }, []);
+  }, [router]);
 
   /*
    * -----------------------------------------
@@ -382,8 +386,7 @@ export default function JobsPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        window.location.href =
-          "/login";
+        router.replace("/login");
         return;
       }
 
@@ -420,6 +423,7 @@ export default function JobsPage() {
         alert(
           `${job.title} added to your applications!`
         );
+        router.push("/applications");
       } else {
         alert(
           `${job.title} saved to your wishlist!`
@@ -467,9 +471,10 @@ export default function JobsPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
+      <TopNav />
       {/* NAVBAR */}
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+      <header className="hidden sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
             href="/"
@@ -505,7 +510,7 @@ export default function JobsPage() {
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        v
       </span>
     </button>
 
@@ -618,7 +623,7 @@ export default function JobsPage() {
             href="/"
             className="text-sm font-semibold text-blue-600 hover:text-blue-300"
           >
-            â† Back to Dashboard
+            &larr; Back to Dashboard
           </Link>
 
           <div className="mt-5 flex flex-col justify-between gap-6 md:flex-row md:items-end">
@@ -668,10 +673,6 @@ export default function JobsPage() {
             {/* SEARCH */}
 
             <div className="relative flex-1">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
-                ðŸ”Ž
-              </span>
-
               <input
                 value={search}
                 onChange={(event) =>
@@ -680,7 +681,7 @@ export default function JobsPage() {
                   )
                 }
                 placeholder="Search job title, company, skill..."
-                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] py-4 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-600/40"
+                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] py-4 pl-4 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-600/40"
               />
             </div>
 
@@ -694,7 +695,7 @@ export default function JobsPage() {
               }
               className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold transition hover:bg-white/10"
             >
-              âš™ Filters
+              Filters
             </button>
           </div>
 
@@ -757,7 +758,7 @@ export default function JobsPage() {
                   </option>
 
                   <option value="az">
-                    A â†’ Z
+                    A to Z
                   </option>
                 </select>
               </div>
@@ -814,7 +815,7 @@ export default function JobsPage() {
             0 && (
             <section className="mt-8 rounded-3xl border border-dashed border-white/10 bg-[#163456] p-12 text-center">
               <div className="text-5xl">
-                ðŸ”
+                Search
               </div>
 
               <h2 className="mt-5 text-2xl font-black">
@@ -880,16 +881,16 @@ export default function JobsPage() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0">
                             <p className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                              {job.company}
+                              {cleanDisplayText(job.company)}
                             </p>
 
                             <h2 className="mt-2 line-clamp-2 text-xl font-black leading-7">
-                              {job.title}
+                              {cleanDisplayText(job.title)}
                             </h2>
 
                             <p className="mt-2 text-xs text-slate-600">
-                              ðŸ“{" "}
-                              {job.location ||
+                              Location: {" "}
+                              {cleanDisplayText(job.location) ||
                                 "India"}
                             </p>
                           </div>
@@ -932,7 +933,7 @@ export default function JobsPage() {
                         {/* DESCRIPTION */}
 
                         <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
-                          {job.description ||
+                          {cleanDisplayText(job.description) ||
                             "Explore this opportunity and compare it with your current skill profile."}
                         </p>
 
@@ -975,9 +976,9 @@ export default function JobsPage() {
                                       }`}
                                     >
                                       {matched
-                                        ? "âœ“ "
+                                        ? "+ "
                                         : improving
-                                        ? "â†— "
+                                        ? "~ "
                                         : ""}
                                       {skill}
                                     </span>
@@ -1057,7 +1058,7 @@ export default function JobsPage() {
                             href={`/jobs/${job.id}`}
                             className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center text-xs font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
                           >
-                            ðŸ‘ View Details
+                            View Details
                           </Link>
 
                           {application ? (
@@ -1065,7 +1066,7 @@ export default function JobsPage() {
                               href="/applications"
                               className="rounded-xl bg-teal-500/10 px-3 py-3 text-center text-xs font-bold text-teal-300 transition hover:bg-teal-500/20"
                             >
-                              âœ“{" "}
+                              Status: {" "}
                               {
                                 application.status
                               }
@@ -1086,7 +1087,7 @@ export default function JobsPage() {
                               {actionId ===
                               `Applied-${job.id}`
                                 ? "Applying..."
-                                : "Apply Now â†’"}
+                                : "Apply Now"}
                             </button>
                           )}
                         </div>
@@ -1114,8 +1115,8 @@ export default function JobsPage() {
                             `Wishlist-${job.id}`
                               ? "Saving..."
                               : isWishlist
-                              ? "â™¡ In Wishlist"
-                              : "â™¡ Add to Wishlist"}
+                              ? "In Wishlist"
+                              : "Add to Wishlist"}
                           </button>
                         )}
                       </div>
@@ -1163,7 +1164,7 @@ export default function JobsPage() {
               href="/recommendations"
               className="rounded-xl bg-purple-400 px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-purple-300"
             >
-              ðŸ§  AI Career Recommendations
+              AI Career Recommendations
             </Link>
           </div>
         </section>

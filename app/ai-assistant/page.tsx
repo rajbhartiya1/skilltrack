@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import TopNav from "../../components/TopNav";
 import {
   calculateSkillGap,
   UserSkill,
@@ -44,10 +45,6 @@ export default function AIAssistantPage() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [thinking, setThinking] = useState(false);
-
-  useEffect(() => {
-    loadContext();
-  }, []);
 
   async function loadContext() {
     setLoading(true);
@@ -141,6 +138,12 @@ export default function AIAssistantPage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadContext();
+    });
+  }, []);
 
   const analysis = useMemo(() => {
     if (!skills.length || !jobs.length) {
@@ -344,7 +347,7 @@ Don't try to learn everything at once. Pick one high-impact skill, build a proje
         .slice(0, 5)
         .map(
           (job, index) =>
-            `${index + 1}. **${job.title}** â€” ${job.company}`
+            `${index + 1}. **${job.title}** - ${job.company}`
         )
         .join("\n");
 
@@ -374,7 +377,7 @@ Add accurate proficiency levels for every skill.
 Focus on the skills repeatedly requested by your target jobs.
 
 **3. Build proof**
-Create 2â€“3 projects that demonstrate those skills.
+Create 2-3 projects that demonstrate those skills.
 
 **4. Improve your resume**
 Use Resume Analyzer to identify missing skills and ATS issues.
@@ -396,7 +399,7 @@ Your current target direction is **${analysis.bestCareer}**.
 
 Your resume should clearly include:
 - Your strongest technical skills
-- 2â€“3 relevant projects
+- 2-3 relevant projects
 - Technologies used in each project
 - Measurable project outcomes
 - GitHub or portfolio links
@@ -411,7 +414,7 @@ Use **Resume Analyzer** in the AI Career menu to check your ATS readiness.`;
     ) {
       return `For interview preparation, I recommend this sequence:
 
-**Step 1:** Choose your target career â€” ${analysis.bestCareer}
+**Step 1:** Choose your target career - ${analysis.bestCareer}
 
 **Step 2:** Revise your strongest skills:
 ${analysis.matched.length ? analysis.matched.slice(0, 5).join(", ") : "Your current skills"}
@@ -453,7 +456,7 @@ Current pipeline:
         ).length
       }
 
-Keep your strongest opportunities moving from Applied â†’ Interview â†’ Offer.`;
+Keep your strongest opportunities moving from Applied †’ Interview †’ Offer.`;
     }
 
     return `Based on your current profile, I can help you with:
@@ -630,11 +633,18 @@ Use these calculated SkillTrack match percentages and job requirements when answ
 Do not claim that job requirements are unavailable when they are provided above.
 `;
 
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(
+        () => controller.abort(),
+        6000
+      );
+
       const response = await fetch("/api/ai-career", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({
           question: text,
           context,
@@ -644,6 +654,8 @@ Do not claim that job requirements are unavailable when they are provided above.
           ],
         }),
       });
+
+      window.clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -669,8 +681,7 @@ Do not claim that job requirements are unavailable when they are provided above.
         ...current,
         {
           role: "assistant",
-          text:
-            "I'm having trouble connecting to the AI service right now. Please check your API configuration and try again.",
+          text: generateAnswer(text),
         },
       ]);
     } finally {
@@ -704,9 +715,10 @@ Do not claim that job requirements are unavailable when they are provided above.
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
+      <TopNav />
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+      <header className="hidden sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
           <Link
@@ -1182,7 +1194,7 @@ Do not claim that job requirements are unavailable when they are provided above.
               </p>
 
               <div className="mt-4 text-sm font-bold text-blue-300">
-                Open Career Coach â†’
+                Open Career Coach †’
               </div>
 
             </Link>

@@ -1,10 +1,12 @@
 ﻿"use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -14,18 +16,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    checkExistingSession();
-  }, []);
-
-  async function checkExistingSession() {
+  const checkExistingSession = useCallback(async () => {
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (session?.user) {
-        window.location.href = "/";
+        router.replace("/profile");
         return;
       }
     } catch (err) {
@@ -33,7 +31,11 @@ export default function LoginPage() {
     } finally {
       setCheckingSession(false);
     }
-  }
+  }, [router]);
+
+  useEffect(() => {
+    void checkExistingSession();
+  }, [checkExistingSession]);
 
   function getFriendlyError(errorMessage: string) {
     const message = errorMessage.toLowerCase();
@@ -114,7 +116,7 @@ export default function LoginPage() {
 
       setMessage("Login successful. Redirecting...");
 
-      window.location.href = "/";
+      router.replace("/profile");
     } catch (err) {
       console.error("Login error:", err);
 

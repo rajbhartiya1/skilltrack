@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ChangeEvent, useMemo, useState } from "react";
 import Link from "next/link";
@@ -326,7 +326,7 @@ export default function ResumeAnalyzerPage() {
       !safeText.toLowerCase().includes("project")
     ) {
       suggestions.push(
-        "Add 2â€“3 strong projects with technologies and measurable outcomes."
+        "Add 2-3 strong projects with technologies and measurable outcomes."
       );
     }
 
@@ -421,7 +421,7 @@ export default function ResumeAnalyzerPage() {
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        v
       </span>
     </button>
 
@@ -534,7 +534,7 @@ export default function ResumeAnalyzerPage() {
 
           <div className="relative">
             <div className="inline-flex rounded-full border border-blue-600/20 bg-blue-600/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
-              âœ¦ AI Resume Intelligence
+              œ¦ AI Resume Intelligence
             </div>
 
             <h1 className="mt-5 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
@@ -672,7 +672,7 @@ export default function ResumeAnalyzerPage() {
                   </p>
 
                   <p className="mt-3 text-xs text-slate-600">
-                    TXT â€¢ PDF â€¢ DOC â€¢ DOCX
+                    TXT * PDF * DOC * DOCX
                   </p>
                 </>
               )}
@@ -689,7 +689,7 @@ export default function ResumeAnalyzerPage() {
               >
                 {loading
                   ? "Analyzing..."
-                  : "Analyze Resume â†’"}
+                  : "Analyze Resume †’"}
               </button>
 
               {fileName && (
@@ -788,7 +788,7 @@ export default function ResumeAnalyzerPage() {
                         key={skill}
                         className="rounded-xl bg-teal-500/10 px-4 py-2.5 text-sm font-semibold text-teal-300"
                       >
-                        âœ“ {skill}
+                        œ“ {skill}
                       </span>
                     )
                   )}
@@ -849,7 +849,7 @@ export default function ResumeAnalyzerPage() {
                         className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 text-sm leading-6 text-slate-400"
                       >
                         <span className="mr-2 text-teal-400">
-                          âœ“
+                          œ“
                         </span>
 
                         {item}
@@ -976,7 +976,7 @@ export default function ResumeAnalyzerPage() {
         )}
 
         <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
-          SkillTrack â€¢ AI Resume Intelligence
+          SkillTrack * AI Resume Intelligence
         </footer>
       </div>
     </main>

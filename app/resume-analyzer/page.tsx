@@ -10,6 +10,7 @@ import {
 } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import TopNav from "../../components/TopNav";
 import {
   calculateSkillGap,
   UserSkill,
@@ -93,10 +94,6 @@ export default function ResumeAnalyzerPage() {
   const [result, setResult] =
     useState<AnalysisResult | null>(null);
   const [copied, setCopied] = useState("");
-
-  useEffect(() => {
-    loadContext();
-  }, []);
 
   async function loadContext() {
     setLoading(true);
@@ -204,6 +201,12 @@ export default function ResumeAnalyzerPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadContext();
+    });
+  }, []);
 
   const careerOptions = useMemo(() => {
     const fromJobs = jobs
@@ -482,7 +485,8 @@ export default function ResumeAnalyzerPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+      <TopNav />
+      <header className="hidden sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
             href="/"
@@ -1174,7 +1178,7 @@ export default function ResumeAnalyzerPage() {
               <p className="font-bold">Keyword Alignment</p>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Measures how strongly your resume matches
-                the selected career's required skills.
+                the selected career&apos;s required skills.
               </p>
             </div>
 

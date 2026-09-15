@@ -1,191 +1,189 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../lib/supabase";
+import { useEffect, useRef, useState } from "react";
 
-export default function SignupPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+const aiCareerItems = [
+  {
+    name: "AI Career Assistant",
+    href: "/ai-assistant",
+    description: "Ask personalized career questions",
+  },
+  {
+    name: "Career Recommendations",
+    href: "/recommendations",
+    description: "Find careers that match your skills",
+  },
+  {
+    name: "Skill Gap Analysis",
+    href: "/skill-gap",
+    description: "Discover missing and weak skills",
+  },
+  {
+    name: "Career Coach",
+    href: "/career-coach",
+    description: "Build your career roadmap",
+  },
+  {
+    name: "Resume Analyzer",
+    href: "/resume-analyzer",
+    description: "Check ATS score and improve your resume",
+  },
+  {
+    name: "Interview Coach",
+    href: "/interview-coach",
+    description: "Practice role-specific interviews",
+  },
+];
 
-  async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+export default function TopNav() {
+  const [aiOpen, setAiOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-    setLoading(true);
-    setMessage("");
-    setError("");
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent) {
+      const target = event.target as Node;
 
-    if (!name.trim()) {
-      setError("Please enter your full name.");
-      setLoading(false);
-      return;
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target)
+      ) {
+        setAiOpen(false);
+      }
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      setLoading(false);
-      return;
-    }
+    document.addEventListener("mousedown", handleOutsideClick);
 
-    try {
-      const { data, error: signupError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-      });
-
-      if (signupError) {
-        setError(signupError.message);
-        setLoading(false);
-        return;
-      }
-
-      if (!data.user) {
-        setError("Account could not be created.");
-        setLoading(false);
-        return;
-      }
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .upsert({
-          id: data.user.id,
-          full_name: name.trim(),
-          skills: [],
-          bio: "",
-        });
-
-      if (profileError) {
-        console.error("Profile error:", profileError.message);
-        setError(
-          "Account created, but profile could not be saved. Please try logging in."
-        );
-        setLoading(false);
-        return;
-      }
-
-      setMessage(
-        "Account created successfully! Check your email if confirmation is required."
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
       );
-
-      setName("");
-      setEmail("");
-      setPassword("");
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
-    }
-
-    setLoading(false);
-  }
+    };
+  }, []);
 
   return (
-    <main className="min-h-screen bg-[#0B1F3A] px-5 py-10 text-white">
-      <div className="mx-auto flex min-h-[90vh] max-w-md items-center justify-center">
-        <div className="w-full rounded-3xl border border-white/10 bg-[#163456] p-7 shadow-2xl md:p-9">
-          
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-300"
-          >
-            â† SkillTrack
-          </Link>
+    <header className="sticky top-0 z-[100] border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+      <div className="mx-auto flex min-h-[72px] w-full max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-6">
 
-          <div className="mt-8">
-            <h1 className="text-3xl font-bold">
-              Create your account
-            </h1>
+        {/* LOGO */}
+        <Link
+          href="/"
+          className="shrink-0 whitespace-nowrap text-xl font-black tracking-tight text-white sm:text-2xl"
+        >
+          Skill
+          <span className="text-blue-500">Track</span>
+        </Link>
 
-            <p className="mt-2 text-sm text-slate-400">
-              Start tracking your skills and career progress.
-            </p>
-          </div>
+        {/* NAVIGATION */}
+        <div className="min-w-0 flex-1">
+          <nav className="scrollbar-none flex items-center justify-center gap-0.5 overflow-x-auto whitespace-nowrap sm:gap-1">
 
-          <form onSubmit={handleSignup} className="mt-8 space-y-5">
-            
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                Full Name
-              </label>
-
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
-                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-white outline-none placeholder:text-slate-600 focus:border-blue-600"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                Email
-              </label>
-
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-white outline-none placeholder:text-slate-600 focus:border-blue-600"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                Password
-              </label>
-
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
-                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-white outline-none placeholder:text-slate-600 focus:border-blue-600"
-                minLength={6}
-                required
-              />
-            </div>
-
-            {error && (
-              <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
-                {error}
-              </div>
-            )}
-
-            {message && (
-              <div className="rounded-xl border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-300">
-                {message}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-slate-950 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? "Creating account..." : "Create Account"}
-            </button>
-          </form>
-
-          <div className="mt-7 text-center text-sm text-slate-400">
-            Already have an account?{" "}
+            {/* DASHBOARD */}
             <Link
-              href="/login"
-              className="font-semibold text-blue-600 hover:text-blue-300"
+              href="/"
+              className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
             >
-              Login
+              Dashboard
             </Link>
-          </div>
+
+            {/* JOBS */}
+            <Link
+              href="/jobs"
+              className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
+            >
+              Jobs
+            </Link>
+
+            {/* AI CAREER */}
+            <div
+              ref={dropdownRef}
+              className="relative shrink-0"
+            >
+              <button
+                type="button"
+                onClick={() => setAiOpen((current) => !current)}
+                aria-expanded={aiOpen}
+                aria-haspopup="menu"
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
+                  aiOpen
+                    ? "bg-blue-600/15 text-cyan-300"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <span>AI Career</span>
+
+                <span
+                  className={`text-[9px] text-slate-400 transition-transform duration-200 ${
+                    aiOpen ? "rotate-180" : ""
+                  }`}
+                  aria-hidden="true"
+                >
+                  ▼
+                </span>
+              </button>
+
+              {/* DROPDOWN */}
+              {aiOpen && (
+                <div
+                  role="menu"
+                  className="absolute left-1/2 top-full mt-2 w-[290px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/10 bg-[#10294A] p-2 shadow-2xl shadow-black/40 sm:w-[330px]"
+                >
+                  {/* HEADER */}
+                  <div className="px-3 pb-2 pt-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-400">
+                      AI CAREER TOOLS
+                    </p>
+                  </div>
+
+                  {/* ITEMS */}
+                  {aiCareerItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      role="menuitem"
+                      onClick={() => setAiOpen(false)}
+                      className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                    >
+                      <p className="text-sm font-semibold text-white">
+                        {item.name}
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-400">
+                        {item.description}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* APPLICATIONS */}
+            <Link
+              href="/applications"
+              className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
+            >
+              Applications
+            </Link>
+
+            {/* PROFILE */}
+            <Link
+              href="/profile"
+              className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
+            >
+              Profile
+            </Link>
+          </nav>
         </div>
+
+        {/* UPDATE SKILLS */}
+        <Link
+          href="/skills"
+          className="shrink-0 whitespace-nowrap rounded-xl bg-blue-600 px-2.5 py-2.5 text-[10px] font-black text-white transition hover:bg-blue-500 sm:px-4 sm:text-sm"
+        >
+          Update Skills
+        </Link>
       </div>
-    </main>
+    </header>
   );
 }
-
-
