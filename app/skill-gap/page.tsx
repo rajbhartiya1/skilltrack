@@ -8,7 +8,6 @@ import {
   calculateSkillGap,
   UserSkill,
 } from "../../lib/skillGap";
-import TopNav from "../../components/TopNav";
 
 type Job = {
   id: string;
@@ -393,7 +392,6 @@ export default function SkillGapPage() {
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
       {/* SHARED RESPONSIVE NAVBAR */}
-      <TopNav />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
         {/* HEADER */}

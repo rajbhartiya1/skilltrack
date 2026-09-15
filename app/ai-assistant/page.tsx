@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-import TopNav from "../../components/TopNav";
 import {
   calculateSkillGap,
   UserSkill,
@@ -715,7 +714,6 @@ Do not claim that job requirements are unavailable when they are provided above.
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
-      <TopNav />
 
       {/* NAVBAR */}
       <header className="hidden sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">

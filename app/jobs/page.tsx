@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { calculateSkillGap, UserSkill } from "../../lib/skillGap";
 import { cleanDisplayText } from "../../lib/text";
-import TopNav from "../../components/TopNav";
 
 type Job = {
   id: string;
@@ -471,7 +470,6 @@ export default function JobsPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
-      <TopNav />
       {/* NAVBAR */}
 
       <header className="hidden sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">

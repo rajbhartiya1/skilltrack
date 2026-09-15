@@ -1,189 +1,233 @@
-"use client";
+﻿"use client";
 
+import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 
-const aiCareerItems = [
-  {
-    name: "AI Career Assistant",
-    href: "/ai-assistant",
-    description: "Ask personalized career questions",
-  },
-  {
-    name: "Career Recommendations",
-    href: "/recommendations",
-    description: "Find careers that match your skills",
-  },
-  {
-    name: "Skill Gap Analysis",
-    href: "/skill-gap",
-    description: "Discover missing and weak skills",
-  },
-  {
-    name: "Career Coach",
-    href: "/career-coach",
-    description: "Build your career roadmap",
-  },
-  {
-    name: "Resume Analyzer",
-    href: "/resume-analyzer",
-    description: "Check ATS score and improve your resume",
-  },
-  {
-    name: "Interview Coach",
-    href: "/interview-coach",
-    description: "Practice role-specific interviews",
-  },
-];
+export default function SignupPage() {
+  const router = useRouter();
 
-export default function TopNav() {
-  const [aiOpen, setAiOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  useEffect(() => {
-    function handleOutsideClick(event: MouseEvent) {
-      const target = event.target as Node;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(target)
-      ) {
-        setAiOpen(false);
-      }
+  async function handleSignup(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    setError("");
+    setMessage("");
+
+    const cleanName = fullName.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanName) {
+      setError("Please enter your full name.");
+      return;
     }
 
-    document.addEventListener("mousedown", handleOutsideClick);
+    if (!cleanEmail) {
+      setError("Please enter your email address.");
+      return;
+    }
 
-    return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleOutsideClick
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error: signupError } =
+        await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              full_name: cleanName,
+            },
+          },
+        });
+
+      if (signupError) {
+        setError(signupError.message);
+        return;
+      }
+
+      if (data.session) {
+        setMessage("Account created successfully. Redirecting...");
+
+        setTimeout(() => {
+          router.push("/");
+          router.refresh();
+        }, 700);
+
+        return;
+      }
+
+      setMessage(
+        "Account created successfully. You can now login."
       );
-    };
-  }, []);
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1200);
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <header className="sticky top-0 z-[100] border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[72px] w-full max-w-7xl items-center gap-2 px-3 sm:gap-4 sm:px-6">
+    <main className="min-h-screen bg-[#0B1F3A] px-4 py-10 text-white sm:px-6">
+      <div className="mx-auto flex min-h-[calc(100vh-80px)] max-w-md items-center justify-center">
+        <section className="w-full rounded-3xl border border-white/10 bg-[#10294A] p-6 shadow-2xl shadow-black/30 sm:p-8">
 
-        {/* LOGO */}
-        <Link
-          href="/"
-          className="shrink-0 whitespace-nowrap text-xl font-black tracking-tight text-white sm:text-2xl"
-        >
-          Skill
-          <span className="text-blue-500">Track</span>
-        </Link>
-
-        {/* NAVIGATION */}
-        <div className="min-w-0 flex-1">
-          <nav className="scrollbar-none flex items-center justify-center gap-0.5 overflow-x-auto whitespace-nowrap sm:gap-1">
-
-            {/* DASHBOARD */}
+          <div className="mb-8 text-center">
             <Link
               href="/"
-              className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
+              className="inline-block text-3xl font-black tracking-tight"
             >
-              Dashboard
+              Skill
+              <span className="text-blue-500">Track</span>
             </Link>
 
-            {/* JOBS */}
-            <Link
-              href="/jobs"
-              className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
-            >
-              Jobs
-            </Link>
+            <h1 className="mt-6 text-2xl font-black">
+              Create your account
+            </h1>
 
-            {/* AI CAREER */}
-            <div
-              ref={dropdownRef}
-              className="relative shrink-0"
-            >
-              <button
-                type="button"
-                onClick={() => setAiOpen((current) => !current)}
-                aria-expanded={aiOpen}
-                aria-haspopup="menu"
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
-                  aiOpen
-                    ? "bg-blue-600/15 text-cyan-300"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white"
-                }`}
+            <p className="mt-2 text-sm text-slate-400">
+              Start building your personalized career profile.
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleSignup}
+            className="space-y-5"
+          >
+            <div>
+              <label
+                htmlFor="fullName"
+                className="mb-2 block text-sm font-semibold text-slate-200"
               >
-                <span>AI Career</span>
+                Full Name
+              </label>
 
-                <span
-                  className={`text-[9px] text-slate-400 transition-transform duration-200 ${
-                    aiOpen ? "rotate-180" : ""
-                  }`}
-                  aria-hidden="true"
-                >
-                  ▼
-                </span>
-              </button>
-
-              {/* DROPDOWN */}
-              {aiOpen && (
-                <div
-                  role="menu"
-                  className="absolute left-1/2 top-full mt-2 w-[290px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/10 bg-[#10294A] p-2 shadow-2xl shadow-black/40 sm:w-[330px]"
-                >
-                  {/* HEADER */}
-                  <div className="px-3 pb-2 pt-2">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-400">
-                      AI CAREER TOOLS
-                    </p>
-                  </div>
-
-                  {/* ITEMS */}
-                  {aiCareerItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      role="menuitem"
-                      onClick={() => setAiOpen(false)}
-                      className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
-                    >
-                      <p className="text-sm font-semibold text-white">
-                        {item.name}
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-slate-400">
-                        {item.description}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
+              <input
+                id="fullName"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Enter your full name"
+                autoComplete="name"
+                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500"
+              />
             </div>
 
-            {/* APPLICATIONS */}
-            <Link
-              href="/applications"
-              className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
-            >
-              Applications
-            </Link>
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-semibold text-slate-200"
+              >
+                Email Address
+              </label>
 
-            {/* PROFILE */}
-            <Link
-              href="/profile"
-              className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
-            >
-              Profile
-            </Link>
-          </nav>
-        </div>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500"
+              />
+            </div>
 
-        {/* UPDATE SKILLS */}
-        <Link
-          href="/skills"
-          className="shrink-0 whitespace-nowrap rounded-xl bg-blue-600 px-2.5 py-2.5 text-[10px] font-black text-white transition hover:bg-blue-500 sm:px-4 sm:text-sm"
-        >
-          Update Skills
-        </Link>
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-semibold text-slate-200"
+              >
+                Password
+              </label>
+
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Minimum 6 characters"
+                autoComplete="new-password"
+                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="confirmPassword"
+                className="mb-2 block text-sm font-semibold text-slate-200"
+              >
+                Confirm Password
+              </label>
+
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) =>
+                  setConfirmPassword(e.target.value)
+                }
+                placeholder="Re-enter your password"
+                autoComplete="new-password"
+                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-blue-500"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-300">
+                {error}
+              </div>
+            )}
+
+            {message && (
+              <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
+                {message}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="min-h-12 w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Creating account..." : "Create Account"}
+            </button>
+          </form>
+
+          <div className="mt-7 text-center text-sm text-slate-400">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-bold text-blue-400 transition hover:text-cyan-300"
+            >
+              Login
+            </Link>
+          </div>
+        </section>
       </div>
-    </header>
+    </main>
   );
 }

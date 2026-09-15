@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import TopNav from "../../components/TopNav";
 
 type Difficulty = "Easy" | "Medium" | "Hard";
 
@@ -1214,7 +1213,6 @@ export default function InterviewCoachPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
-      <TopNav />
       {/* NAVBAR */}
 
       <header className="hidden sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/90 backdrop-blur-xl">

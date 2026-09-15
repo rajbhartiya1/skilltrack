@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
-import TopNav from "../../components/TopNav";
 
 type Skill = {
   name: string;
@@ -407,7 +406,6 @@ export default function SkillsPage() {
 
   return (
     <main className="min-h-screen bg-[#07111F] text-white">
-      <TopNav />
       <div className="flex min-h-screen">
         {/* SIDEBAR */}
         <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-[#0B1F3A] p-5 md:hidden">

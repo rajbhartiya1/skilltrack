@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
 import { calculateSkillGap, UserSkill } from "../../lib/skillGap";
-import TopNav from "../../components/TopNav";
 
 type Job = {
   id: string;
@@ -510,7 +509,6 @@ export default function RecommendationsPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
-      <TopNav />
       {/* NAVBAR */}
 
       <header className="hidden sticky top-0 z-30 border-b border-white/10 bg-[#0B1F3A]/90 backdrop-blur-xl">

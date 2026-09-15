@@ -10,7 +10,6 @@ import {
 } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
-import TopNav from "../../components/TopNav";
 import {
   calculateSkillGap,
   UserSkill,
@@ -485,7 +484,6 @@ export default function ResumeAnalyzerPage() {
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
-      <TopNav />
       <header className="hidden sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link

@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { getJobs } from "../lib/jobs";
 import { getApplications } from "../lib/applications";
-import TopNav from "../components/TopNav";
 import {
   calculateSkillGap,
   UserSkill,
@@ -66,7 +65,6 @@ export default function Dashboard() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -127,7 +125,6 @@ export default function Dashboard() {
       );
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [router]);
 
@@ -136,11 +133,6 @@ export default function Dashboard() {
       void loadDashboard();
     });
   }, [loadDashboard]);
-
-  async function handleRefresh() {
-    setRefreshing(true);
-    await loadDashboard();
-  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -403,175 +395,6 @@ export default function Dashboard() {
         backgroundColor: COLORS.navy,
       }}
     >
-      <TopNav />
-      <header
-        className="hidden sticky top-0 z-50 border-b border-white/10 backdrop-blur-xl"
-        style={{
-          backgroundColor:
-            "rgba(11,31,58,0.96)",
-        }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link
-            href="/"
-            className="text-2xl font-black tracking-tight"
-          >
-            Skill
-            <span
-              style={{
-                color: COLORS.blueLight,
-              }}
-            >
-              Track
-            </span>
-          </Link>
-
-          <nav className="hidden items-center gap-7 text-sm lg:flex">
-            <Link
-              href="/"
-              className="font-semibold"
-              style={{
-                color: COLORS.blueLight,
-              }}
-            >
-              Dashboard
-            </Link>
-
-            <Link
-              href="/jobs"
-              className="text-slate-300 transition hover:text-white"
-            >
-              Jobs
-            </Link>
-
-            <div className="group relative">
-              <button
-                type="button"
-                className="flex items-center gap-2 py-3 text-slate-300 transition hover:text-white"
-              >
-                AI Career
-                <span className="text-xs">
-                  v
-                </span>
-              </button>
-
-              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#10294A] p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
-                <Link
-                  href="/ai-assistant"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    AI Career Assistant
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400">
-                    Personalized career guidance
-                  </div>
-                </Link>
-
-                <Link
-                  href="/recommendations"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Career Recommendations
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400">
-                    Discover your best career paths
-                  </div>
-                </Link>
-
-                <Link
-                  href="/skill-gap"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Skill Gap Analysis
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400">
-                    Find missing and improving skills
-                  </div>
-                </Link>
-
-                <Link
-                  href="/career-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Career Coach
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400">
-                    Build your career roadmap
-                  </div>
-                </Link>
-
-                <Link
-                  href="/resume-analyzer"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Resume Analyzer
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400">
-                    Check ATS and resume quality
-                  </div>
-                </Link>
-
-                <Link
-                  href="/interview-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Interview Coach
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400">
-                    Practice role-based interviews
-                  </div>
-                </Link>
-              </div>
-            </div>
-
-            <Link
-              href="/applications"
-              className="text-slate-300 transition hover:text-white"
-            >
-              Applications
-            </Link>
-
-            <Link
-              href="/profile"
-              className="text-slate-300 transition hover:text-white"
-            >
-              Profile
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="hidden rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/10 disabled:opacity-50 sm:block"
-            >
-              {refreshing
-                ? "Refreshing..."
-                : "Refresh"}
-            </button>
-
-            <Link
-              href="/profile"
-              className="rounded-xl px-4 py-2 text-xs font-bold text-white"
-              style={{
-                backgroundColor:
-                  "rgba(37,99,235,0.18)",
-                border:
-                  "1px solid rgba(37,99,235,0.4)",
-              }}
-            >
-              {userName}
-            </Link>
-          </div>
-        </div>
-      </header>
 
       <div className="mx-auto max-w-7xl px-6 py-10">
         <section className="relative overflow-hidden rounded-3xl border border-white/10 p-8 md:p-10">
