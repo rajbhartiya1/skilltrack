@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -1208,16 +1208,16 @@ export default function InterviewCoachPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1F3A] text-white">
+    <main className="min-h-screen bg-[#07111f] text-white">
       {/* NAVBAR */}
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07111f]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <Link
             href="/"
             className="text-2xl font-black"
           >
-            Skill<span className="text-blue-600">
+            Skill<span className="text-cyan-400">
               Track
             </span>
           </Link>
@@ -1226,14 +1226,14 @@ export default function InterviewCoachPage() {
 
   <Link
     href="/"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Dashboard
   </Link>
 
   <Link
     href="/jobs"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Jobs
   </Link>
@@ -1242,19 +1242,19 @@ export default function InterviewCoachPage() {
 
     <button
       type="button"
-      className="flex items-center gap-2 py-3 transition hover:text-blue-600"
+      className="flex items-center gap-2 py-3 transition hover:text-cyan-400"
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        ▼
       </span>
     </button>
 
-    <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#10294A] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+    <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
 
       <Link
   href="/ai-assistant"
-  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
 >
   <div className="font-semibold text-white">
     AI Career Assistant
@@ -1265,7 +1265,7 @@ export default function InterviewCoachPage() {
 </Link>
 <Link
         href="/recommendations"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Career Recommendations
@@ -1277,7 +1277,7 @@ export default function InterviewCoachPage() {
 
       <Link
         href="/skill-gap"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Skill Gap Analysis
@@ -1289,7 +1289,7 @@ export default function InterviewCoachPage() {
 
       <Link
         href="/career-coach"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Career Coach
@@ -1301,7 +1301,7 @@ export default function InterviewCoachPage() {
 
       <Link
         href="/resume-analyzer"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Resume Analyzer
@@ -1313,7 +1313,7 @@ export default function InterviewCoachPage() {
 
       <Link
         href="/interview-coach"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Interview Coach
@@ -1328,14 +1328,14 @@ export default function InterviewCoachPage() {
 
   <Link
     href="/applications"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Applications
   </Link>
 
   <Link
     href="/profile"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Profile
   </Link>
@@ -1344,7 +1344,7 @@ export default function InterviewCoachPage() {
 
           <Link
             href="/jobs"
-            className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-slate-950"
+            className="rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950"
           >
             Find Jobs
           </Link>
@@ -1354,19 +1354,19 @@ export default function InterviewCoachPage() {
       <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
         {/* HERO */}
 
-        <section className="relative overflow-hidden rounded-[32px] border border-blue-600/20 bg-gradient-to-br from-cyan-500/10 via-[#101d35] to-purple-500/10 p-7 md:p-10">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-blue-600/10 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[32px] border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-[#101d35] to-purple-500/10 p-7 md:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl" />
 
           <div className="relative grid gap-8 lg:grid-cols-[1fr_320px] lg:items-center">
             <div>
-              <div className="inline-flex rounded-full border border-blue-600/20 bg-blue-600/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
-                âœ¦ AI Interview Intelligence
+              <div className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+                ✦ AI Interview Intelligence
               </div>
 
               <h1 className="mt-5 text-4xl font-black leading-tight md:text-6xl">
                 Practice.
                 <br />
-                <span className="text-blue-600">
+                <span className="text-cyan-400">
                   Perform.
                 </span>
                 <br />
@@ -1385,7 +1385,7 @@ export default function InterviewCoachPage() {
                 Interview readiness
               </p>
 
-              <p className="mt-3 text-6xl font-black text-blue-600">
+              <p className="mt-3 text-6xl font-black text-cyan-400">
                 {readiness}%
               </p>
 
@@ -1395,7 +1395,7 @@ export default function InterviewCoachPage() {
 
               <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-all"
+                  className="h-full rounded-full bg-cyan-400 transition-all"
                   style={{
                     width: `${readiness}%`,
                   }}
@@ -1418,7 +1418,7 @@ export default function InterviewCoachPage() {
               onChange={(event) =>
                 changeCareer(event.target.value)
               }
-              className="mt-4 w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-600"
+              className="mt-4 w-full rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-sm font-semibold text-white outline-none focus:border-cyan-400"
             >
               {Object.keys(careerData).map(
                 (item) => (
@@ -1458,7 +1458,7 @@ export default function InterviewCoachPage() {
                   className={`rounded-xl px-3 py-3 text-xs font-bold transition ${
                     difficulty === item
                       ? item === "Easy"
-                        ? "bg-teal-500 text-slate-950"
+                        ? "bg-emerald-400 text-slate-950"
                         : item === "Medium"
                           ? "bg-yellow-400 text-slate-950"
                           : "bg-red-400 text-white"
@@ -1475,8 +1475,8 @@ export default function InterviewCoachPage() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-blue-600/10 bg-blue-600/5 p-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-600">
+          <div className="rounded-3xl border border-cyan-400/10 bg-cyan-400/5 p-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
               Session
             </p>
 
@@ -1490,11 +1490,11 @@ export default function InterviewCoachPage() {
 
             <button
               onClick={startSession}
-              className="mt-5 w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-slate-950 hover:bg-blue-500"
+              className="mt-5 w-full rounded-xl bg-cyan-400 px-4 py-3 font-bold text-slate-950 hover:bg-cyan-300"
             >
               {started
                 ? "Restart Interview"
-                : "Start Interview â†’"}
+                : "Start Interview →"}
             </button>
           </div>
         </section>
@@ -1508,7 +1508,7 @@ export default function InterviewCoachPage() {
             <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-blue-600">
+                  <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
                     Question{" "}
                     {questionIndex + 1} /{" "}
                     {currentQuestions.length}
@@ -1523,7 +1523,7 @@ export default function InterviewCoachPage() {
                   className={`rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-wider ${
                     currentQuestion.difficulty ===
                     "Easy"
-                      ? "bg-teal-500/10 text-teal-300"
+                      ? "bg-emerald-400/10 text-emerald-300"
                       : currentQuestion.difficulty ===
                           "Medium"
                         ? "bg-yellow-400/10 text-yellow-300"
@@ -1559,7 +1559,7 @@ export default function InterviewCoachPage() {
                     setAnswer(event.target.value)
                   }
                   placeholder="Type your interview answer here..."
-                  className="min-h-[240px] w-full resize-none rounded-2xl border border-white/10 bg-[#0B1F3A] p-5 text-sm leading-7 text-white outline-none placeholder:text-slate-700 focus:border-blue-600/50"
+                  className="min-h-[240px] w-full resize-none rounded-2xl border border-white/10 bg-[#07111f] p-5 text-sm leading-7 text-white outline-none placeholder:text-slate-700 focus:border-cyan-400/50"
                 />
               </div>
 
@@ -1570,15 +1570,15 @@ export default function InterviewCoachPage() {
                   }
                   className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-400 hover:bg-white/10"
                 >
-                  ðŸ’¡ {showHint ? "Hide Hint" : "Show Hint"}
+                  💡 {showHint ? "Hide Hint" : "Show Hint"}
                 </button>
 
                 <button
                   onClick={submitAnswer}
                   disabled={!answer.trim()}
-                  className="ml-auto rounded-xl bg-blue-600 px-6 py-3 font-bold text-slate-950 hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="ml-auto rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Evaluate Answer â†’
+                  Evaluate Answer →
                 </button>
               </div>
 
@@ -1615,7 +1615,7 @@ export default function InterviewCoachPage() {
                       key={item}
                       className="flex gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3"
                     >
-                      <span className="font-black text-blue-600">
+                      <span className="font-black text-cyan-400">
                         0{index + 1}
                       </span>
 
@@ -1628,7 +1628,7 @@ export default function InterviewCoachPage() {
               </div>
 
               <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-teal-400">
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
                   Session Stats
                 </p>
 
@@ -1638,7 +1638,7 @@ export default function InterviewCoachPage() {
                       Average
                     </p>
 
-                    <p className="mt-1 text-2xl font-black text-blue-600">
+                    <p className="mt-1 text-2xl font-black text-cyan-400">
                       {averageScore}
                     </p>
                   </div>
@@ -1662,14 +1662,14 @@ export default function InterviewCoachPage() {
 
         {evaluation && !sessionComplete && (
           <section className="mt-7">
-            <div className="rounded-3xl border border-blue-600/20 bg-gradient-to-br from-cyan-500/10 via-[#0c1a2d] to-purple-500/5 p-6 md:p-8">
+            <div className="rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-[#0c1a2d] to-purple-500/5 p-6 md:p-8">
               <div className="flex flex-col gap-7 lg:flex-row">
                 <div className="flex shrink-0 flex-col items-center justify-center rounded-3xl border border-white/10 bg-black/10 p-7 lg:w-52">
                   <p className="text-xs uppercase tracking-widest text-slate-500">
                     Score
                   </p>
 
-                  <p className="mt-2 text-6xl font-black text-blue-600">
+                  <p className="mt-2 text-6xl font-black text-cyan-400">
                     {evaluation.score}
                   </p>
 
@@ -1679,7 +1679,7 @@ export default function InterviewCoachPage() {
                 </div>
 
                 <div className="flex-1">
-                  <p className="text-xs font-bold uppercase tracking-widest text-blue-600">
+                  <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
                     AI Evaluation
                   </p>
 
@@ -1723,7 +1723,7 @@ export default function InterviewCoachPage() {
 
               <div className="mt-8 grid gap-6 lg:grid-cols-3">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-teal-400">
+                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
                     Strengths
                   </p>
 
@@ -1732,9 +1732,9 @@ export default function InterviewCoachPage() {
                       (item) => (
                         <div
                           key={item}
-                          className="rounded-xl border border-emerald-400/10 bg-teal-500/5 p-4 text-sm leading-6 text-slate-400"
+                          className="rounded-xl border border-emerald-400/10 bg-emerald-400/5 p-4 text-sm leading-6 text-slate-400"
                         >
-                          âœ“ {item}
+                          ✓ {item}
                         </div>
                       )
                     )}
@@ -1779,7 +1779,7 @@ export default function InterviewCoachPage() {
 
                     {evaluation.missingPoints.length ===
                       0 && (
-                      <div className="rounded-xl border border-emerald-400/10 bg-teal-500/5 p-4 text-sm text-teal-300">
+                      <div className="rounded-xl border border-emerald-400/10 bg-emerald-400/5 p-4 text-sm text-emerald-300">
                         Excellent coverage!
                       </div>
                     )}
@@ -1800,12 +1800,12 @@ export default function InterviewCoachPage() {
               <div className="mt-6 flex justify-end">
                 <button
                   onClick={nextQuestion}
-                  className="rounded-xl bg-blue-600 px-6 py-3 font-bold text-slate-950 hover:bg-blue-500"
+                  className="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 hover:bg-cyan-300"
                 >
                   {questionIndex >=
                   currentQuestions.length - 1
-                    ? "Finish Interview â†’"
-                    : "Next Question â†’"}
+                    ? "Finish Interview →"
+                    : "Next Question →"}
                 </button>
               </div>
             </div>
@@ -1815,12 +1815,12 @@ export default function InterviewCoachPage() {
         {/* COMPLETE */}
 
         {sessionComplete && (
-          <section className="mt-8 rounded-[32px] border border-blue-600/20 bg-gradient-to-br from-cyan-500/10 via-[#0c1a2d] to-purple-500/10 p-7 text-center md:p-12">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-600/10 text-4xl">
-              ðŸ†
+          <section className="mt-8 rounded-[32px] border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-[#0c1a2d] to-purple-500/10 p-7 text-center md:p-12">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-cyan-400/10 text-4xl">
+              🏆
             </div>
 
-            <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+            <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
               Interview Complete
             </p>
 
@@ -1839,7 +1839,7 @@ export default function InterviewCoachPage() {
                   Average Score
                 </p>
 
-                <p className="mt-2 text-4xl font-black text-blue-600">
+                <p className="mt-2 text-4xl font-black text-cyan-400">
                   {averageScore}
                 </p>
               </div>
@@ -1868,7 +1868,7 @@ export default function InterviewCoachPage() {
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <button
                 onClick={restartSession}
-                className="rounded-xl bg-blue-600 px-6 py-3 font-bold text-slate-950"
+                className="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950"
               >
                 Practice Again
               </button>
@@ -1896,7 +1896,7 @@ export default function InterviewCoachPage() {
           <div className="grid gap-7 md:grid-cols-3">
             <div>
               <p className="text-3xl">
-                ðŸŽ¯
+                🎯
               </p>
 
               <h3 className="mt-4 font-black">
@@ -1910,7 +1910,7 @@ export default function InterviewCoachPage() {
 
             <div>
               <p className="text-3xl">
-                ðŸ“„
+                📄
               </p>
 
               <h3 className="mt-4 font-black">
@@ -1924,7 +1924,7 @@ export default function InterviewCoachPage() {
 
             <div>
               <p className="text-3xl">
-                ðŸš€
+                🚀
               </p>
 
               <h3 className="mt-4 font-black">
@@ -1939,10 +1939,9 @@ export default function InterviewCoachPage() {
         </section>
 
         <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
-          SkillTrack â€¢ AI Interview Intelligence
+          SkillTrack • AI Interview Intelligence
         </footer>
       </div>
     </main>
   );
 }
-

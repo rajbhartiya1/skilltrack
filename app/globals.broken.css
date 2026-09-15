@@ -1,0 +1,114 @@
+﻿@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* =========================================
+   SKILLTRACK BUTTER YELLOW THEME
+   ========================================= */
+
+@layer utilities {
+  .text-cyan-300 {
+    color: #F7E7A7 !important;
+  }
+
+  .text-cyan-400 {
+    color: #FFE9A8 !important;
+  }
+
+  .text-cyan-500 {
+    color: #E8C95A !important;
+  }
+
+  .bg-cyan-400 {
+    background-color: #F7E7A7 !important;
+  }
+
+  .bg-cyan-400\/5 {
+    background-color: rgb(247 231 167 / 0.05) !important;
+  }
+
+  .bg-cyan-400\/10 {
+    background-color: rgb(247 231 167 / 0.10) !important;
+  }
+
+  .bg-cyan-400\/15 {
+    background-color: rgb(247 231 167 / 0.15) !important;
+  }
+
+  .border-cyan-400\/10 {
+    border-color: rgb(247 231 167 / 0.10) !important;
+  }
+
+  .border-cyan-400\/20 {
+    border-color: rgb(247 231 167 / 0.20) !important;
+  }
+
+  .border-cyan-400\/30 {
+    border-color: rgb(247 231 167 / 0.30) !important;
+  }
+
+  .border-cyan-400\/40 {
+    border-color: rgb(247 231 167 / 0.40) !important;
+  }
+
+  .shadow-cyan-500\/5 {
+    --tw-shadow-color: rgb(247 231 167 / 0.05) !important;
+  }
+
+  .shadow-cyan-500\/10 {
+    --tw-shadow-color: rgb(247 231 167 / 0.10) !important;
+  }
+}
+
+/* =========================================
+   SKILLTRACK EGGSHELL WHITE BACKGROUND
+   ========================================= */
+
+html,
+body {
+  background: #F3EFE3 !important;
+}
+
+body {
+  color: #1F2937 !important;
+}
+
+/* Main page backgrounds */
+main[class~="bg-[#07111f]"],
+main[class~="bg-[#06101d]"] {
+  background: #F3EFE3 !important;
+  color: #1F2937 !important;
+}
+
+/* Common dark page wrappers */
+[class~="bg-[#07111f]"] {
+  background-color: #F3EFE3 !important;
+}
+
+[class~="bg-[#06101d]"] {
+  background-color: #F3EFE3 !important;
+}
+

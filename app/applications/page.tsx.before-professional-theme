@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { DragEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -248,10 +248,10 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1F3A] text-white">
+    <main className="min-h-screen bg-[#06101d] text-white">
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
           <Link
@@ -259,7 +259,7 @@ export default function ApplicationsPage() {
             className="text-2xl font-black tracking-tight"
           >
             Skill
-            <span className="text-blue-600">
+            <span className="text-cyan-400">
               Track
             </span>
           </Link>
@@ -268,14 +268,14 @@ export default function ApplicationsPage() {
 
             <Link
               href="/"
-              className="transition hover:text-blue-600"
+              className="transition hover:text-cyan-400"
             >
               Dashboard
             </Link>
 
             <Link
               href="/jobs"
-              className="transition hover:text-blue-600"
+              className="transition hover:text-cyan-400"
             >
               Jobs
             </Link>
@@ -284,20 +284,20 @@ export default function ApplicationsPage() {
 
               <button
                 type="button"
-                className="flex items-center gap-2 py-3 transition hover:text-blue-600"
+                className="flex items-center gap-2 py-3 transition hover:text-cyan-400"
               >
                 AI Career
 
                 <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-                  â–¼
+                  ▼
                 </span>
               </button>
 
-              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#10294A] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
 
                 <Link
   href="/ai-assistant"
-  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
 >
   <div className="font-semibold text-white">
     AI Career Assistant
@@ -308,7 +308,7 @@ export default function ApplicationsPage() {
 </Link>
 <Link
                   href="/recommendations"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Career Recommendations
@@ -321,7 +321,7 @@ export default function ApplicationsPage() {
 
                 <Link
                   href="/skill-gap"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Skill Gap Analysis
@@ -334,7 +334,7 @@ export default function ApplicationsPage() {
 
                 <Link
                   href="/career-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Career Coach
@@ -347,7 +347,7 @@ export default function ApplicationsPage() {
 
                 <Link
                   href="/resume-analyzer"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Resume Analyzer
@@ -360,7 +360,7 @@ export default function ApplicationsPage() {
 
                 <Link
                   href="/interview-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Interview Coach
@@ -376,14 +376,14 @@ export default function ApplicationsPage() {
 
             <Link
               href="/applications"
-              className="font-semibold text-blue-600"
+              className="font-semibold text-cyan-400"
             >
               Applications
             </Link>
 
             <Link
               href="/profile"
-              className="transition hover:text-blue-600"
+              className="transition hover:text-cyan-400"
             >
               Profile
             </Link>
@@ -392,7 +392,7 @@ export default function ApplicationsPage() {
 
           <Link
             href="/profile"
-            className="rounded-xl border border-blue-600/30 bg-blue-600/10 px-4 py-2 text-sm font-semibold text-blue-300 transition hover:bg-blue-600/20"
+            className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
           >
             My Profile
           </Link>
@@ -404,19 +404,19 @@ export default function ApplicationsPage() {
       <div className="mx-auto max-w-7xl px-6 py-10">
 
         {/* HERO */}
-        <section className="mb-8 rounded-3xl border border-blue-600/20 bg-gradient-to-br from-[#10294A] via-[#0B1F3A] to-[#163456] p-8 shadow-2xl shadow-cyan-500/5">
+        <section className="mb-8 rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-[#0b2030] via-[#0a1728] to-[#10142b] p-8 shadow-2xl shadow-cyan-500/5">
 
           <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
 
             <div className="max-w-3xl">
 
-              <div className="mb-4 inline-flex rounded-full border border-blue-600/20 bg-blue-600/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-300">
+              <div className="mb-4 inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">
                 Employment Tracker
               </div>
 
               <h1 className="text-4xl font-black tracking-tight md:text-5xl">
                 Track every opportunity.
-                <span className="block text-blue-600">
+                <span className="block text-cyan-400">
                   Move toward employment.
                 </span>
               </h1>
@@ -431,7 +431,7 @@ export default function ApplicationsPage() {
 
             <Link
               href="/jobs"
-              className="inline-flex shrink-0 items-center justify-center rounded-2xl bg-blue-600 px-6 py-4 font-bold text-slate-950 transition hover:bg-blue-500"
+              className="inline-flex shrink-0 items-center justify-center rounded-2xl bg-cyan-400 px-6 py-4 font-bold text-slate-950 transition hover:bg-cyan-300"
             >
               Explore Jobs
             </Link>
@@ -442,7 +442,7 @@ export default function ApplicationsPage() {
 
         {/* MESSAGE */}
         {message && (
-          <div className="mb-6 rounded-2xl border border-blue-600/20 bg-blue-600/10 px-5 py-4 text-sm text-blue-300">
+          <div className="mb-6 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-4 text-sm text-cyan-300">
             {message}
           </div>
         )}
@@ -450,7 +450,7 @@ export default function ApplicationsPage() {
         {/* STATS */}
         <section className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-          <div className="rounded-2xl border border-white/10 bg-[#10294A] p-6">
+          <div className="rounded-2xl border border-white/10 bg-[#0b1728] p-6">
             <p className="text-sm text-slate-500">
               Total Tracked
             </p>
@@ -464,12 +464,12 @@ export default function ApplicationsPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-[#10294A] p-6">
+          <div className="rounded-2xl border border-white/10 bg-[#0b1728] p-6">
             <p className="text-sm text-slate-500">
               Active Applications
             </p>
 
-            <p className="mt-2 text-4xl font-black text-blue-600">
+            <p className="mt-2 text-4xl font-black text-cyan-400">
               {activeApplications}
             </p>
 
@@ -478,7 +478,7 @@ export default function ApplicationsPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-[#10294A] p-6">
+          <div className="rounded-2xl border border-white/10 bg-[#0b1728] p-6">
             <p className="text-sm text-slate-500">
               Interview Rate
             </p>
@@ -492,12 +492,12 @@ export default function ApplicationsPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-[#10294A] p-6">
+          <div className="rounded-2xl border border-white/10 bg-[#0b1728] p-6">
             <p className="text-sm text-slate-500">
               Offer Rate
             </p>
 
-            <p className="mt-2 text-4xl font-black text-teal-400">
+            <p className="mt-2 text-4xl font-black text-emerald-400">
               {offerRate}%
             </p>
 
@@ -564,7 +564,7 @@ export default function ApplicationsPage() {
                   onDrop={(event) =>
                     handleDrop(event, column.status)
                   }
-                  className="min-h-[430px] rounded-3xl border border-white/10 bg-[#163456] p-4 transition hover:border-blue-600/20"
+                  className="min-h-[430px] rounded-3xl border border-white/10 bg-[#091524] p-4 transition hover:border-cyan-400/20"
                 >
 
                   {/* COLUMN HEADER */}
@@ -604,7 +604,7 @@ export default function ApplicationsPage() {
                             )
                           }
                           onDragEnd={handleDragEnd}
-                          className={`group cursor-grab rounded-2xl border border-white/10 bg-[#0d1c2e] p-4 shadow-lg transition hover:-translate-y-1 hover:border-blue-600/30 hover:bg-[#102238] active:cursor-grabbing ${
+                          className={`group cursor-grab rounded-2xl border border-white/10 bg-[#0d1c2e] p-4 shadow-lg transition hover:-translate-y-1 hover:border-cyan-400/30 hover:bg-[#102238] active:cursor-grabbing ${
                             draggedApplication?.id ===
                             application.id
                               ? "scale-[0.98] opacity-50"
@@ -621,14 +621,14 @@ export default function ApplicationsPage() {
                                   "Unknown Position"}
                               </h4>
 
-                              <p className="mt-1 truncate text-sm text-blue-300">
+                              <p className="mt-1 truncate text-sm text-cyan-300">
                                 {job?.company ||
                                   "Unknown Company"}
                               </p>
 
                             </div>
 
-                            <div className="text-slate-600 transition group-hover:text-blue-600">
+                            <div className="text-slate-600 transition group-hover:text-cyan-400">
                               ::
                             </div>
 
@@ -780,13 +780,13 @@ export default function ApplicationsPage() {
         )}
 
         {/* BOTTOM CTA */}
-        <section className="mt-10 rounded-3xl border border-white/10 bg-[#10294A] p-8">
+        <section className="mt-10 rounded-3xl border border-white/10 bg-[#0b1728] p-8">
 
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
 
             <div>
 
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                 Keep moving forward
               </p>
 
@@ -812,7 +812,7 @@ export default function ApplicationsPage() {
 
               <Link
                 href="/recommendations"
-                className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-blue-500"
+                className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300"
               >
                 AI Career
               </Link>

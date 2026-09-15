@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -380,11 +380,11 @@ export default function ProfilePage() {
     level: number
   ) {
     if (level >= 90) {
-      return "text-teal-300";
+      return "text-emerald-300";
     }
 
     if (level >= 70) {
-      return "text-blue-300";
+      return "text-cyan-300";
     }
 
     if (level >= 40) {
@@ -437,7 +437,7 @@ export default function ProfilePage() {
       }
 
       showMessage(
-        "Profile and skills saved successfully! ðŸŽ‰",
+        "Profile and skills saved successfully! 🎉",
         "success"
       );
     } catch (error) {
@@ -468,9 +468,9 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0B1F3A] text-white">
+      <main className="flex min-h-screen items-center justify-center bg-[#07111f] text-white">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600/20 border-t-cyan-400" />
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
 
           <p className="mt-5 text-sm text-slate-400">
             Loading your profile...
@@ -481,17 +481,17 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1F3A] text-white">
+    <main className="min-h-screen bg-[#07111f] text-white">
       {/* NAVBAR */}
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
             href="/"
             className="text-2xl font-black tracking-tight"
           >
             Skill
-            <span className="text-blue-600">
+            <span className="text-cyan-400">
               Track
             </span>
           </Link>
@@ -500,14 +500,14 @@ export default function ProfilePage() {
 
   <Link
     href="/"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Dashboard
   </Link>
 
   <Link
     href="/jobs"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Jobs
   </Link>
@@ -516,19 +516,19 @@ export default function ProfilePage() {
 
     <button
       type="button"
-      className="flex items-center gap-2 py-3 transition hover:text-blue-600"
+      className="flex items-center gap-2 py-3 transition hover:text-cyan-400"
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        ▼
       </span>
     </button>
 
-    <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#10294A] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+    <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
 
       <Link
   href="/ai-assistant"
-  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
 >
   <div className="font-semibold text-white">
     AI Career Assistant
@@ -539,7 +539,7 @@ export default function ProfilePage() {
 </Link>
 <Link
         href="/recommendations"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Career Recommendations
@@ -551,7 +551,7 @@ export default function ProfilePage() {
 
       <Link
         href="/skill-gap"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Skill Gap Analysis
@@ -563,7 +563,7 @@ export default function ProfilePage() {
 
       <Link
         href="/career-coach"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Career Coach
@@ -575,7 +575,7 @@ export default function ProfilePage() {
 
       <Link
         href="/resume-analyzer"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Resume Analyzer
@@ -587,7 +587,7 @@ export default function ProfilePage() {
 
       <Link
         href="/interview-coach"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Interview Coach
@@ -602,14 +602,14 @@ export default function ProfilePage() {
 
   <Link
     href="/applications"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Applications
   </Link>
 
   <Link
     href="/profile"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Profile
   </Link>
@@ -634,13 +634,13 @@ export default function ProfilePage() {
         <section>
           <Link
             href="/"
-            className="text-sm font-semibold text-blue-600 hover:text-blue-300"
+            className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
           >
-            â† Back to Dashboard
+            ← Back to Dashboard
           </Link>
 
           <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-blue-600">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-400">
               CAREER PROFILE
             </p>
 
@@ -662,7 +662,7 @@ export default function ProfilePage() {
           <div
             className={`mt-6 rounded-2xl border p-4 text-sm font-semibold ${
               messageType === "success"
-                ? "border-teal-500/20 bg-teal-500/10 text-teal-300"
+                ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-300"
                 : "border-red-400/20 bg-red-400/10 text-red-300"
             }`}
           >
@@ -673,22 +673,22 @@ export default function ProfilePage() {
         {/* PROFILE SUMMARY */}
 
         <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-blue-600/10 bg-[#163456] p-6">
+          <div className="rounded-2xl border border-cyan-400/10 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-500">
               Total Skills
             </p>
 
-            <p className="mt-3 text-4xl font-black text-blue-600">
+            <p className="mt-3 text-4xl font-black text-cyan-400">
               {skills.length}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-emerald-400/10 bg-[#163456] p-6">
+          <div className="rounded-2xl border border-emerald-400/10 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-500">
               Strong Skills
             </p>
 
-            <p className="mt-3 text-4xl font-black text-teal-400">
+            <p className="mt-3 text-4xl font-black text-emerald-400">
               {strongSkills}
             </p>
 
@@ -697,7 +697,7 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-yellow-400/10 bg-[#163456] p-6">
+          <div className="rounded-2xl border border-yellow-400/10 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-500">
               Developing
             </p>
@@ -707,11 +707,11 @@ export default function ProfilePage() {
             </p>
 
             <p className="mt-1 text-xs text-slate-600">
-              40â€“69% proficiency
+              40–69% proficiency
             </p>
           </div>
 
-          <div className="rounded-2xl border border-purple-400/10 bg-[#163456] p-6">
+          <div className="rounded-2xl border border-purple-400/10 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-500">
               Average Level
             </p>
@@ -724,7 +724,7 @@ export default function ProfilePage() {
 
         {/* PERSONAL INFORMATION */}
 
-        <section className="mt-6 rounded-3xl border border-white/10 bg-[#163456] p-7">
+        <section className="mt-6 rounded-3xl border border-white/10 bg-[#0d1b2e] p-7">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
               PERSONAL INFORMATION
@@ -749,7 +749,7 @@ export default function ProfilePage() {
                   )
                 }
                 placeholder="Enter your full name"
-                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-700 focus:border-blue-600/40"
+                className="w-full rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-400/40"
               />
             </div>
 
@@ -779,7 +779,7 @@ export default function ProfilePage() {
                 }
                 rows={5}
                 placeholder="Tell employers about your interests, experience and career goals..."
-                className="w-full resize-none rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-slate-700 focus:border-blue-600/40"
+                className="w-full resize-none rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-sm leading-6 text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-400/40"
               />
             </div>
           </div>
@@ -787,9 +787,9 @@ export default function ProfilePage() {
 
         {/* ADD SKILL */}
 
-        <section className="mt-6 rounded-3xl border border-blue-600/20 bg-gradient-to-br from-cyan-400/10 via-[#0d1b2e] to-purple-500/10 p-7">
+        <section className="mt-6 rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/10 via-[#0d1b2e] to-purple-500/10 p-7">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
               SKILL BUILDER
             </p>
 
@@ -822,7 +822,7 @@ export default function ProfilePage() {
                   }
                 }}
                 placeholder="e.g. React, Python, SQL..."
-                className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-700 focus:border-blue-600/40"
+                className="w-full rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-sm text-white outline-none placeholder:text-slate-700 focus:border-cyan-400/40"
               />
             </div>
 
@@ -865,7 +865,7 @@ export default function ProfilePage() {
 
             <button
               onClick={() => addSkill()}
-              className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-black text-slate-950 transition hover:bg-blue-500"
+              className="rounded-xl bg-cyan-400 px-6 py-3 text-sm font-black text-slate-950 transition hover:bg-cyan-300"
             >
               + Add Skill
             </button>
@@ -893,7 +893,7 @@ export default function ProfilePage() {
                   )
                 }
                 placeholder="Search skills..."
-                className="rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-2.5 text-xs text-white outline-none placeholder:text-slate-700 focus:border-blue-600/40"
+                className="rounded-xl border border-white/10 bg-[#07111f] px-4 py-2.5 text-xs text-white outline-none placeholder:text-slate-700 focus:border-cyan-400/40"
               />
             </div>
 
@@ -905,7 +905,7 @@ export default function ProfilePage() {
                     onClick={() =>
                       addSkill(skill)
                     }
-                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-400 transition hover:border-blue-600/30 hover:bg-blue-600/10 hover:text-blue-300"
+                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-400 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300"
                   >
                     + {skill}
                   </button>
@@ -924,7 +924,7 @@ export default function ProfilePage() {
 
         {/* SKILL LIST */}
 
-        <section className="mt-6 rounded-3xl border border-white/10 bg-[#163456] p-7">
+        <section className="mt-6 rounded-3xl border border-white/10 bg-[#0d1b2e] p-7">
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-purple-300">
@@ -950,7 +950,7 @@ export default function ProfilePage() {
             {skills.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center">
                 <div className="text-4xl">
-                  ðŸ§ 
+                  🧠
                 </div>
 
                 <p className="mt-4 font-bold">
@@ -1064,7 +1064,7 @@ export default function ProfilePage() {
                         Number(
                           skill.level
                         ) >= 70
-                          ? "bg-blue-600"
+                          ? "bg-cyan-400"
                           : Number(
                               skill.level
                             ) >= 40
@@ -1092,10 +1092,10 @@ export default function ProfilePage() {
 
         {/* SAVE */}
 
-        <section className="mt-6 rounded-3xl border border-teal-500/20 bg-gradient-to-r from-emerald-400/10 via-[#0d1b2e] to-cyan-400/10 p-7">
+        <section className="mt-6 rounded-3xl border border-emerald-400/20 bg-gradient-to-r from-emerald-400/10 via-[#0d1b2e] to-cyan-400/10 p-7">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-400">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
                 PROFILE SYNC
               </p>
 
@@ -1112,11 +1112,11 @@ export default function ProfilePage() {
             <button
               onClick={saveProfile}
               disabled={saving}
-              className="rounded-xl bg-teal-500 px-7 py-4 text-sm font-black text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-emerald-400 px-7 py-4 text-sm font-black text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving
                 ? "Saving Profile..."
-                : "Save Profile âœ“"}
+                : "Save Profile ✓"}
             </button>
           </div>
         </section>
@@ -1129,7 +1129,7 @@ export default function ProfilePage() {
             className="rounded-2xl border border-red-400/10 bg-red-400/5 p-6 transition hover:border-red-400/30"
           >
             <p className="text-2xl">
-              ðŸŽ¯
+              🎯
             </p>
 
             <h3 className="mt-3 font-black">
@@ -1146,7 +1146,7 @@ export default function ProfilePage() {
             className="rounded-2xl border border-purple-400/10 bg-purple-400/5 p-6 transition hover:border-purple-400/30"
           >
             <p className="text-2xl">
-              ðŸ§ 
+              🧠
             </p>
 
             <h3 className="mt-3 font-black">
@@ -1160,10 +1160,10 @@ export default function ProfilePage() {
 
           <Link
             href="/jobs"
-            className="rounded-2xl border border-blue-600/10 bg-blue-600/5 p-6 transition hover:border-blue-600/30"
+            className="rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-6 transition hover:border-cyan-400/30"
           >
             <p className="text-2xl">
-              ðŸ’¼
+              💼
             </p>
 
             <h3 className="mt-3 font-black">
@@ -1179,4 +1179,3 @@ export default function ProfilePage() {
     </main>
   );
 }
-

@@ -1,0 +1,984 @@
+"use client";
+
+import { ChangeEvent, useMemo, useState } from "react";
+import Link from "next/link";
+import { calculateSkillGap } from "../../lib/skillGap";
+
+type Analysis = {
+  atsScore: number;
+  skillMatch: number;
+  matchedSkills: string[];
+  missingSkills: string[];
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: string[];
+};
+
+const careerSkills: Record<string, string[]> = {
+  "Frontend Developer": [
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "React",
+    "TypeScript",
+    "Git",
+    "Tailwind CSS",
+  ],
+  "Backend Developer": [
+    "Node.js",
+    "Express",
+    "JavaScript",
+    "TypeScript",
+    "SQL",
+    "MongoDB",
+    "Git",
+  ],
+  "Full Stack Developer": [
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "React",
+    "Node.js",
+    "SQL",
+    "MongoDB",
+    "Git",
+  ],
+  "Data Analyst": [
+    "Python",
+    "SQL",
+    "Excel",
+    "Power BI",
+    "Tableau",
+    "Statistics",
+  ],
+  "AI / ML Engineer": [
+    "Python",
+    "Machine Learning",
+    "Deep Learning",
+    "TensorFlow",
+    "PyTorch",
+    "SQL",
+  ],
+  "Cloud / DevOps Engineer": [
+    "Linux",
+    "AWS",
+    "Docker",
+    "Kubernetes",
+    "Git",
+    "CI/CD",
+  ],
+  "Cybersecurity Engineer": [
+    "Linux",
+    "Networking",
+    "Cybersecurity",
+    "Python",
+    "Ethical Hacking",
+    "Cloud Security",
+  ],
+  "UI/UX Designer": [
+    "Figma",
+    "UI Design",
+    "UX Design",
+    "Wireframing",
+    "Prototyping",
+    "User Research",
+  ],
+};
+
+function extractText(file: File) {
+  return new Promise<string>((resolve) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result);
+    };
+
+    reader.onerror = () => resolve("");
+
+    reader.readAsText(file);
+  });
+}
+
+function containsSkill(text: string, skill: string) {
+  const cleanText = text.toLowerCase();
+  const cleanSkill = skill.toLowerCase();
+
+  return cleanText.includes(cleanSkill);
+}
+
+function calculateATSScore(
+  text: string,
+  matchedCount: number,
+  totalSkills: number
+) {
+  if (!text.trim()) {
+    return 0;
+  }
+
+  let score = 30;
+
+  if (text.length >= 500) {
+    score += 10;
+  }
+
+  if (text.length >= 1000) {
+    score += 10;
+  }
+
+  const sections = [
+    "experience",
+    "education",
+    "skills",
+    "project",
+    "projects",
+    "summary",
+    "contact",
+  ];
+
+  sections.forEach((section) => {
+    if (text.toLowerCase().includes(section)) {
+      score += 5;
+    }
+  });
+
+  if (totalSkills > 0) {
+    score += Math.round(
+      (matchedCount / totalSkills) * 20
+    );
+  }
+
+  return Math.min(100, score);
+}
+
+export default function ResumeAnalyzerPage() {
+  const [career, setCareer] = useState(
+    "Frontend Developer"
+  );
+
+  const [fileName, setFileName] = useState("");
+  const [resumeText, setResumeText] = useState("");
+  const [analysis, setAnalysis] =
+    useState<Analysis | null>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  const requiredSkills = useMemo(() => {
+    return careerSkills[career] || [];
+  }, [career]);
+
+  async function processFile(file: File) {
+    setLoading(true);
+    setAnalysis(null);
+
+    setFileName(file.name);
+
+    let text = "";
+
+    if (
+      file.type === "text/plain" ||
+      file.name.toLowerCase().endsWith(".txt")
+    ) {
+      text = await extractText(file);
+    } else {
+      /*
+       * Browser-only fallback for PDF/DOC files.
+       * The file name and basic resume analysis are still used.
+       */
+      text = file.name;
+    }
+
+    setResumeText(text);
+
+    analyzeResume(text);
+
+    setLoading(false);
+  }
+
+  function analyzeResume(text: string) {
+    const safeText = text || "";
+
+    const userSkills = requiredSkills
+      .filter((skill) =>
+        containsSkill(safeText, skill)
+      )
+      .map((skill) => ({
+        name: skill,
+        level: 70,
+      }));
+
+    const gap = calculateSkillGap(
+      userSkills,
+      requiredSkills
+    );
+
+    const atsScore = calculateATSScore(
+      safeText,
+      gap.matchedSkills.length,
+      requiredSkills.length
+    );
+
+    const strengths: string[] = [];
+
+    if (gap.matchedSkills.length > 0) {
+      strengths.push(
+        `Your resume contains ${gap.matchedSkills.length} relevant skill${
+          gap.matchedSkills.length === 1
+            ? ""
+            : "s"
+        } for ${career}.`
+      );
+    }
+
+    if (
+      safeText.toLowerCase().includes("project") ||
+      safeText.toLowerCase().includes("projects")
+    ) {
+      strengths.push(
+        "Your resume mentions project experience."
+      );
+    }
+
+    if (
+      safeText.toLowerCase().includes("experience")
+    ) {
+      strengths.push(
+        "Your resume contains an experience section."
+      );
+    }
+
+    if (
+      safeText.toLowerCase().includes("education")
+    ) {
+      strengths.push(
+        "Your educational background is included."
+      );
+    }
+
+    if (strengths.length === 0) {
+      strengths.push(
+        "Upload a detailed resume to identify stronger profile signals."
+      );
+    }
+
+    const weaknesses: string[] = [];
+
+    if (gap.missingSkills.length > 0) {
+      weaknesses.push(
+        `Missing important skills: ${gap.missingSkills
+          .slice(0, 4)
+          .join(", ")}.`
+      );
+    }
+
+    if (safeText.length < 500) {
+      weaknesses.push(
+        "Your resume appears too short for a strong ATS profile."
+      );
+    }
+
+    if (
+      !safeText.toLowerCase().includes("project")
+    ) {
+      weaknesses.push(
+        "Project experience is not clearly visible."
+      );
+    }
+
+    if (
+      !safeText.toLowerCase().includes("experience")
+    ) {
+      weaknesses.push(
+        "Work or internship experience is not clearly highlighted."
+      );
+    }
+
+    if (weaknesses.length === 0) {
+      weaknesses.push(
+        "No major structural weakness was detected."
+      );
+    }
+
+    const suggestions: string[] = [];
+
+    if (gap.missingSkills.length > 0) {
+      suggestions.push(
+        `Add evidence of ${gap.missingSkills
+          .slice(0, 3)
+          .join(", ")} through projects, certifications or experience.`
+      );
+    }
+
+    suggestions.push(
+      "Use measurable achievements instead of only describing responsibilities."
+    );
+
+    suggestions.push(
+      "Keep important technical skills visible in a dedicated Skills section."
+    );
+
+    suggestions.push(
+      `Customize your resume keywords for ${career} before applying.`
+    );
+
+    if (
+      !safeText.toLowerCase().includes("project")
+    ) {
+      suggestions.push(
+        "Add 2–3 strong projects with technologies and measurable outcomes."
+      );
+    }
+
+    setAnalysis({
+      atsScore,
+      skillMatch: gap.matchPercentage,
+      matchedSkills: gap.matchedSkills,
+      missingSkills: gap.missingSkills,
+      strengths,
+      weaknesses,
+      suggestions,
+    });
+  }
+
+  function handleFileChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    processFile(file);
+  }
+
+  function handleDrop(
+    event: React.DragEvent<HTMLLabelElement>
+  ) {
+    event.preventDefault();
+    setDragActive(false);
+
+    const file = event.dataTransfer.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    processFile(file);
+  }
+
+  function handleAnalyze() {
+    if (!resumeText && !fileName) {
+      return;
+    }
+
+    analyzeResume(resumeText);
+  }
+
+  function resetAnalyzer() {
+    setFileName("");
+    setResumeText("");
+    setAnalysis(null);
+  }
+
+  return (
+    <main className="min-h-screen bg-[#07111f] text-white">
+      {/* NAVBAR */}
+
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#07111f]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+          <Link
+            href="/"
+            className="text-2xl font-black tracking-tight"
+          >
+            Skill<span className="text-cyan-400">
+              Track
+            </span>
+          </Link>
+
+          <nav className="hidden items-center gap-7 text-sm text-slate-300 lg:flex">
+
+  <Link
+    href="/"
+    className="transition hover:text-cyan-400"
+  >
+    Dashboard
+  </Link>
+
+  <Link
+    href="/jobs"
+    className="transition hover:text-cyan-400"
+  >
+    Jobs
+  </Link>
+
+  <div className="group relative">
+
+    <button
+      type="button"
+      className="flex items-center gap-2 py-3 transition hover:text-cyan-400"
+    >
+      AI Career
+      <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
+        ▼
+      </span>
+    </button>
+
+    <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+
+      <Link
+  href="/ai-assistant"
+  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+>
+  <div className="font-semibold text-white">
+    AI Career Assistant
+  </div>
+  <div className="mt-1 text-xs text-slate-500">
+    Ask personalized career questions
+  </div>
+</Link>
+<Link
+        href="/recommendations"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+      >
+        <div className="font-semibold text-white">
+          Career Recommendations
+        </div>
+        <div className="mt-1 text-xs text-slate-500">
+          Find the best career path for your skills
+        </div>
+      </Link>
+
+      <Link
+        href="/skill-gap"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+      >
+        <div className="font-semibold text-white">
+          Skill Gap Analysis
+        </div>
+        <div className="mt-1 text-xs text-slate-500">
+          Discover missing and improving skills
+        </div>
+      </Link>
+
+      <Link
+        href="/career-coach"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+      >
+        <div className="font-semibold text-white">
+          Career Coach
+        </div>
+        <div className="mt-1 text-xs text-slate-500">
+          Build your personalized career roadmap
+        </div>
+      </Link>
+
+      <Link
+        href="/resume-analyzer"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+      >
+        <div className="font-semibold text-white">
+          Resume Analyzer
+        </div>
+        <div className="mt-1 text-xs text-slate-500">
+          Check your resume and ATS readiness
+        </div>
+      </Link>
+
+      <Link
+        href="/interview-coach"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+      >
+        <div className="font-semibold text-white">
+          Interview Coach
+        </div>
+        <div className="mt-1 text-xs text-slate-500">
+          Practice interview questions
+        </div>
+      </Link>
+
+    </div>
+  </div>
+
+  <Link
+    href="/applications"
+    className="transition hover:text-cyan-400"
+  >
+    Applications
+  </Link>
+
+  <Link
+    href="/profile"
+    className="transition hover:text-cyan-400"
+  >
+    Profile
+  </Link>
+
+</nav>
+
+          <Link
+            href="/profile"
+            className="rounded-xl bg-cyan-400 px-4 py-2.5 text-sm font-bold text-slate-950"
+          >
+            My Profile
+          </Link>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
+        {/* HERO */}
+
+        <section className="relative overflow-hidden rounded-[32px] border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-[#101d35] to-purple-500/10 p-7 md:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl" />
+
+          <div className="relative">
+            <div className="inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
+              ✦ AI Resume Intelligence
+            </div>
+
+            <h1 className="mt-5 max-w-4xl text-4xl font-black leading-tight md:text-6xl">
+              Make your resume
+              <br />
+              <span className="text-cyan-400">
+                job-ready.
+              </span>
+            </h1>
+
+            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400 md:text-lg">
+              Analyze your resume against the skills required for your
+              target career and discover exactly what you should improve.
+            </p>
+          </div>
+        </section>
+
+        {/* ANALYZER */}
+
+        <section className="mt-7 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+          {/* LEFT */}
+
+          <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-7">
+            <p className="text-xs font-bold uppercase tracking-widest text-purple-400">
+              Step 01
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black">
+              Select target career
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Resume analysis will compare your profile against this career.
+            </p>
+
+            <select
+              value={career}
+              onChange={(event) => {
+                setCareer(event.target.value);
+                setAnalysis(null);
+              }}
+              className="mt-6 w-full rounded-xl border border-white/10 bg-[#07111f] px-4 py-3 text-sm font-semibold text-white outline-none focus:border-cyan-400"
+            >
+              {Object.keys(careerSkills).map(
+                (item) => (
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item}
+                  </option>
+                )
+              )}
+            </select>
+
+            <div className="mt-7">
+              <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+                Required skills
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {requiredSkills.map(
+                  (skill) => (
+                    <span
+                      key={skill}
+                      className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 text-xs text-slate-300"
+                    >
+                      {skill}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* UPLOAD */}
+
+          <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-7">
+            <p className="text-xs font-bold uppercase tracking-widest text-cyan-400">
+              Step 02
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black">
+              Upload your resume
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Upload a resume file and let SkillTrack analyze it.
+            </p>
+
+            <label
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={() =>
+                setDragActive(false)
+              }
+              onDrop={handleDrop}
+              className={`mt-6 flex min-h-[250px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-8 text-center transition ${
+                dragActive
+                  ? "border-cyan-400 bg-cyan-400/10"
+                  : "border-white/10 bg-white/[0.02] hover:border-cyan-400/40 hover:bg-cyan-400/5"
+              }`}
+            >
+              <input
+                type="file"
+                accept=".txt,.pdf,.doc,.docx"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-400/10 text-3xl">
+                📄
+              </div>
+
+              {fileName ? (
+                <>
+                  <h3 className="mt-5 font-black">
+                    {fileName}
+                  </h3>
+
+                  <p className="mt-2 text-sm text-emerald-400">
+                    Resume uploaded successfully
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="mt-5 text-lg font-black">
+                    Drop your resume here
+                  </h3>
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    or click to browse files
+                  </p>
+
+                  <p className="mt-3 text-xs text-slate-600">
+                    TXT • PDF • DOC • DOCX
+                  </p>
+                </>
+              )}
+            </label>
+
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={handleAnalyze}
+                disabled={
+                  loading ||
+                  (!resumeText && !fileName)
+                }
+                className="flex-1 rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {loading
+                  ? "Analyzing..."
+                  : "Analyze Resume →"}
+              </button>
+
+              {fileName && (
+                <button
+                  onClick={resetAnalyzer}
+                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-slate-300 hover:bg-white/10"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* RESULTS */}
+
+        {analysis && (
+          <>
+            <section className="mt-10">
+              <div className="mb-5">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+                  Analysis complete
+                </p>
+
+                <h2 className="mt-2 text-3xl font-black">
+                  Your resume intelligence
+                </h2>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-3">
+                <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-6">
+                  <p className="text-sm text-slate-500">
+                    ATS Score
+                  </p>
+
+                  <p className="mt-3 text-5xl font-black text-cyan-400">
+                    {analysis.atsScore}%
+                  </p>
+
+                  <div className="mt-5 h-2 rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-cyan-400"
+                      style={{
+                        width: `${analysis.atsScore}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/5 p-6">
+                  <p className="text-sm text-slate-500">
+                    Skill Match
+                  </p>
+
+                  <p className="mt-3 text-5xl font-black text-emerald-400">
+                    {analysis.skillMatch}%
+                  </p>
+
+                  <p className="mt-3 text-xs text-slate-500">
+                    Match against {career} requirements
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-purple-400/20 bg-purple-400/5 p-6">
+                  <p className="text-sm text-slate-500">
+                    Skills Found
+                  </p>
+
+                  <p className="mt-3 text-5xl font-black text-purple-300">
+                    {analysis.matchedSkills.length}
+                  </p>
+
+                  <p className="mt-3 text-xs text-slate-500">
+                    of {requiredSkills.length} required skills
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* SKILL ANALYSIS */}
+
+            <section className="mt-7 grid gap-6 lg:grid-cols-2">
+              <div className="rounded-3xl border border-emerald-400/10 bg-[#0c1a2d] p-6 md:p-7">
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                  Matched skills
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black">
+                  What your resume already shows
+                </h2>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {analysis.matchedSkills.map(
+                    (skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-xl bg-emerald-400/10 px-4 py-2.5 text-sm font-semibold text-emerald-300"
+                      >
+                        ✓ {skill}
+                      </span>
+                    )
+                  )}
+
+                  {analysis.matchedSkills.length ===
+                    0 && (
+                    <p className="text-sm text-slate-600">
+                      No matching skills detected yet.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-red-400/10 bg-[#0c1a2d] p-6 md:p-7">
+                <p className="text-xs font-bold uppercase tracking-widest text-red-400">
+                  Skill gaps
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black">
+                  What you should add
+                </h2>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {analysis.missingSkills.map(
+                    (skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-xl bg-red-400/10 px-4 py-2.5 text-sm font-semibold text-red-300"
+                      >
+                        + {skill}
+                      </span>
+                    )
+                  )}
+
+                  {analysis.missingSkills.length ===
+                    0 && (
+                    <p className="text-sm text-emerald-400">
+                      Excellent! No major skill gaps detected.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* STRENGTHS / WEAKNESSES */}
+
+            <section className="mt-7 grid gap-6 lg:grid-cols-2">
+              <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-7">
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">
+                  Strengths
+                </p>
+
+                <div className="mt-5 space-y-3">
+                  {analysis.strengths.map(
+                    (item) => (
+                      <div
+                        key={item}
+                        className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 text-sm leading-6 text-slate-400"
+                      >
+                        <span className="mr-2 text-emerald-400">
+                          ✓
+                        </span>
+
+                        {item}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-[#0c1a2d] p-6 md:p-7">
+                <p className="text-xs font-bold uppercase tracking-widest text-red-400">
+                  Improvement areas
+                </p>
+
+                <div className="mt-5 space-y-3">
+                  {analysis.weaknesses.map(
+                    (item) => (
+                      <div
+                        key={item}
+                        className="rounded-2xl border border-white/5 bg-white/[0.025] p-4 text-sm leading-6 text-slate-400"
+                      >
+                        <span className="mr-2 text-red-400">
+                          !
+                        </span>
+
+                        {item}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* SUGGESTIONS */}
+
+            <section className="mt-7 rounded-3xl border border-purple-400/20 bg-gradient-to-br from-purple-500/10 via-[#0c1a2d] to-cyan-500/5 p-6 md:p-8">
+              <p className="text-xs font-bold uppercase tracking-widest text-purple-300">
+                AI recommendations
+              </p>
+
+              <h2 className="mt-2 text-3xl font-black">
+                How to improve your resume
+              </h2>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {analysis.suggestions.map(
+                  (item, index) => (
+                    <div
+                      key={item}
+                      className="rounded-2xl border border-white/10 bg-black/10 p-5"
+                    >
+                      <div className="flex gap-4">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-400/10 text-sm font-black text-purple-300">
+                          {index + 1}
+                        </div>
+
+                        <p className="text-sm leading-6 text-slate-400">
+                          {item}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </section>
+
+            {/* NEXT STEPS */}
+
+            <section className="mt-7 rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-7 text-center md:p-10">
+              <div className="text-4xl">
+                🚀
+              </div>
+
+              <h2 className="mt-4 text-3xl font-black">
+                Turn this analysis into action
+              </h2>
+
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+                Close your missing skill gaps, improve your resume and
+                apply to jobs where your profile has the strongest match.
+              </p>
+
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <Link
+                  href="/skill-gap"
+                  className="rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950"
+                >
+                  Fix Skill Gaps
+                </Link>
+
+                <Link
+                  href="/recommendations"
+                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold"
+                >
+                  AI Career Match
+                </Link>
+
+                <Link
+                  href="/jobs"
+                  className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold"
+                >
+                  Find Jobs
+                </Link>
+              </div>
+            </section>
+          </>
+        )}
+
+        {!analysis && (
+          <section className="mt-7 rounded-3xl border border-white/10 bg-[#0c1a2d] p-8 text-center">
+            <div className="text-5xl">
+              🤖
+            </div>
+
+            <h2 className="mt-5 text-2xl font-black">
+              Your resume intelligence will appear here
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">
+              Select your target career, upload your resume and click
+              Analyze Resume.
+            </p>
+          </section>
+        )}
+
+        <footer className="mt-10 border-t border-white/10 py-7 text-center text-xs text-slate-600">
+          SkillTrack • AI Resume Intelligence
+        </footer>
+      </div>
+    </main>
+  );
+}

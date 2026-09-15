@@ -703,10 +703,10 @@ Do not claim that job requirements are unavailable when they are provided above.
   }
 
   return (
-    <main className="min-h-screen bg-[#06101d] text-white">
+    <main className="min-h-screen bg-[#0B1F3A] text-white">
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
 
           <Link
@@ -714,7 +714,7 @@ Do not claim that job requirements are unavailable when they are provided above.
             className="text-2xl font-black tracking-tight"
           >
             Skill
-            <span className="text-cyan-400">
+            <span className="text-blue-600">
               Track
             </span>
           </Link>
@@ -723,14 +723,14 @@ Do not claim that job requirements are unavailable when they are provided above.
 
             <Link
               href="/"
-              className="transition hover:text-cyan-400"
+              className="transition hover:text-blue-600"
             >
               Dashboard
             </Link>
 
             <Link
               href="/jobs"
-              className="transition hover:text-cyan-400"
+              className="transition hover:text-blue-600"
             >
               Jobs
             </Link>
@@ -739,7 +739,7 @@ Do not claim that job requirements are unavailable when they are provided above.
 
               <button
                 type="button"
-                className="flex items-center gap-2 py-3 text-cyan-400"
+                className="flex items-center gap-2 py-3 text-blue-600"
               >
                 AI Career
                 <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
@@ -747,13 +747,13 @@ Do not claim that job requirements are unavailable when they are provided above.
                 </span>
               </button>
 
-              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#10294A] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
 
                 <Link
                   href="/ai-assistant"
-                  className="block rounded-xl bg-cyan-400/10 px-4 py-3"
+                  className="block rounded-xl bg-blue-600/10 px-4 py-3"
                 >
-                  <div className="font-semibold text-cyan-300">
+                  <div className="font-semibold text-blue-300">
                     AI Career Assistant
                   </div>
                   <div className="mt-1 text-xs text-slate-500">
@@ -763,7 +763,7 @@ Do not claim that job requirements are unavailable when they are provided above.
 
                 <Link
                   href="/recommendations"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
                 >
                   <div className="font-semibold text-white">
                     Career Recommendations
@@ -775,7 +775,7 @@ Do not claim that job requirements are unavailable when they are provided above.
 
                 <Link
                   href="/skill-gap"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
                 >
                   <div className="font-semibold text-white">
                     Skill Gap Analysis
@@ -787,7 +787,7 @@ Do not claim that job requirements are unavailable when they are provided above.
 
                 <Link
                   href="/career-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
                 >
                   <div className="font-semibold text-white">
                     Career Coach
@@ -799,7 +799,7 @@ Do not claim that job requirements are unavailable when they are provided above.
 
                 <Link
                   href="/resume-analyzer"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
                 >
                   <div className="font-semibold text-white">
                     Resume Analyzer
@@ -811,7 +811,7 @@ Do not claim that job requirements are unavailable when they are provided above.
 
                 <Link
                   href="/interview-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
                 >
                   <div className="font-semibold text-white">
                     Interview Coach
@@ -827,14 +827,14 @@ Do not claim that job requirements are unavailable when they are provided above.
 
             <Link
               href="/applications"
-              className="transition hover:text-cyan-400"
+              className="transition hover:text-blue-600"
             >
               Applications
             </Link>
 
             <Link
               href="/profile"
-              className="transition hover:text-cyan-400"
+              className="transition hover:text-blue-600"
             >
               Profile
             </Link>
@@ -843,7 +843,7 @@ Do not claim that job requirements are unavailable when they are provided above.
 
           <Link
             href="/profile"
-            className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-300"
+            className="rounded-xl border border-blue-600/30 bg-blue-600/10 px-4 py-2 text-sm font-semibold text-blue-300"
           >
             My Profile
           </Link>
@@ -854,19 +854,19 @@ Do not claim that job requirements are unavailable when they are provided above.
       <div className="mx-auto max-w-7xl px-6 py-10">
 
         {/* HERO */}
-        <section className="mb-8 overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-[#0b2030] via-[#0a1728] to-[#10142b] p-8 shadow-2xl shadow-cyan-500/5">
+        <section className="mb-8 overflow-hidden rounded-3xl border border-blue-600/20 bg-gradient-to-br from-[#10294A] via-[#0B1F3A] to-[#163456] p-8 shadow-2xl shadow-cyan-500/5">
 
           <div className="grid gap-8 lg:grid-cols-[1fr_320px] lg:items-center">
 
             <div>
 
-              <div className="mb-4 inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">
+              <div className="mb-4 inline-flex rounded-full border border-blue-600/20 bg-blue-600/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-300">
                 AI Career Assistant
               </div>
 
               <h1 className="text-4xl font-black tracking-tight md:text-5xl">
                 Your personal
-                <span className="block text-cyan-400">
+                <span className="block text-blue-600">
                   career intelligence.
                 </span>
               </h1>
@@ -896,7 +896,7 @@ Do not claim that job requirements are unavailable when they are provided above.
                   Profile match
                 </span>
 
-                <span className="text-3xl font-black text-cyan-400">
+                <span className="text-3xl font-black text-blue-600">
                   {loading
                     ? "--"
                     : `${analysis.match}%`}
@@ -905,7 +905,7 @@ Do not claim that job requirements are unavailable when they are provided above.
 
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div
-                  className="h-full rounded-full bg-cyan-400 transition-all duration-700"
+                  className="h-full rounded-full bg-blue-600 transition-all duration-700"
                   style={{
                     width: `${analysis.match}%`,
                   }}
@@ -922,7 +922,7 @@ Do not claim that job requirements are unavailable when they are provided above.
         <section className="grid gap-6 lg:grid-cols-[1fr_330px]">
 
           {/* CHAT */}
-          <div className="flex min-h-[650px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#091524]">
+          <div className="flex min-h-[650px] flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#163456]">
 
             <div className="border-b border-white/10 px-6 py-5">
 
@@ -938,7 +938,7 @@ Do not claim that job requirements are unavailable when they are provided above.
                   </p>
                 </div>
 
-                <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                <div className="rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-1 text-xs font-semibold text-teal-300">
                   {loading
                     ? "Loading"
                     : "Profile Connected"}
@@ -965,8 +965,8 @@ Do not claim that job requirements are unavailable when they are provided above.
                   <div
                     className={`max-w-[85%] rounded-2xl px-5 py-4 text-sm leading-6 ${
                       message.role === "user"
-                        ? "bg-cyan-400 font-medium text-slate-950"
-                        : "border border-white/10 bg-[#0e1e31] text-slate-300"
+                        ? "bg-blue-600 font-medium text-slate-950"
+                        : "border border-white/10 bg-[#1D3A5C] text-slate-300"
                     }`}
                   >
                     {renderMessage(message.text)}
@@ -979,7 +979,7 @@ Do not claim that job requirements are unavailable when they are provided above.
               {thinking && (
                 <div className="flex justify-start">
 
-                  <div className="rounded-2xl border border-white/10 bg-[#0e1e31] px-5 py-4 text-sm text-slate-500">
+                  <div className="rounded-2xl border border-white/10 bg-[#1D3A5C] px-5 py-4 text-sm text-slate-500">
                     SkillTrack AI is analyzing your profile...
                   </div>
 
@@ -1004,7 +1004,7 @@ Do not claim that job requirements are unavailable when they are provided above.
                         )
                       }
                       disabled={thinking}
-                      className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-400 transition hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-cyan-300 disabled:opacity-40"
+                      className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-400 transition hover:border-blue-600/30 hover:bg-blue-600/10 hover:text-blue-300 disabled:opacity-40"
                     >
                       {question}
                     </button>
@@ -1024,7 +1024,7 @@ Do not claim that job requirements are unavailable when they are provided above.
                     setInput(event.target.value)
                   }
                   placeholder="Ask anything about your career..."
-                  className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#07111f] px-5 py-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400/40"
+                  className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-[#0B1F3A] px-5 py-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-600/40"
                 />
 
                 <button
@@ -1032,7 +1032,7 @@ Do not claim that job requirements are unavailable when they are provided above.
                   disabled={
                     thinking || !input.trim()
                   }
-                  className="rounded-2xl bg-cyan-400 px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-2xl bg-blue-600 px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Ask
                 </button>
@@ -1046,9 +1046,9 @@ Do not claim that job requirements are unavailable when they are provided above.
           {/* INSIGHTS */}
           <aside className="space-y-5">
 
-            <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
+            <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
 
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
                 Your Context
               </p>
 
@@ -1085,9 +1085,9 @@ Do not claim that job requirements are unavailable when they are provided above.
 
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
+            <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
 
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
                 Recommended Skills
               </p>
 
@@ -1112,7 +1112,7 @@ Do not claim that job requirements are unavailable when they are provided above.
                         {skill}
                       </span>
 
-                      <span className="text-xs text-cyan-400">
+                      <span className="text-xs text-blue-600">
                         Learn
                       </span>
 
@@ -1126,10 +1126,10 @@ Do not claim that job requirements are unavailable when they are provided above.
 
             <Link
               href="/career-coach"
-              className="block rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-6 transition hover:bg-cyan-400/15"
+              className="block rounded-3xl border border-blue-600/20 bg-blue-600/10 p-6 transition hover:bg-blue-600/15"
             >
 
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
                 Next Step
               </p>
 
@@ -1142,7 +1142,7 @@ Do not claim that job requirements are unavailable when they are provided above.
                 gaps into a structured learning plan.
               </p>
 
-              <div className="mt-4 text-sm font-bold text-cyan-300">
+              <div className="mt-4 text-sm font-bold text-blue-300">
                 Open Career Coach â†’
               </div>
 
@@ -1157,6 +1157,7 @@ Do not claim that job requirements are unavailable when they are provided above.
     </main>
   );
 }
+
 
 
 

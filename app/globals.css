@@ -24,3 +24,267 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* =========================================
+   SKILLTRACK BUTTER YELLOW THEME
+   ========================================= */
+
+@layer utilities {
+  .text-cyan-300 {
+    color: #F7E7A7 !important;
+  }
+
+  .text-cyan-400 {
+    color: #FFE9A8 !important;
+  }
+
+  .text-cyan-500 {
+    color: #E8C95A !important;
+  }
+
+  .bg-cyan-400 {
+    background-color: #F7E7A7 !important;
+  }
+
+  .bg-cyan-400\/5 {
+    background-color: rgb(247 231 167 / 0.05) !important;
+  }
+
+  .bg-cyan-400\/10 {
+    background-color: rgb(247 231 167 / 0.10) !important;
+  }
+
+  .bg-cyan-400\/15 {
+    background-color: rgb(247 231 167 / 0.15) !important;
+  }
+
+  .border-cyan-400\/10 {
+    border-color: rgb(247 231 167 / 0.10) !important;
+  }
+
+  .border-cyan-400\/20 {
+    border-color: rgb(247 231 167 / 0.20) !important;
+  }
+
+  .border-cyan-400\/30 {
+    border-color: rgb(247 231 167 / 0.30) !important;
+  }
+
+  .border-cyan-400\/40 {
+    border-color: rgb(247 231 167 / 0.40) !important;
+  }
+
+  .shadow-cyan-500\/5 {
+    --tw-shadow-color: rgb(247 231 167 / 0.05) !important;
+  }
+
+  .shadow-cyan-500\/10 {
+    --tw-shadow-color: rgb(247 231 167 / 0.10) !important;
+  }
+}
+
+/* =========================================
+   SKILLTRACK PROFESSIONAL THEME
+   NAVY BLUE + BRIGHT BLUE + TEAL
+   ========================================= */
+
+:root {
+  --skilltrack-navy: #0B1F3A;
+  --skilltrack-blue: #2563EB;
+  --skilltrack-teal: #14B8A6;
+  --skilltrack-bg: #F5F8FC;
+  --skilltrack-white: #FFFFFF;
+  --skilltrack-text: #172033;
+  --skilltrack-muted: #64748B;
+}
+
+/* Main application background */
+html,
+body {
+  background: var(--skilltrack-bg) !important;
+  color: var(--skilltrack-text);
+}
+
+/* Existing dark background utilities */
+[class~="bg-[#07111f]"] {
+  background-color: var(--skilltrack-navy) !important;
+}
+
+[class~="bg-[#06101d]"] {
+  background-color: var(--skilltrack-navy) !important;
+}
+
+[class~="bg-[#0b1728]"] {
+  background-color: #10294A !important;
+}
+
+[class~="bg-[#091524]"] {
+  background-color: #10294A !important;
+}
+
+[class~="bg-[#0e1e31]"] {
+  background-color: #163456 !important;
+}
+
+[class~="bg-[#0d1b2e]"] {
+  background-color: #163456 !important;
+}
+
+/* Cyan -> Bright Blue */
+[class~="text-cyan-300"] {
+  color: #60A5FA !important;
+}
+
+[class~="text-cyan-400"] {
+  color: var(--skilltrack-blue) !important;
+}
+
+[class~="text-cyan-500"] {
+  color: #1D4ED8 !important;
+}
+
+[class~="bg-cyan-400"] {
+  background-color: var(--skilltrack-blue) !important;
+}
+
+[class~="bg-cyan-500"] {
+  background-color: var(--skilltrack-blue) !important;
+}
+
+[class~="bg-cyan-400/5"] {
+  background-color: rgb(37 99 235 / 0.05) !important;
+}
+
+[class~="bg-cyan-400/10"] {
+  background-color: rgb(37 99 235 / 0.10) !important;
+}
+
+[class~="bg-cyan-400/15"] {
+  background-color: rgb(37 99 235 / 0.15) !important;
+}
+
+[class~="bg-cyan-500/5"] {
+  background-color: rgb(37 99 235 / 0.05) !important;
+}
+
+[class~="bg-cyan-500/10"] {
+  background-color: rgb(37 99 235 / 0.10) !important;
+}
+
+[class~="bg-cyan-500/15"] {
+  background-color: rgb(37 99 235 / 0.15) !important;
+}
+
+/* Cyan borders -> Bright Blue */
+[class~="border-cyan-400/10"] {
+  border-color: rgb(37 99 235 / 0.10) !important;
+}
+
+[class~="border-cyan-400/20"] {
+  border-color: rgb(37 99 235 / 0.20) !important;
+}
+
+[class~="border-cyan-400/30"] {
+  border-color: rgb(37 99 235 / 0.30) !important;
+}
+
+[class~="border-cyan-400/40"] {
+  border-color: rgb(37 99 235 / 0.40) !important;
+}
+
+[class~="border-cyan-500/20"] {
+  border-color: rgb(37 99 235 / 0.20) !important;
+}
+
+[class~="border-cyan-500/30"] {
+  border-color: rgb(37 99 235 / 0.30) !important;
+}
+
+/* Hover states */
+[class~="hover:text-cyan-400"]:hover {
+  color: var(--skilltrack-blue) !important;
+}
+
+[class~="hover:text-cyan-300"]:hover {
+  color: #60A5FA !important;
+}
+
+[class~="hover:bg-cyan-300"]:hover {
+  background-color: #3B82F6 !important;
+}
+
+[class~="hover:bg-cyan-400/20"]:hover {
+  background-color: rgb(37 99 235 / 0.20) !important;
+}
+
+[class~="hover:bg-cyan-400/15"]:hover {
+  background-color: rgb(37 99 235 / 0.15) !important;
+}
+
+[class~="hover:bg-cyan-400/10"]:hover {
+  background-color: rgb(37 99 235 / 0.10) !important;
+}
+
+/* Teal for positive/success indicators */
+[class~="text-emerald-300"] {
+  color: #2DD4BF !important;
+}
+
+[class~="text-emerald-400"] {
+  color: var(--skilltrack-teal) !important;
+}
+
+[class~="bg-emerald-400"] {
+  background-color: var(--skilltrack-teal) !important;
+}
+
+[class~="bg-emerald-400/5"] {
+  background-color: rgb(20 184 166 / 0.05) !important;
+}
+
+[class~="bg-emerald-400/10"] {
+  background-color: rgb(20 184 166 / 0.10) !important;
+}
+
+[class~="border-emerald-400/20"] {
+  border-color: rgb(20 184 166 / 0.20) !important;
+}
+
+[class~="border-emerald-400/30"] {
+  border-color: rgb(20 184 166 / 0.30) !important;
+}
+
+/* Teal hover */
+[class~="hover:bg-emerald-400/10"]:hover {
+  background-color: rgb(20 184 166 / 0.10) !important;
+}
+
+/* Inputs and form areas */
+input,
+textarea,
+select {
+  color: var(--skilltrack-text);
+}
+
+/* Keep dark input fields professional */
+[class~="bg-[#07111f]"] input,
+[class~="bg-[#07111f]"] textarea,
+[class~="bg-[#07111f]"] select {
+  color: white;
+}
+
+/* Buttons */
+button[class~="bg-cyan-400"] {
+  background-color: var(--skilltrack-blue) !important;
+}
+
+button[class~="bg-cyan-400"]:hover {
+  background-color: #3B82F6 !important;
+}
+
+/* Professional focus ring */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--skilltrack-blue) !important;
+}

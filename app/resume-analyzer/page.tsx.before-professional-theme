@@ -453,11 +453,11 @@ export default function ResumeAnalyzerPage() {
 
   function scoreClass(score: number) {
     if (score >= 85) {
-      return "border-teal-500/30 bg-teal-500/10 text-teal-300";
+      return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
     }
 
     if (score >= 70) {
-      return "border-blue-600/30 bg-blue-600/10 text-blue-300";
+      return "border-cyan-400/30 bg-cyan-400/10 text-cyan-300";
     }
 
     if (score >= 55) {
@@ -469,9 +469,9 @@ export default function ResumeAnalyzerPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0B1F3A] text-white">
+      <main className="flex min-h-screen items-center justify-center bg-[#07111f] text-white">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600/20 border-t-cyan-400" />
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
           <p className="mt-5 text-sm text-slate-400">
             Loading your SkillTrack resume intelligence...
           </p>
@@ -481,15 +481,15 @@ export default function ResumeAnalyzerPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1F3A] text-white">
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+    <main className="min-h-screen bg-[#07111f] text-white">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
             href="/"
             className="text-2xl font-black tracking-tight"
           >
             Skill
-            <span className="text-blue-600">
+            <span className="text-cyan-400">
               Track
             </span>
           </Link>
@@ -497,14 +497,14 @@ export default function ResumeAnalyzerPage() {
           <nav className="hidden items-center gap-7 text-sm text-slate-300 lg:flex">
             <Link
               href="/"
-              className="transition hover:text-blue-600"
+              className="transition hover:text-cyan-400"
             >
               Dashboard
             </Link>
 
             <Link
               href="/jobs"
-              className="transition hover:text-blue-600"
+              className="transition hover:text-cyan-400"
             >
               Jobs
             </Link>
@@ -512,7 +512,7 @@ export default function ResumeAnalyzerPage() {
             <div className="group relative">
               <button
                 type="button"
-                className="flex items-center gap-2 py-3 text-blue-600"
+                className="flex items-center gap-2 py-3 text-cyan-400"
               >
                 AI Career
                 <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
@@ -520,10 +520,10 @@ export default function ResumeAnalyzerPage() {
                 </span>
               </button>
 
-              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#10294A] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
                 <Link
                   href="/ai-assistant"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     AI Career Assistant
@@ -535,7 +535,7 @@ export default function ResumeAnalyzerPage() {
 
                 <Link
                   href="/recommendations"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Career Recommendations
@@ -547,7 +547,7 @@ export default function ResumeAnalyzerPage() {
 
                 <Link
                   href="/skill-gap"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Skill Gap Analysis
@@ -559,7 +559,7 @@ export default function ResumeAnalyzerPage() {
 
                 <Link
                   href="/career-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Career Coach
@@ -571,9 +571,9 @@ export default function ResumeAnalyzerPage() {
 
                 <Link
                   href="/resume-analyzer"
-                  className="block rounded-xl bg-blue-600/10 px-4 py-3"
+                  className="block rounded-xl bg-cyan-400/10 px-4 py-3"
                 >
-                  <div className="font-semibold text-blue-300">
+                  <div className="font-semibold text-cyan-300">
                     Resume Analyzer
                   </div>
                   <div className="mt-1 text-xs text-slate-500">
@@ -583,7 +583,7 @@ export default function ResumeAnalyzerPage() {
 
                 <Link
                   href="/interview-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+                  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
                 >
                   <div className="font-semibold text-white">
                     Interview Coach
@@ -597,14 +597,14 @@ export default function ResumeAnalyzerPage() {
 
             <Link
               href="/applications"
-              className="transition hover:text-blue-600"
+              className="transition hover:text-cyan-400"
             >
               Applications
             </Link>
 
             <Link
               href="/profile"
-              className="transition hover:text-blue-600"
+              className="transition hover:text-cyan-400"
             >
               Profile
             </Link>
@@ -612,7 +612,7 @@ export default function ResumeAnalyzerPage() {
 
           <Link
             href="/profile"
-            className="rounded-xl border border-blue-600/30 bg-blue-600/10 px-4 py-2 text-sm font-semibold text-blue-300"
+            className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-300"
           >
             My Profile
           </Link>
@@ -620,16 +620,16 @@ export default function ResumeAnalyzerPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <section className="mb-8 overflow-hidden rounded-3xl border border-blue-600/20 bg-gradient-to-br from-[#10294A] via-[#0B1F3A] to-[#163456] p-8 shadow-2xl shadow-cyan-500/5">
+        <section className="mb-8 overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-[#0b2030] via-[#0a1728] to-[#10142b] p-8 shadow-2xl shadow-cyan-500/5">
           <div className="grid gap-8 lg:grid-cols-[1fr_320px] lg:items-center">
             <div>
-              <div className="mb-4 inline-flex rounded-full border border-blue-600/20 bg-blue-600/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-300">
+              <div className="mb-4 inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">
                 AI Resume Intelligence
               </div>
 
               <h1 className="text-4xl font-black tracking-tight md:text-5xl">
                 Make your resume
-                <span className="block text-blue-600">
+                <span className="block text-cyan-400">
                   job-ready.
                 </span>
               </h1>
@@ -660,10 +660,10 @@ export default function ResumeAnalyzerPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+          <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                   Step 01
                 </p>
                 <h2 className="mt-2 text-2xl font-black">
@@ -681,13 +681,13 @@ export default function ResumeAnalyzerPage() {
               onChange={(event) =>
                 setTargetCareer(event.target.value)
               }
-              className="w-full rounded-2xl border border-white/10 bg-[#0B1F3A] px-4 py-4 text-sm text-white outline-none focus:border-blue-600/40"
+              className="w-full rounded-2xl border border-white/10 bg-[#07111f] px-4 py-4 text-sm text-white outline-none focus:border-cyan-400/40"
             >
               {careerOptions.map((career) => (
                 <option
                   key={career}
                   value={career}
-                  className="bg-[#0B1F3A]"
+                  className="bg-[#07111f]"
                 >
                   {career}
                 </option>
@@ -698,7 +698,7 @@ export default function ResumeAnalyzerPage() {
               {targetSkills.slice(0, 10).map((skill) => (
                 <span
                   key={skill}
-                  className="rounded-full border border-blue-600/10 bg-blue-600/5 px-3 py-2 text-xs text-blue-300"
+                  className="rounded-full border border-cyan-400/10 bg-cyan-400/5 px-3 py-2 text-xs text-cyan-300"
                 >
                   {skill}
                 </span>
@@ -725,7 +725,7 @@ export default function ResumeAnalyzerPage() {
                   <span className="text-xs text-slate-600">
                     Your current profile match
                   </span>
-                  <span className="text-lg font-black text-blue-600">
+                  <span className="text-lg font-black text-cyan-400">
                     {targetJob.gap.matchPercentage}%
                   </span>
                 </div>
@@ -733,9 +733,9 @@ export default function ResumeAnalyzerPage() {
             )}
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+          <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
             <div className="mb-6">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                 Step 02
               </p>
               <h2 className="mt-2 text-2xl font-black">
@@ -768,11 +768,11 @@ export default function ResumeAnalyzerPage() {
               }
               className={`cursor-pointer rounded-3xl border-2 border-dashed p-8 text-center transition ${
                 dragActive
-                  ? "border-blue-600 bg-blue-600/10"
-                  : "border-white/10 bg-white/[0.02] hover:border-blue-600/30 hover:bg-blue-600/5"
+                  ? "border-cyan-400 bg-cyan-400/10"
+                  : "border-white/10 bg-white/[0.02] hover:border-cyan-400/30 hover:bg-cyan-400/5"
               }`}
             >
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-600/20 bg-blue-600/10 text-2xl font-black text-blue-600">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-cyan-400/20 bg-cyan-400/10 text-2xl font-black text-cyan-400">
                 CV
               </div>
 
@@ -787,7 +787,7 @@ export default function ResumeAnalyzerPage() {
               </p>
 
               {selectedFile && (
-                <p className="mt-4 text-xs text-blue-300">
+                <p className="mt-4 text-xs text-cyan-300">
                   {(
                     selectedFile.size /
                     1024 /
@@ -808,7 +808,7 @@ export default function ResumeAnalyzerPage() {
               type="button"
               onClick={analyzeResume}
               disabled={!selectedFile || analyzing}
-              className="mt-5 w-full rounded-2xl bg-blue-600 px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-5 w-full rounded-2xl bg-cyan-400 px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {analyzing
                 ? "Analyzing Resume..."
@@ -820,12 +820,12 @@ export default function ResumeAnalyzerPage() {
         {result && (
           <section className="mt-8 space-y-6">
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
                   ATS Score
                 </p>
                 <div className="mt-4 flex items-end justify-between">
-                  <span className="text-5xl font-black text-blue-600">
+                  <span className="text-5xl font-black text-cyan-400">
                     {result.ats.score}
                   </span>
                   <span className="mb-2 text-sm text-slate-500">
@@ -834,7 +834,7 @@ export default function ResumeAnalyzerPage() {
                 </div>
                 <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-blue-600 transition-all duration-700"
+                    className="h-full rounded-full bg-cyan-400 transition-all duration-700"
                     style={{
                       width: `${result.ats.score}%`,
                     }}
@@ -845,7 +845,7 @@ export default function ResumeAnalyzerPage() {
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
                   Career Target
                 </p>
@@ -858,7 +858,7 @@ export default function ResumeAnalyzerPage() {
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
                   Resume Length
                 </p>
@@ -870,7 +870,7 @@ export default function ResumeAnalyzerPage() {
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
                 <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
                   Impact Signals
                 </p>
@@ -883,10 +883,10 @@ export default function ResumeAnalyzerPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+            <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                     Resume Verdict
                   </p>
                   <h2 className="mt-2 text-2xl font-black">
@@ -905,8 +905,8 @@ export default function ResumeAnalyzerPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                   Skills Found
                 </p>
 
@@ -915,7 +915,7 @@ export default function ResumeAnalyzerPage() {
                     result.matchedSkills.map((skill) => (
                       <span
                         key={skill}
-                        className="rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-2 text-xs text-teal-300"
+                        className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-300"
                       >
                         {skill}
                       </span>
@@ -928,8 +928,8 @@ export default function ResumeAnalyzerPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                   Priority Gaps
                 </p>
 
@@ -944,7 +944,7 @@ export default function ResumeAnalyzerPage() {
                       </span>
                     ))
                   ) : (
-                    <p className="text-sm text-teal-300">
+                    <p className="text-sm text-emerald-300">
                       No major target skill gaps detected.
                     </p>
                   )}
@@ -952,8 +952,8 @@ export default function ResumeAnalyzerPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+            <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                 Resume Structure
               </p>
 
@@ -963,7 +963,7 @@ export default function ResumeAnalyzerPage() {
                     key={section.name}
                     className={`flex items-center justify-between rounded-2xl border px-4 py-4 ${
                       section.found
-                        ? "border-teal-500/20 bg-teal-500/10"
+                        ? "border-emerald-400/20 bg-emerald-400/10"
                         : "border-red-400/20 bg-red-400/10"
                     }`}
                   >
@@ -974,7 +974,7 @@ export default function ResumeAnalyzerPage() {
                     <span
                       className={`text-xs font-bold ${
                         section.found
-                          ? "text-teal-300"
+                          ? "text-emerald-300"
                           : "text-red-300"
                       }`}
                     >
@@ -988,10 +988,10 @@ export default function ResumeAnalyzerPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                       Better Summary
                     </p>
                     <h2 className="mt-2 text-xl font-black">
@@ -1020,8 +1020,8 @@ export default function ResumeAnalyzerPage() {
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                   High-Impact Improvements
                 </p>
 
@@ -1040,10 +1040,10 @@ export default function ResumeAnalyzerPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
+            <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                     Rewrite Examples
                   </p>
                   <h2 className="mt-2 text-xl font-black">
@@ -1079,7 +1079,7 @@ export default function ResumeAnalyzerPage() {
                       key={index}
                       className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-300"
                     >
-                      <span className="mr-2 font-black text-blue-600">
+                      <span className="mr-2 font-black text-cyan-400">
                         {index + 1}.
                       </span>
                       {bullet}
@@ -1090,10 +1090,10 @@ export default function ResumeAnalyzerPage() {
             </div>
 
             {result.aiFeedback && (
-              <div className="rounded-3xl border border-blue-600/20 bg-gradient-to-br from-[#10294A] to-[#163456] p-6">
+              <div className="rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-[#0b2030] to-[#10142b] p-6">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                       AI Deep Review
                     </p>
                     <h2 className="mt-2 text-2xl font-black">
@@ -1101,7 +1101,7 @@ export default function ResumeAnalyzerPage() {
                     </h2>
                   </div>
 
-                  <span className="rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-2 text-xs font-semibold text-teal-300">
+                  <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-300">
                     AI analysis complete
                   </span>
                 </div>
@@ -1113,8 +1113,8 @@ export default function ResumeAnalyzerPage() {
             )}
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <div className="rounded-3xl border border-white/10 bg-[#091524] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                   Extracted Resume
                 </p>
 
@@ -1124,13 +1124,13 @@ export default function ResumeAnalyzerPage() {
                   characters
                 </p>
 
-                <div className="mt-5 max-h-80 overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1F3A] p-5 text-sm leading-7 text-slate-400">
+                <div className="mt-5 max-h-80 overflow-y-auto rounded-2xl border border-white/10 bg-[#07111f] p-5 text-sm leading-7 text-slate-400">
                   {result.previewText}
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-blue-600/20 bg-blue-600/5 p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                   Next Step
                 </p>
 
@@ -1147,7 +1147,7 @@ export default function ResumeAnalyzerPage() {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
                     href="/interview-coach"
-                    className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-slate-950"
+                    className="rounded-xl bg-cyan-400 px-5 py-3 text-sm font-black text-slate-950"
                   >
                     Practice Interview
                   </Link>
@@ -1164,7 +1164,7 @@ export default function ResumeAnalyzerPage() {
           </section>
         )}
 
-        <section className="mt-8 rounded-3xl border border-white/10 bg-[#163456] p-6">
+        <section className="mt-8 rounded-3xl border border-white/10 bg-[#091524] p-6">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-600">
             How SkillTrack Scores Your Resume
           </p>
@@ -1208,4 +1208,3 @@ export default function ResumeAnalyzerPage() {
     </main>
   );
 }
-

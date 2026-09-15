@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -375,11 +375,11 @@ export default function SkillGapPage() {
     percentage: number
   ) {
     if (percentage >= 85) {
-      return "text-teal-300 bg-teal-500/10 border-teal-500/20";
+      return "text-emerald-300 bg-emerald-400/10 border-emerald-400/20";
     }
 
     if (percentage >= 70) {
-      return "text-blue-300 bg-blue-600/10 border-blue-600/20";
+      return "text-cyan-300 bg-cyan-400/10 border-cyan-400/20";
     }
 
     if (percentage >= 50) {
@@ -391,9 +391,9 @@ export default function SkillGapPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0B1F3A] text-white">
+      <main className="flex min-h-screen items-center justify-center bg-[#07111f] text-white">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600/20 border-t-cyan-400" />
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
 
           <p className="mt-5 text-sm text-slate-400">
             Analyzing your skill profile...
@@ -404,17 +404,17 @@ export default function SkillGapPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1F3A] text-white">
+    <main className="min-h-screen bg-[#07111f] text-white">
       {/* NAVBAR */}
 
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#07111f]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
             href="/"
             className="text-2xl font-black"
           >
             Skill
-            <span className="text-blue-600">
+            <span className="text-cyan-400">
               Track
             </span>
           </Link>
@@ -423,14 +423,14 @@ export default function SkillGapPage() {
 
   <Link
     href="/"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Dashboard
   </Link>
 
   <Link
     href="/jobs"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Jobs
   </Link>
@@ -439,19 +439,19 @@ export default function SkillGapPage() {
 
     <button
       type="button"
-      className="flex items-center gap-2 py-3 transition hover:text-blue-600"
+      className="flex items-center gap-2 py-3 transition hover:text-cyan-400"
     >
       AI Career
       <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-        â–¼
+        ▼
       </span>
     </button>
 
-    <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#10294A] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
+    <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#0b1728] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
 
       <Link
   href="/ai-assistant"
-  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+  className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
 >
   <div className="font-semibold text-white">
     AI Career Assistant
@@ -462,7 +462,7 @@ export default function SkillGapPage() {
 </Link>
 <Link
         href="/recommendations"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Career Recommendations
@@ -474,7 +474,7 @@ export default function SkillGapPage() {
 
       <Link
         href="/skill-gap"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Skill Gap Analysis
@@ -486,7 +486,7 @@ export default function SkillGapPage() {
 
       <Link
         href="/career-coach"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Career Coach
@@ -498,7 +498,7 @@ export default function SkillGapPage() {
 
       <Link
         href="/resume-analyzer"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Resume Analyzer
@@ -510,7 +510,7 @@ export default function SkillGapPage() {
 
       <Link
         href="/interview-coach"
-        className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
+        className="block rounded-xl px-4 py-3 transition hover:bg-cyan-400/10"
       >
         <div className="font-semibold text-white">
           Interview Coach
@@ -525,14 +525,14 @@ export default function SkillGapPage() {
 
   <Link
     href="/applications"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Applications
   </Link>
 
   <Link
     href="/profile"
-    className="transition hover:text-blue-600"
+    className="transition hover:text-cyan-400"
   >
     Profile
   </Link>
@@ -541,7 +541,7 @@ export default function SkillGapPage() {
 
           <Link
             href="/profile"
-            className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-black text-slate-950"
+            className="rounded-xl bg-cyan-400 px-4 py-2 text-xs font-black text-slate-950"
           >
             Update Skills
           </Link>
@@ -554,13 +554,13 @@ export default function SkillGapPage() {
         <section>
           <Link
             href="/"
-            className="text-sm font-semibold text-blue-600 hover:text-blue-300"
+            className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
           >
-            â† Back to Dashboard
+            ← Back to Dashboard
           </Link>
 
           <div className="mt-5">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-blue-600">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-400">
               SKILL INTELLIGENCE
             </p>
 
@@ -585,14 +585,14 @@ export default function SkillGapPage() {
 
         {/* READINESS HERO */}
 
-        <section className="mt-8 overflow-hidden rounded-3xl border border-blue-600/20 bg-gradient-to-br from-cyan-400/10 via-[#0d1b2e] to-purple-500/10 p-8">
+        <section className="mt-8 overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-400/10 via-[#0d1b2e] to-purple-500/10 p-8">
           <div className="grid gap-10 lg:grid-cols-[260px_1fr] lg:items-center">
             {/* SCORE */}
 
             <div className="flex flex-col items-center">
-              <div className="flex h-52 w-52 items-center justify-center rounded-full border-[12px] border-blue-600/15 bg-blue-600/5">
+              <div className="flex h-52 w-52 items-center justify-center rounded-full border-[12px] border-cyan-400/15 bg-cyan-400/5">
                 <div className="text-center">
-                  <p className="text-6xl font-black text-blue-600">
+                  <p className="text-6xl font-black text-cyan-400">
                     {readinessScore}%
                   </p>
 
@@ -632,7 +632,7 @@ export default function SkillGapPage() {
                     Overall readiness
                   </span>
 
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-cyan-400">
                     {readinessScore}%
                   </span>
                 </div>
@@ -649,7 +649,7 @@ export default function SkillGapPage() {
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl bg-white/[0.03] p-4">
-                  <p className="text-2xl font-black text-blue-600">
+                  <p className="text-2xl font-black text-cyan-400">
                     {skills.length}
                   </p>
 
@@ -659,7 +659,7 @@ export default function SkillGapPage() {
                 </div>
 
                 <div className="rounded-xl bg-white/[0.03] p-4">
-                  <p className="text-2xl font-black text-teal-400">
+                  <p className="text-2xl font-black text-emerald-400">
                     {strongSkills.length}
                   </p>
 
@@ -685,12 +685,12 @@ export default function SkillGapPage() {
         {/* STATS */}
 
         <section className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-emerald-400/10 bg-[#163456] p-6">
+          <div className="rounded-2xl border border-emerald-400/10 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-500">
               Strong Skills
             </p>
 
-            <p className="mt-3 text-4xl font-black text-teal-400">
+            <p className="mt-3 text-4xl font-black text-emerald-400">
               {strongSkills.length}
             </p>
 
@@ -699,7 +699,7 @@ export default function SkillGapPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-yellow-400/10 bg-[#163456] p-6">
+          <div className="rounded-2xl border border-yellow-400/10 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-500">
               Improve
             </p>
@@ -713,7 +713,7 @@ export default function SkillGapPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-red-400/10 bg-[#163456] p-6">
+          <div className="rounded-2xl border border-red-400/10 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-500">
               Priority Gaps
             </p>
@@ -727,12 +727,12 @@ export default function SkillGapPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-blue-600/10 bg-[#163456] p-6">
+          <div className="rounded-2xl border border-cyan-400/10 bg-[#0d1b2e] p-6">
             <p className="text-sm text-slate-500">
               Jobs Analyzed
             </p>
 
-            <p className="mt-3 text-4xl font-black text-blue-600">
+            <p className="mt-3 text-4xl font-black text-cyan-400">
               {jobs.length}
             </p>
 
@@ -744,9 +744,9 @@ export default function SkillGapPage() {
 
         {/* STRONG SKILLS */}
 
-        <section className="mt-6 rounded-3xl border border-emerald-400/10 bg-[#163456] p-7">
+        <section className="mt-6 rounded-3xl border border-emerald-400/10 bg-[#0d1b2e] p-7">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-400">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
               YOUR ADVANTAGE
             </p>
 
@@ -776,28 +776,28 @@ export default function SkillGapPage() {
                 (skill) => (
                   <div
                     key={skill.name}
-                    className="rounded-2xl border border-emerald-400/10 bg-teal-500/5 p-5"
+                    className="rounded-2xl border border-emerald-400/10 bg-emerald-400/5 p-5"
                   >
                     <div className="flex items-center justify-between">
                       <p className="font-bold">
                         {skill.name}
                       </p>
 
-                      <span className="text-lg font-black text-teal-300">
+                      <span className="text-lg font-black text-emerald-300">
                         {skill.level}%
                       </span>
                     </div>
 
                     <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/10">
                       <div
-                        className="h-full rounded-full bg-teal-500"
+                        className="h-full rounded-full bg-emerald-400"
                         style={{
                           width: `${skill.level}%`,
                         }}
                       />
                     </div>
 
-                    <p className="mt-3 text-xs text-teal-400">
+                    <p className="mt-3 text-xs text-emerald-400">
                       Strong proficiency
                     </p>
                   </div>
@@ -812,7 +812,7 @@ export default function SkillGapPage() {
         <section className="mt-6 grid gap-6 lg:grid-cols-2">
           {/* IMPROVING */}
 
-          <div className="rounded-3xl border border-yellow-400/10 bg-[#163456] p-7">
+          <div className="rounded-3xl border border-yellow-400/10 bg-[#0d1b2e] p-7">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-yellow-400">
               DEVELOPMENT
             </p>
@@ -866,7 +866,7 @@ export default function SkillGapPage() {
 
           {/* PRIORITY GAPS */}
 
-          <div className="rounded-3xl border border-red-400/10 bg-[#163456] p-7">
+          <div className="rounded-3xl border border-red-400/10 bg-[#0d1b2e] p-7">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">
               MARKET GAP
             </p>
@@ -883,8 +883,8 @@ export default function SkillGapPage() {
             <div className="mt-6 space-y-3">
               {priorityGaps.length ===
               0 ? (
-                <div className="rounded-xl border border-emerald-400/10 bg-teal-500/5 p-6 text-sm text-teal-300">
-                  ðŸŽ‰ No major market skill gaps detected.
+                <div className="rounded-xl border border-emerald-400/10 bg-emerald-400/5 p-6 text-sm text-emerald-300">
+                  🎉 No major market skill gaps detected.
                 </div>
               ) : (
                 priorityGaps.map(
@@ -906,7 +906,7 @@ export default function SkillGapPage() {
                           Appears in {skill.count} job
                           {skill.count === 1
                             ? ""
-                            : "s"} â€¢ Current level{" "}
+                            : "s"} • Current level{" "}
                           {skill.level}%
                         </p>
                       </div>
@@ -924,10 +924,10 @@ export default function SkillGapPage() {
 
         {/* BEST JOB MATCHES */}
 
-        <section className="mt-6 rounded-3xl border border-blue-600/10 bg-[#163456] p-7">
+        <section className="mt-6 rounded-3xl border border-cyan-400/10 bg-[#0d1b2e] p-7">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
                 OPPORTUNITY MATCH
               </p>
 
@@ -943,9 +943,9 @@ export default function SkillGapPage() {
 
             <Link
               href="/jobs"
-              className="text-sm font-bold text-blue-600 hover:text-blue-300"
+              className="text-sm font-bold text-cyan-400 hover:text-cyan-300"
             >
-              View All Jobs â†’
+              View All Jobs →
             </Link>
           </div>
 
@@ -959,11 +959,11 @@ export default function SkillGapPage() {
                 <Link
                   key={job.id}
                   href={`/jobs/${job.id}`}
-                  className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:-translate-y-1 hover:border-blue-600/30"
+                  className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:-translate-y-1 hover:border-cyan-400/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-blue-600">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
                         {job.company}
                       </p>
 
@@ -972,7 +972,7 @@ export default function SkillGapPage() {
                       </h3>
 
                       <p className="mt-2 text-[11px] text-slate-600">
-                        ðŸ“{" "}
+                        📍{" "}
                         {job.location ||
                           "India"}
                       </p>
@@ -999,9 +999,9 @@ export default function SkillGapPage() {
                       .map((skill) => (
                         <span
                           key={skill}
-                          className="rounded-lg bg-teal-500/10 px-2.5 py-1.5 text-[10px] text-teal-300"
+                          className="rounded-lg bg-emerald-400/10 px-2.5 py-1.5 text-[10px] text-emerald-300"
                         >
-                          âœ“ {skill}
+                          ✓ {skill}
                         </span>
                       ))}
 
@@ -1017,8 +1017,8 @@ export default function SkillGapPage() {
                       ))}
                   </div>
 
-                  <p className="mt-5 text-xs font-bold text-slate-600 transition group-hover:text-blue-600">
-                    Analyze this job â†’
+                  <p className="mt-5 text-xs font-bold text-slate-600 transition group-hover:text-cyan-400">
+                    Analyze this job →
                   </p>
                 </Link>
               ))
@@ -1096,7 +1096,7 @@ export default function SkillGapPage() {
 
                   <p className="mt-1 font-bold text-yellow-300">
                     {improvingSkills[0].name}{" "}
-                    â€” {improvingSkills[0].level}%
+                    — {improvingSkills[0].level}%
                   </p>
                 </div>
               )}
@@ -1105,7 +1105,7 @@ export default function SkillGapPage() {
             {/* STEP 3 */}
 
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-500/10 text-lg">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-400/10 text-lg">
                 03
               </div>
 
@@ -1119,16 +1119,16 @@ export default function SkillGapPage() {
               </p>
 
               {bestJobs[0] && (
-                <div className="mt-5 rounded-xl bg-teal-500/5 p-4">
+                <div className="mt-5 rounded-xl bg-emerald-400/5 p-4">
                   <p className="text-xs text-slate-600">
                     Best opportunity
                   </p>
 
-                  <p className="mt-1 font-bold text-teal-300">
+                  <p className="mt-1 font-bold text-emerald-300">
                     {bestJobs[0].title}
                   </p>
 
-                  <p className="mt-1 text-xs text-teal-400">
+                  <p className="mt-1 text-xs text-emerald-400">
                     {bestJobs[0].matchPercentage}% match
                   </p>
                 </div>
@@ -1139,8 +1139,8 @@ export default function SkillGapPage() {
 
         {/* CTA */}
 
-        <section className="mt-6 rounded-3xl border border-blue-600/20 bg-blue-600/5 p-8 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+        <section className="mt-6 rounded-3xl border border-cyan-400/20 bg-cyan-400/5 p-8 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-400">
             TAKE ACTION
           </p>
 
@@ -1156,7 +1156,7 @@ export default function SkillGapPage() {
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/profile"
-              className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-black text-slate-950 transition hover:bg-blue-500"
+              className="rounded-xl bg-cyan-400 px-6 py-3 text-sm font-black text-slate-950 transition hover:bg-cyan-300"
             >
               Update My Skills
             </Link>
@@ -1180,4 +1180,3 @@ export default function SkillGapPage() {
     </main>
   );
 }
-
