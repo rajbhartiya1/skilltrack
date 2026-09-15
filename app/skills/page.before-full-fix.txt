@@ -9,6 +9,15 @@ type Skill = {
   level: number;
 };
 
+const fallbackSkills: Skill[] = [
+  { name: "JavaScript", level: 85 },
+  { name: "React", level: 78 },
+  { name: "Next.js", level: 72 },
+  { name: "Node.js", level: 68 },
+  { name: "SQL", level: 62 },
+  { name: "Python", level: 55 },
+];
+
 function normalizeSkills(value: unknown): Skill[] {
   if (!Array.isArray(value)) {
     return [];
@@ -17,14 +26,8 @@ function normalizeSkills(value: unknown): Skill[] {
   return value
     .map((item) => {
       if (typeof item === "string") {
-        const name = item.trim();
-
-        if (!name) {
-          return null;
-        }
-
         return {
-          name,
+          name: item.trim(),
           level: 70,
         };
       }
@@ -40,20 +43,15 @@ function normalizeSkills(value: unknown): Skill[] {
         };
 
         const name = String(skill.name ?? "").trim();
+        const level = Number(skill.level ?? 70);
 
         if (!name) {
           return null;
         }
 
-        const rawLevel = Number(skill.level ?? 70);
-
-        const level = Number.isFinite(rawLevel)
-          ? Math.max(0, Math.min(100, Math.round(rawLevel)))
-          : 70;
-
         return {
           name,
-          level,
+          level: Math.max(0, Math.min(100, Number.isFinite(level) ? level : 70)),
         };
       }
 
@@ -73,16 +71,12 @@ export default function SkillsPage() {
   const [skillName, setSkillName] = useState("");
   const [skillLevel, setSkillLevel] = useState(50);
 
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    loadSkills();
-  }, []);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   async function loadSkills() {
     setLoading(true);
-    setErrorMessage("");
+    setError("");
 
     try {
       const {
@@ -99,23 +93,25 @@ export default function SkillsPage() {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error: profileError } = await supabase
         .from("profiles")
         .select("skills")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (error) {
-        throw new Error(error.message);
+      if (profileError) {
+        throw new Error(profileError.message);
       }
 
-      setSkills(normalizeSkills(data?.skills));
-    } catch (error) {
-      console.error("Load skills error:", error);
+      const savedSkills = normalizeSkills(data?.skills);
 
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
+      setSkills(savedSkills);
+    } catch (err) {
+      console.error("Skills loading error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
           : "Unable to load your skills."
       );
     } finally {
@@ -123,10 +119,14 @@ export default function SkillsPage() {
     }
   }
 
+  useEffect(() => {
+    loadSkills();
+  }, []);
+
   async function saveSkills(updatedSkills: Skill[]) {
     setSaving(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    setError("");
+    setMessage("");
 
     try {
       const {
@@ -143,26 +143,26 @@ export default function SkillsPage() {
         return false;
       }
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({
           skills: updatedSkills,
         })
         .eq("id", user.id);
 
-      if (error) {
-        throw new Error(error.message);
+      if (updateError) {
+        throw new Error(updateError.message);
       }
 
       setSkills(updatedSkills);
 
       return true;
-    } catch (error) {
-      console.error("Save skills error:", error);
+    } catch (err) {
+      console.error("Skills save error:", err);
 
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
+      setError(
+        err instanceof Error
+          ? err.message
           : "Unable to save your skills."
       );
 
@@ -172,24 +172,25 @@ export default function SkillsPage() {
     }
   }
 
-  async function handleAddSkill() {
-    setErrorMessage("");
-    setSuccessMessage("");
+  async function addSkill() {
+    setMessage("");
+    setError("");
 
     const cleanedName = skillName.trim();
 
     if (!cleanedName) {
-      setErrorMessage("Please enter a skill name.");
+      setError("Please enter a skill name.");
       return;
     }
 
-    const exists = skills.some(
+    const duplicate = skills.some(
       (skill) =>
-        skill.name.toLowerCase() === cleanedName.toLowerCase()
+        skill.name.trim().toLowerCase() ===
+        cleanedName.toLowerCase()
     );
 
-    if (exists) {
-      setErrorMessage("This skill already exists.");
+    if (duplicate) {
+      setError("This skill already exists.");
       return;
     }
 
@@ -200,19 +201,16 @@ export default function SkillsPage() {
 
     const updatedSkills = [...skills, newSkill];
 
-    const saved = await saveSkills(updatedSkills);
+    const success = await saveSkills(updatedSkills);
 
-    if (!saved) {
+    if (!success) {
       return;
     }
 
     setSkillName("");
     setSkillLevel(50);
     setShowForm(false);
-
-    setSuccessMessage(
-      `${cleanedName} was added successfully.`
-    );
+    setMessage("Skill added successfully.");
   }
 
   function startEdit(skill: Skill) {
@@ -220,59 +218,54 @@ export default function SkillsPage() {
     setSkillName(skill.name);
     setSkillLevel(skill.level);
     setShowForm(true);
+    setMessage("");
+    setError("");
 
-    setSuccessMessage("");
-    setErrorMessage("");
-
-    setTimeout(() => {
-      const input = document.getElementById(
-        "skill-name-input"
-      ) as HTMLInputElement | null;
-
-      input?.focus();
-    }, 50);
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
-  async function handleUpdateSkill() {
-    setErrorMessage("");
-    setSuccessMessage("");
+  async function updateSkill() {
+    setMessage("");
+    setError("");
 
     const cleanedName = skillName.trim();
+
+    if (!cleanedName) {
+      setError("Please enter a skill name.");
+      return;
+    }
 
     if (!editingSkill) {
       return;
     }
 
-    if (!cleanedName) {
-      setErrorMessage("Please enter a skill name.");
-      return;
-    }
-
     const duplicate = skills.some(
       (skill) =>
-        skill.name.toLowerCase() === cleanedName.toLowerCase() &&
+        skill.name.trim().toLowerCase() ===
+          cleanedName.toLowerCase() &&
         skill.name !== editingSkill
     );
 
     if (duplicate) {
-      setErrorMessage("Another skill with this name already exists.");
+      setError("Another skill with this name already exists.");
       return;
     }
 
-    const updatedSkills = skills.map((skill) => {
-      if (skill.name === editingSkill) {
-        return {
-          name: cleanedName,
-          level: skillLevel,
-        };
-      }
+    const updatedSkills = skills.map((skill) =>
+      skill.name === editingSkill
+        ? {
+            name: cleanedName,
+            level: skillLevel,
+          }
+        : skill
+    );
 
-      return skill;
-    });
+    const success = await saveSkills(updatedSkills);
 
-    const saved = await saveSkills(updatedSkills);
-
-    if (!saved) {
+    if (!success) {
       return;
     }
 
@@ -280,41 +273,36 @@ export default function SkillsPage() {
     setSkillName("");
     setSkillLevel(50);
     setShowForm(false);
-
-    setSuccessMessage(
-      `${cleanedName} was updated successfully.`
-    );
+    setMessage("Skill updated successfully.");
   }
 
-  async function handleRemoveSkill(name: string) {
-    setErrorMessage("");
-    setSuccessMessage("");
-
+  async function removeSkill(skillNameToRemove: string) {
     const confirmed = window.confirm(
-      `Remove "${name}" from your skills?`
+      `Remove "${skillNameToRemove}" from your skills?`
     );
 
     if (!confirmed) {
       return;
     }
 
+    setMessage("");
+    setError("");
+
     const updatedSkills = skills.filter(
-      (skill) => skill.name !== name
+      (skill) => skill.name !== skillNameToRemove
     );
 
-    const saved = await saveSkills(updatedSkills);
+    const success = await saveSkills(updatedSkills);
 
-    if (!saved) {
+    if (!success) {
       return;
     }
 
-    if (editingSkill === name) {
+    if (editingSkill === skillNameToRemove) {
       cancelForm();
     }
 
-    setSuccessMessage(
-      `${name} was removed successfully.`
-    );
+    setMessage("Skill removed successfully.");
   }
 
   function cancelForm() {
@@ -322,7 +310,8 @@ export default function SkillsPage() {
     setEditingSkill(null);
     setSkillName("");
     setSkillLevel(50);
-    setErrorMessage("");
+    setMessage("");
+    setError("");
   }
 
   const averageProficiency = useMemo(() => {
@@ -330,12 +319,10 @@ export default function SkillsPage() {
       return 0;
     }
 
-    const total = skills.reduce(
-      (sum, skill) => sum + skill.level,
-      0
+    return Math.round(
+      skills.reduce((total, skill) => total + skill.level, 0) /
+        skills.length
     );
-
-    return Math.round(total / skills.length);
   }, [skills]);
 
   const strongestSkill = useMemo(() => {
@@ -343,12 +330,10 @@ export default function SkillsPage() {
       return null;
     }
 
-    return [...skills].sort(
-      (a, b) => b.level - a.level
-    )[0];
+    return [...skills].sort((a, b) => b.level - a.level)[0];
   }, [skills]);
 
-  function getLevelLabel(level: number) {
+  const skillCategory = (level: number) => {
     if (level >= 85) {
       return "Expert";
     }
@@ -362,35 +347,18 @@ export default function SkillsPage() {
     }
 
     return "Beginner";
-  }
-
-  function getLevelTextColor(level: number) {
-    if (level >= 85) {
-      return "text-cyan-300";
-    }
-
-    if (level >= 70) {
-      return "text-blue-300";
-    }
-
-    if (level >= 50) {
-      return "text-emerald-300";
-    }
-
-    return "text-amber-300";
-  }
+  };
 
   return (
-    <main className="min-h-screen bg-[#07111F] text-white">
+    <main className="min-h-screen bg-[#0B1F3A] text-white">
       <div className="flex min-h-screen">
         {/* SIDEBAR */}
-        <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-[#0B1F3A] p-5 md:block">
+        <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-[#10294A] p-5 md:block">
           <div className="mb-10 flex items-center gap-3">
-            <Link
-              href="/"
-              className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-bold text-white"
-            >
-              S
+            <Link href="/">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xl font-bold text-white">
+                S
+              </div>
             </Link>
 
             <div>
@@ -404,10 +372,10 @@ export default function SkillsPage() {
             </div>
           </div>
 
-          <nav className="space-y-1.5">
+          <nav className="space-y-2">
             <Link
               href="/"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Dashboard
             </Link>
@@ -421,67 +389,67 @@ export default function SkillsPage() {
 
             <Link
               href="/jobs"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Jobs
             </Link>
 
             <Link
               href="/skill-gap"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Skill Gap
             </Link>
 
             <Link
               href="/recommendations"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Recommendations
             </Link>
 
             <Link
               href="/career-coach"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Career Coach
             </Link>
 
             <Link
               href="/resume-analyzer"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Resume Analyzer
             </Link>
 
             <Link
               href="/interview-coach"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Interview Coach
             </Link>
 
             <Link
               href="/applications"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Applications
             </Link>
 
             <Link
               href="/profile"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Profile
             </Link>
           </nav>
 
-          <div className="mt-10 rounded-2xl border border-blue-500/20 bg-blue-500/5 p-4">
+          <div className="mt-10 rounded-2xl border border-blue-600/20 bg-blue-600/5 p-4">
             <p className="text-xs text-slate-400">
               Profile completion
             </p>
 
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-700">
               <div className="h-full w-[82%] rounded-full bg-blue-600" />
             </div>
 
@@ -494,7 +462,7 @@ export default function SkillsPage() {
         {/* MAIN */}
         <section className="min-w-0 flex-1">
           {/* HEADER */}
-          <header className="flex items-center justify-between border-b border-white/10 bg-[#0B1F3A] px-5 py-5 md:px-8">
+          <header className="flex items-center justify-between border-b border-white/10 bg-[#10294A]/90 px-5 py-5 backdrop-blur md:px-8">
             <div>
               <p className="text-sm text-slate-400">
                 Career Dashboard
@@ -515,7 +483,7 @@ export default function SkillsPage() {
 
           <div className="space-y-7 p-5 md:p-8">
             {/* TITLE */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
               <div>
                 <h3 className="text-3xl font-bold">
                   Your Skills
@@ -531,19 +499,8 @@ export default function SkillsPage() {
                   type="button"
                   onClick={() => {
                     setShowForm(true);
-                    setEditingSkill(null);
-                    setSkillName("");
-                    setSkillLevel(50);
-                    setErrorMessage("");
-                    setSuccessMessage("");
-
-                    setTimeout(() => {
-                      const input = document.getElementById(
-                        "skill-name-input"
-                      ) as HTMLInputElement | null;
-
-                      input?.focus();
-                    }, 50);
+                    setMessage("");
+                    setError("");
                   }}
                   className="min-h-11 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500"
                 >
@@ -552,89 +509,75 @@ export default function SkillsPage() {
               )}
             </div>
 
-            {/* MESSAGES */}
-            {successMessage && (
+            {/* STATUS MESSAGE */}
+            {message && (
               <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
-                {successMessage}
+                {message}
               </div>
             )}
 
-            {errorMessage && (
+            {error && (
               <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-300">
-                {errorMessage}
+                {error}
               </div>
             )}
 
-            {/* FORM */}
+            {/* ADD / EDIT FORM */}
             {showForm && (
-              <div className="relative z-10 rounded-2xl border border-blue-500/20 bg-[#10294A] p-5 md:p-6">
-                <h3 className="text-lg font-bold">
-                  {editingSkill
-                    ? "Edit Skill"
-                    : "Add New Skill"}
-                </h3>
-
-                <p className="mt-1 text-sm text-slate-400">
-                  {editingSkill
-                    ? "Update the skill and proficiency level."
-                    : "Add a skill to your career profile."}
-                </p>
-
-                <div className="mt-6 grid gap-6 md:grid-cols-2">
-                  {/* INPUT */}
+              <div className="rounded-2xl border border-blue-600/20 bg-[#163456] p-5 md:p-6">
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                   <div>
-                    <label
-                      htmlFor="skill-name-input"
-                      className="mb-2 block text-sm font-medium text-slate-300"
-                    >
+                    <h3 className="text-lg font-bold">
+                      {editingSkill
+                        ? "Edit Skill"
+                        : "Add New Skill"}
+                    </h3>
+
+                    <p className="mt-1 text-sm text-slate-400">
+                      {editingSkill
+                        ? "Update the skill name or proficiency level."
+                        : "Add a skill to your career profile."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-300">
                       Skill Name
                     </label>
 
                     <input
-                      id="skill-name-input"
-                      name="skillName"
                       type="text"
                       value={skillName}
-                      onChange={(event) => {
-                        setSkillName(event.target.value);
-                        setErrorMessage("");
-                      }}
+                      onChange={(e) =>
+                        setSkillName(e.target.value)
+                      }
                       placeholder="e.g. TypeScript"
-                      autoComplete="off"
-                      spellCheck={false}
-                      disabled={saving}
-                      className="relative z-20 block w-full cursor-text rounded-xl border border-white/10 bg-[#07111F] px-4 py-3 text-base text-white caret-cyan-400 outline-none placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-xl border border-white/10 bg-[#0B1F3A] px-4 py-3 text-slate-100 caret-cyan-400 outline-none placeholder:text-slate-500 focus:border-blue-500"
                     />
                   </div>
 
-                  {/* RANGE */}
                   <div>
                     <div className="flex items-center justify-between">
-                      <label
-                        htmlFor="skill-level-range"
-                        className="text-sm font-medium text-slate-300"
-                      >
+                      <label className="text-sm font-medium text-slate-300">
                         Proficiency
                       </label>
 
-                      <span className="font-bold text-cyan-400">
+                      <span className="text-sm font-bold text-cyan-400">
                         {skillLevel}%
                       </span>
                     </div>
 
                     <input
-                      id="skill-level-range"
                       type="range"
                       min="0"
                       max="100"
                       value={skillLevel}
-                      onChange={(event) => {
-                        setSkillLevel(
-                          Number(event.target.value)
-                        );
-                      }}
-                      disabled={saving}
-                      className="mt-5 block w-full cursor-pointer accent-cyan-400 disabled:cursor-not-allowed"
+                      onChange={(e) =>
+                        setSkillLevel(Number(e.target.value))
+                      }
+                      className="mt-4 w-full accent-cyan-400"
                     />
 
                     <div className="mt-2 flex justify-between text-xs text-slate-500">
@@ -646,17 +589,14 @@ export default function SkillsPage() {
                   </div>
                 </div>
 
-                {/* BUTTONS */}
                 <div className="mt-6 flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={
-                      editingSkill
-                        ? handleUpdateSkill
-                        : handleAddSkill
+                      editingSkill ? updateSkill : addSkill
                     }
                     disabled={saving}
-                    className="min-h-11 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="min-h-11 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {saving
                       ? "Saving..."
@@ -669,7 +609,7 @@ export default function SkillsPage() {
                     type="button"
                     onClick={cancelForm}
                     disabled={saving}
-                    className="min-h-11 rounded-xl border border-white/10 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="min-h-11 rounded-xl border border-white/10 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5 disabled:opacity-60"
                   >
                     Cancel
                   </button>
@@ -679,7 +619,7 @@ export default function SkillsPage() {
 
             {/* SUMMARY */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-[#10294A] p-5">
+              <div className="rounded-2xl border border-white/10 bg-[#163456] p-5">
                 <p className="text-sm text-slate-400">
                   Total Skills
                 </p>
@@ -693,15 +633,13 @@ export default function SkillsPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-[#10294A] p-5">
+              <div className="rounded-2xl border border-white/10 bg-[#163456] p-5">
                 <p className="text-sm text-slate-400">
                   Average Proficiency
                 </p>
 
                 <p className="mt-2 text-3xl font-bold">
-                  {loading
-                    ? "—"
-                    : `${averageProficiency}%`}
+                  {loading ? "—" : `${averageProficiency}%`}
                 </p>
 
                 <p className="mt-2 text-xs text-emerald-400">
@@ -709,7 +647,7 @@ export default function SkillsPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-[#10294A] p-5">
+              <div className="rounded-2xl border border-white/10 bg-[#163456] p-5">
                 <p className="text-sm text-slate-400">
                   Strongest Skill
                 </p>
@@ -728,27 +666,27 @@ export default function SkillsPage() {
               </div>
             </div>
 
-            {/* SKILLS */}
-            <div className="rounded-2xl border border-white/10 bg-[#10294A] p-5 md:p-6">
+            {/* SKILLS LIST */}
+            <div className="rounded-2xl border border-white/10 bg-[#163456] p-5 md:p-6">
               <div className="mb-6">
                 <h3 className="text-xl font-bold">
                   Skill Proficiency
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-400">
-                  Your current technical skill levels.
+                  Your skills are stored in your SkillTrack profile.
                 </p>
               </div>
 
               {loading ? (
-                <div className="space-y-6">
+                <div className="space-y-5">
                   {[1, 2, 3].map((item) => (
                     <div
                       key={item}
                       className="animate-pulse"
                     >
-                      <div className="mb-3 h-5 w-40 rounded bg-white/10" />
-                      <div className="h-3 rounded-full bg-white/10" />
+                      <div className="mb-3 h-5 w-32 rounded bg-white/10" />
+                      <div className="h-3 w-full rounded-full bg-white/10" />
                     </div>
                   ))}
                 </div>
@@ -762,30 +700,17 @@ export default function SkillsPage() {
                     No skills added yet
                   </h4>
 
-                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">
-                    Add your first skill to improve job
-                    matching, career recommendations and
-                    skill-gap analysis.
+                  <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
+                    Add your first skill to improve your job
+                    matching, recommendations and skill-gap analysis.
                   </p>
 
                   <button
                     type="button"
                     onClick={() => {
                       setShowForm(true);
-                      setEditingSkill(null);
-                      setSkillName("");
-                      setSkillLevel(50);
-                      setErrorMessage("");
-                      setSuccessMessage("");
-
-                      setTimeout(() => {
-                        const input =
-                          document.getElementById(
-                            "skill-name-input"
-                          ) as HTMLInputElement | null;
-
-                        input?.focus();
-                      }, 50);
+                      setMessage("");
+                      setError("");
                     }}
                     className="mt-5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-500"
                   >
@@ -793,15 +718,13 @@ export default function SkillsPage() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-7">
+                <div className="space-y-6">
                   {skills.map((skill) => (
                     <div key={skill.name}>
-                      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/10 font-bold text-blue-400">
-                            {skill.name
-                              .charAt(0)
-                              .toUpperCase()}
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600/10 text-sm font-bold text-blue-400">
+                            {skill.name.charAt(0).toUpperCase()}
                           </div>
 
                           <div className="min-w-0">
@@ -809,28 +732,21 @@ export default function SkillsPage() {
                               {skill.name}
                             </p>
 
-                            <p
-                              className={`text-xs ${getLevelTextColor(
-                                skill.level
-                              )}`}
-                            >
-                              {getLevelLabel(skill.level)}
+                            <p className="text-xs text-slate-500">
+                              {skillCategory(skill.level)}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="mr-1 text-sm font-semibold text-slate-300">
+                        <div className="flex items-center gap-3 sm:justify-end">
+                          <span className="text-sm font-semibold text-slate-300">
                             {skill.level}%
                           </span>
 
                           <button
                             type="button"
-                            onClick={() =>
-                              startEdit(skill)
-                            }
-                            disabled={saving}
-                            className="rounded-lg border border-blue-400/20 px-3 py-1.5 text-xs font-semibold text-blue-400 hover:bg-blue-400/10 disabled:opacity-50"
+                            onClick={() => startEdit(skill)}
+                            className="rounded-lg border border-blue-400/20 px-3 py-1.5 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/10"
                           >
                             Edit
                           </button>
@@ -838,12 +754,10 @@ export default function SkillsPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              handleRemoveSkill(
-                                skill.name
-                              )
+                              removeSkill(skill.name)
                             }
                             disabled={saving}
-                            className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-400/10 disabled:opacity-50"
+                            className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-400/10 disabled:opacity-50"
                           >
                             Remove
                           </button>
@@ -867,19 +781,19 @@ export default function SkillsPage() {
             {/* INFO */}
             <div className="rounded-2xl border border-cyan-400/10 bg-cyan-400/5 p-5">
               <h4 className="font-semibold text-cyan-300">
-                Why your skills matter
+                Why your skill profile matters
               </h4>
 
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                SkillTrack uses your skill profile to
-                calculate job matches, identify skill gaps
-                and personalize career recommendations.
+                Your skills help SkillTrack calculate job matches,
+                identify skill gaps and personalize career
+                recommendations.
               </p>
             </div>
 
             <Link
               href="/"
-              className="inline-block text-sm font-semibold text-blue-400 hover:text-cyan-300"
+              className="inline-block text-sm font-semibold text-blue-400 transition hover:text-cyan-300"
             >
               ← Back to Dashboard
             </Link>
