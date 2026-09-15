@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 const aiCareerItems = [
   {
@@ -38,6 +39,8 @@ const aiCareerItems = [
 
 export default function TopNav() {
   const [aiOpen, setAiOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
   const [dropdownPosition, setDropdownPosition] = useState({
     top: 0,
     left: 0,
@@ -103,9 +106,32 @@ export default function TopNav() {
     document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
     };
   }, []);
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    setAiOpen(false);
+
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error("Logout error:", error);
+        setLoggingOut(false);
+        return;
+      }
+
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <>
@@ -121,11 +147,10 @@ export default function TopNav() {
             <span className="text-blue-500">Track</span>
           </Link>
 
-          {/* HORIZONTAL NAV */}
+          {/* NAVIGATION */}
           <div className="min-w-0 flex-1 overflow-x-auto scrollbar-none">
             <nav className="flex min-w-max items-center justify-center gap-0.5 whitespace-nowrap sm:gap-1">
 
-              {/* DASHBOARD */}
               <Link
                 href="/"
                 className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
@@ -133,7 +158,6 @@ export default function TopNav() {
                 Dashboard
               </Link>
 
-              {/* JOBS */}
               <Link
                 href="/jobs"
                 className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
@@ -158,7 +182,6 @@ export default function TopNav() {
                 }`}
               >
                 <span>AI Career</span>
-
                 <span
                   className={`text-[9px] text-slate-400 transition-transform duration-200 ${
                     aiOpen ? "rotate-180" : ""
@@ -168,7 +191,6 @@ export default function TopNav() {
                 </span>
               </button>
 
-              {/* APPLICATIONS */}
               <Link
                 href="/applications"
                 className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
@@ -176,7 +198,6 @@ export default function TopNav() {
                 Applications
               </Link>
 
-              {/* PROFILE */}
               <Link
                 href="/profile"
                 className="shrink-0 rounded-lg px-2.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-white/5 hover:text-white sm:px-4 sm:text-sm"
@@ -186,18 +207,28 @@ export default function TopNav() {
             </nav>
           </div>
 
-          {/* UPDATE SKILLS */}
-          <Link
-            href="/skills"
-            className="shrink-0 whitespace-nowrap rounded-xl bg-blue-600 px-2.5 py-2.5 text-[10px] font-black text-white transition hover:bg-blue-500 sm:px-4 sm:text-sm"
-          >
-            Update Skills
-          </Link>
+          {/* ACTIONS */}
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/skills"
+              className="whitespace-nowrap rounded-xl bg-blue-600 px-2.5 py-2.5 text-[10px] font-black text-white transition hover:bg-blue-500 sm:px-4 sm:text-sm"
+            >
+              Update Skills
+            </Link>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="whitespace-nowrap rounded-xl border border-red-400/20 bg-red-400/10 px-2.5 py-2.5 text-[10px] font-black text-red-300 transition hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:text-sm"
+            >
+              {loggingOut ? "Logging out..." : "Logout"}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* AI CAREER DROPDOWN
-          Fixed position prevents clipping by horizontal navbar */}
+      {/* AI CAREER DROPDOWN */}
       {aiOpen && (
         <div
           ref={dropdownRef}
