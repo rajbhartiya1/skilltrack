@@ -345,3 +345,40 @@ select {
 /* =========================================================
    END FORM TEXT VISIBILITY FIX
    ========================================================= */
+/* =========================================================
+   SKILLTRACK RESPONSIVE NAVIGATION
+   ========================================================= */
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent horizontal page overflow */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+/* =========================================================
+   SKILLTRACK SHARED RESPONSIVE NAVBAR
+   ========================================================= */
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
