@@ -1,4 +1,4 @@
-﻿import OpenAI from "openai";
+import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
 import * as mammoth from "mammoth";
@@ -307,13 +307,11 @@ async function extractResumeText(file: File) {
 
   if (file.type === "application/pdf" || name.endsWith(".pdf")) {
     const pdf = await getDocumentProxy(new Uint8Array(buffer));
-    const { text } = await extractText(pdf, {
+    const extracted = await extractText(pdf, {
       mergePages: true,
     });
 
-    return typeof text === "string"
-      ? text
-      : text.join("\n");
+    return String(extracted.text);
   }
 
   throw new Error(
