@@ -220,16 +220,17 @@ export default function SkillsPage() {
     setSkillName(skill.name);
     setSkillLevel(skill.level);
     setShowForm(true);
-
     setSuccessMessage("");
     setErrorMessage("");
 
     setTimeout(() => {
-      const input = document.getElementById(
-        "skill-name-input"
-      ) as HTMLInputElement | null;
+      const input =
+        document.getElementById(
+          "skill-name-input"
+        ) as HTMLInputElement | null;
 
       input?.focus();
+      input?.select();
     }, 50);
   }
 
@@ -237,11 +238,11 @@ export default function SkillsPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
-    const cleanedName = skillName.trim();
-
     if (!editingSkill) {
       return;
     }
+
+    const cleanedName = skillName.trim();
 
     if (!cleanedName) {
       setErrorMessage("Please enter a skill name.");
@@ -255,20 +256,20 @@ export default function SkillsPage() {
     );
 
     if (duplicate) {
-      setErrorMessage("Another skill with this name already exists.");
+      setErrorMessage(
+        "Another skill with this name already exists."
+      );
       return;
     }
 
-    const updatedSkills = skills.map((skill) => {
-      if (skill.name === editingSkill) {
-        return {
-          name: cleanedName,
-          level: skillLevel,
-        };
-      }
-
-      return skill;
-    });
+    const updatedSkills = skills.map((skill) =>
+      skill.name === editingSkill
+        ? {
+            name: cleanedName,
+            level: skillLevel,
+          }
+        : skill
+    );
 
     const saved = await saveSkills(updatedSkills);
 
@@ -323,6 +324,7 @@ export default function SkillsPage() {
     setSkillName("");
     setSkillLevel(50);
     setErrorMessage("");
+    setSuccessMessage("");
   }
 
   const averageProficiency = useMemo(() => {
@@ -364,7 +366,7 @@ export default function SkillsPage() {
     return "Beginner";
   }
 
-  function getLevelTextColor(level: number) {
+  function getLevelColor(level: number) {
     if (level >= 85) {
       return "text-cyan-300";
     }
@@ -378,6 +380,24 @@ export default function SkillsPage() {
     }
 
     return "text-amber-300";
+  }
+
+  function openAddForm() {
+    setEditingSkill(null);
+    setSkillName("");
+    setSkillLevel(50);
+    setShowForm(true);
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    setTimeout(() => {
+      const input =
+        document.getElementById(
+          "skill-name-input"
+        ) as HTMLInputElement | null;
+
+      input?.focus();
+    }, 50);
   }
 
   return (
@@ -407,7 +427,7 @@ export default function SkillsPage() {
           <nav className="space-y-1.5">
             <Link
               href="/"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Dashboard
             </Link>
@@ -421,56 +441,56 @@ export default function SkillsPage() {
 
             <Link
               href="/jobs"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Jobs
             </Link>
 
             <Link
               href="/skill-gap"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Skill Gap
             </Link>
 
             <Link
               href="/recommendations"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Recommendations
             </Link>
 
             <Link
               href="/career-coach"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Career Coach
             </Link>
 
             <Link
               href="/resume-analyzer"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Resume Analyzer
             </Link>
 
             <Link
               href="/interview-coach"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Interview Coach
             </Link>
 
             <Link
               href="/applications"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Applications
             </Link>
 
             <Link
               href="/profile"
-              className="block rounded-xl px-4 py-3 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
+              className="block rounded-xl px-4 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               Profile
             </Link>
@@ -529,22 +549,7 @@ export default function SkillsPage() {
               {!showForm && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(true);
-                    setEditingSkill(null);
-                    setSkillName("");
-                    setSkillLevel(50);
-                    setErrorMessage("");
-                    setSuccessMessage("");
-
-                    setTimeout(() => {
-                      const input = document.getElementById(
-                        "skill-name-input"
-                      ) as HTMLInputElement | null;
-
-                      input?.focus();
-                    }, 50);
-                  }}
+                  onClick={openAddForm}
                   className="min-h-11 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-500"
                 >
                   + Add Skill
@@ -552,13 +557,14 @@ export default function SkillsPage() {
               )}
             </div>
 
-            {/* MESSAGES */}
+            {/* SUCCESS */}
             {successMessage && (
               <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-300">
                 {successMessage}
               </div>
             )}
 
+            {/* ERROR */}
             {errorMessage && (
               <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-300">
                 {errorMessage}
@@ -567,7 +573,7 @@ export default function SkillsPage() {
 
             {/* FORM */}
             {showForm && (
-              <div className="relative z-10 rounded-2xl border border-blue-500/20 bg-[#10294A] p-5 md:p-6">
+              <div className="relative z-20 rounded-2xl border border-blue-500/20 bg-[#10294A] p-5 md:p-6">
                 <h3 className="text-lg font-bold">
                   {editingSkill
                     ? "Edit Skill"
@@ -581,7 +587,7 @@ export default function SkillsPage() {
                 </p>
 
                 <div className="mt-6 grid gap-6 md:grid-cols-2">
-                  {/* INPUT */}
+                  {/* SKILL NAME */}
                   <div>
                     <label
                       htmlFor="skill-name-input"
@@ -601,13 +607,25 @@ export default function SkillsPage() {
                       }}
                       placeholder="e.g. TypeScript"
                       autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="words"
                       spellCheck={false}
                       disabled={saving}
-                      className="relative z-20 block w-full cursor-text rounded-xl border border-white/10 bg-[#07111F] px-4 py-3 text-base text-white caret-cyan-400 outline-none placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{
+                        color: "#FFFFFF",
+                        WebkitTextFillColor: "#FFFFFF",
+                        backgroundColor: "#07111F",
+                        caretColor: "#22D3EE",
+                      }}
+                      className="relative z-30 block w-full cursor-text rounded-xl border border-white/10 px-4 py-3 text-base font-medium outline-none placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-60"
                     />
+
+                    <p className="mt-2 text-xs text-slate-500">
+                      Enter the name of your technical or professional skill.
+                    </p>
                   </div>
 
-                  {/* RANGE */}
+                  {/* PROFICIENCY */}
                   <div>
                     <div className="flex items-center justify-between">
                       <label
@@ -656,7 +674,7 @@ export default function SkillsPage() {
                         : handleAddSkill
                     }
                     disabled={saving}
-                    className="min-h-11 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="min-h-11 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {saving
                       ? "Saving..."
@@ -669,7 +687,7 @@ export default function SkillsPage() {
                     type="button"
                     onClick={cancelForm}
                     disabled={saving}
-                    className="min-h-11 rounded-xl border border-white/10 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="min-h-11 rounded-xl border border-white/10 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Cancel
                   </button>
@@ -728,7 +746,7 @@ export default function SkillsPage() {
               </div>
             </div>
 
-            {/* SKILLS */}
+            {/* SKILLS LIST */}
             <div className="rounded-2xl border border-white/10 bg-[#10294A] p-5 md:p-6">
               <div className="mb-6">
                 <h3 className="text-xl font-bold">
@@ -770,24 +788,8 @@ export default function SkillsPage() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowForm(true);
-                      setEditingSkill(null);
-                      setSkillName("");
-                      setSkillLevel(50);
-                      setErrorMessage("");
-                      setSuccessMessage("");
-
-                      setTimeout(() => {
-                        const input =
-                          document.getElementById(
-                            "skill-name-input"
-                          ) as HTMLInputElement | null;
-
-                        input?.focus();
-                      }, 50);
-                    }}
-                    className="mt-5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-500"
+                    onClick={openAddForm}
+                    className="mt-5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-500"
                   >
                     Add Your First Skill
                   </button>
@@ -810,7 +812,7 @@ export default function SkillsPage() {
                             </p>
 
                             <p
-                              className={`text-xs ${getLevelTextColor(
+                              className={`text-xs ${getLevelColor(
                                 skill.level
                               )}`}
                             >
@@ -830,7 +832,7 @@ export default function SkillsPage() {
                               startEdit(skill)
                             }
                             disabled={saving}
-                            className="rounded-lg border border-blue-400/20 px-3 py-1.5 text-xs font-semibold text-blue-400 hover:bg-blue-400/10 disabled:opacity-50"
+                            className="rounded-lg border border-blue-400/20 px-3 py-1.5 text-xs font-semibold text-blue-400 transition hover:bg-blue-400/10 disabled:opacity-50"
                           >
                             Edit
                           </button>
@@ -843,7 +845,7 @@ export default function SkillsPage() {
                               )
                             }
                             disabled={saving}
-                            className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-400/10 disabled:opacity-50"
+                            className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-400/10 disabled:opacity-50"
                           >
                             Remove
                           </button>
@@ -879,7 +881,7 @@ export default function SkillsPage() {
 
             <Link
               href="/"
-              className="inline-block text-sm font-semibold text-blue-400 hover:text-cyan-300"
+              className="inline-block text-sm font-semibold text-blue-400 transition hover:text-cyan-300"
             >
               ← Back to Dashboard
             </Link>
