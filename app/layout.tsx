@@ -1,6 +1,6 @@
 ﻿import type { Metadata } from "next";
 import "./globals.css";
-import TopNav from "@/components/TopNav";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "SkillTrack",
@@ -15,8 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#0B1F3A] text-white antialiased">
-        <TopNav />
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
