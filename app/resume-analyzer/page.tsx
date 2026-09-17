@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   ChangeEvent,
@@ -24,6 +24,20 @@ type Job = {
   location: string | null;
 };
 
+type SectionStatus = {
+  name: string;
+  found: boolean;
+};
+
+type AIReview = {
+  summary?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  keywordAdvice?: string[];
+  bulletImprovements?: string[];
+  actionPlan?: string[];
+};
+
 type AnalysisResult = {
   success: boolean;
   fileName: string;
@@ -31,209 +45,270 @@ type AnalysisResult = {
   extractedCharacters: number;
   extractedWords: number;
   targetCareer: string;
+
   ats: {
     score: number;
     wordCount: number;
     hasEmail: boolean;
     hasPhone: boolean;
-    sectionScore: number;
     keywordScore: number;
-    actionScore: number;
-    metricCount: number;
-    readabilityScore: number;
+    sectionScore: number;
     lengthScore: number;
+    contactScore: number;
+    actionWordScore: number;
   };
-  matchedSkills: string[];
-  missingSkills: string[];
-  detectedSkills: string[];
-  sectionStatus: {
-    name: string;
-    found: boolean;
-  }[];
+
   localFeedback: {
-    summary: string;
-    bullets: string[];
-    suggestions: string[];
     quickVerdict: string;
-    detectedSkillCount: number;
-    targetSkillCount: number;
+    matchedSkills: string[];
+    missingSkills: string[];
+    improvementSuggestions: string[];
   };
-  aiFeedback: string;
+
+  sectionStatus: SectionStatus[];
+  detectedSkills: string[];
+  missingSkills: string[];
+  aiReview: AIReview | null;
   previewText: string;
 };
 
-const defaultCareers = [
+const careerOptions = [
   "Full Stack Developer",
   "Frontend Developer",
   "Backend Developer",
   "Data Analyst",
-  "AI / Machine Learning Engineer",
-  "Cloud & DevOps Engineer",
-  "Cybersecurity Analyst",
+  "Data Scientist",
+  "Machine Learning Engineer",
+  "DevOps Engineer",
   "UI/UX Designer",
   "Software Engineer",
 ];
 
+const fallbackSkills: Record<string, string[]> = {
+  "Full Stack Developer": [
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Next.js",
+    "Node.js",
+    "Express",
+    "SQL",
+    "Git",
+    "REST API",
+  ],
+
+  "Frontend Developer": [
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Next.js",
+    "Git",
+    "Responsive Design",
+  ],
+
+  "Backend Developer": [
+    "Node.js",
+    "Express",
+    "Python",
+    "Django",
+    "Java",
+    "SQL",
+    "PostgreSQL",
+    "REST API",
+    "Git",
+  ],
+
+  "Data Analyst": [
+    "Excel",
+    "SQL",
+    "Python",
+    "Pandas",
+    "Power BI",
+    "Tableau",
+    "Statistics",
+  ],
+
+  "Data Scientist": [
+    "Python",
+    "SQL",
+    "Pandas",
+    "NumPy",
+    "Machine Learning",
+    "Statistics",
+    "TensorFlow",
+  ],
+
+  "Machine Learning Engineer": [
+    "Python",
+    "Machine Learning",
+    "TensorFlow",
+    "PyTorch",
+    "SQL",
+    "Pandas",
+    "NumPy",
+  ],
+
+  "DevOps Engineer": [
+    "Linux",
+    "Docker",
+    "Kubernetes",
+    "AWS",
+    "CI/CD",
+    "Git",
+    "Terraform",
+  ],
+
+  "UI/UX Designer": [
+    "Figma",
+    "UI Design",
+    "UX Design",
+    "Wireframing",
+    "Prototyping",
+    "User Research",
+  ],
+
+  "Software Engineer": [
+    "JavaScript",
+    "TypeScript",
+    "Python",
+    "Java",
+    "SQL",
+    "Git",
+    "Data Structures",
+    "Algorithms",
+  ],
+};
+
 export default function ResumeAnalyzerPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [profileSkills, setProfileSkills] = useState<
-    UserSkill[]
-  >([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+
+  const [profileSkills, setProfileSkills] = useState<UserSkill[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
+
   const [targetCareer, setTargetCareer] = useState(
     "Full Stack Developer"
   );
-  const [selectedFile, setSelectedFile] =
-    useState<File | null>(null);
-  const [dragActive, setDragActive] = useState(false);
-  const [loading, setLoading] = useState(true);
+
+  const [loadingContext, setLoadingContext] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
+
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
   const [result, setResult] =
     useState<AnalysisResult | null>(null);
-  const [copied, setCopied] = useState("");
-
-  async function loadContext() {
-    setLoading(true);
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const [profileResult, jobsResult] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("skills")
-            .eq("id", user.id)
-            .maybeSingle(),
-
-          supabase
-            .from("jobs")
-            .select(
-              "id, title, company, required_skills, description, location"
-            )
-            .order("created_at", {
-              ascending: false,
-            }),
-        ]);
-
-      const rawSkills = profileResult.data?.skills;
-      let normalizedSkills: UserSkill[] = [];
-
-      if (Array.isArray(rawSkills)) {
-        normalizedSkills = rawSkills
-          .map((skill) => {
-            if (typeof skill === "string") {
-              return {
-                name: skill,
-                level: 70,
-              };
-            }
-
-            if (
-              skill &&
-              typeof skill === "object" &&
-              "name" in skill
-            ) {
-              return {
-                name: String(skill.name),
-                level:
-                  "level" in skill
-                    ? Number(skill.level) || 0
-                    : 70,
-              };
-            }
-
-            return null;
-          })
-          .filter(Boolean) as UserSkill[];
-      }
-
-      setProfileSkills(normalizedSkills);
-      setJobs((jobsResult.data || []) as Job[]);
-
-      if (normalizedSkills.length > 0) {
-        const analyzed = (jobsResult.data || [])
-          .map((job) => ({
-            job,
-            result: calculateSkillGap(
-              normalizedSkills,
-              job.required_skills || []
-            ),
-          }))
-          .sort(
-            (a, b) =>
-              b.result.matchPercentage -
-              a.result.matchPercentage
-          );
-
-        const bestTitle = analyzed[0]?.job.title || "";
-
-        if (/full stack|full-stack/i.test(bestTitle)) {
-          setTargetCareer("Full Stack Developer");
-        } else if (
-          /frontend|front-end|react|ui developer/i.test(
-            bestTitle
-          )
-        ) {
-          setTargetCareer("Frontend Developer");
-        } else if (
-          /backend|back-end|node/i.test(bestTitle)
-        ) {
-          setTargetCareer("Backend Developer");
-        }
-      }
-    } catch (loadError) {
-      console.error(
-        "Resume context loading error:",
-        loadError
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
 
   useEffect(() => {
-    queueMicrotask(() => {
-      void loadContext();
-    });
+    async function loadContext() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setLoadingContext(false);
+          return;
+        }
+
+        const [profileResult, jobsResult] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("skills")
+              .eq("id", user.id)
+              .maybeSingle(),
+
+            supabase
+              .from("jobs")
+              .select(
+                "id, title, company, required_skills, description, location"
+              )
+              .order("created_at", {
+                ascending: false,
+              })
+              .limit(100),
+          ]);
+
+        const rawSkills = profileResult.data?.skills;
+
+        let normalizedSkills: UserSkill[] = [];
+
+        if (Array.isArray(rawSkills)) {
+          normalizedSkills = rawSkills
+            .map((skill: unknown) => {
+              if (typeof skill === "string") {
+                return {
+                  name: skill,
+                  level: 70,
+                };
+              }
+
+              if (
+                skill &&
+                typeof skill === "object" &&
+                "name" in skill
+              ) {
+                const item = skill as {
+                  name?: unknown;
+                  level?: unknown;
+                };
+
+                if (typeof item.name !== "string") {
+                  return null;
+                }
+
+                return {
+                  name: item.name,
+                  level:
+                    typeof item.level === "number"
+                      ? Math.max(
+                          0,
+                          Math.min(100, item.level)
+                        )
+                      : 70,
+                };
+              }
+
+              return null;
+            })
+            .filter(Boolean) as UserSkill[];
+        }
+
+        setProfileSkills(normalizedSkills);
+        setJobs((jobsResult.data || []) as Job[]);
+      } catch (contextError) {
+        console.error(
+          "Resume context loading error:",
+          contextError
+        );
+      } finally {
+        setLoadingContext(false);
+      }
+    }
+
+    loadContext();
   }, []);
 
-  const careerOptions = useMemo(() => {
-    const fromJobs = jobs
-      .map((job) => job.title)
-      .filter(Boolean);
-
-    return Array.from(
-      new Set([...defaultCareers, ...fromJobs])
-    ).slice(0, 25);
-  }, [jobs]);
-
   const targetJob = useMemo(() => {
-    if (!jobs.length || !profileSkills.length) {
+    if (!jobs.length) {
       return null;
     }
 
     const ranked = jobs
-      .map((job) => {
-        const gap = calculateSkillGap(
+      .map((job) => ({
+        job,
+        gap: calculateSkillGap(
           profileSkills,
           job.required_skills || []
-        );
-
-        return {
-          job,
-          gap,
-        };
-      })
+        ),
+      }))
       .sort(
         (a, b) =>
           b.gap.matchPercentage -
@@ -250,80 +325,55 @@ export default function ResumeAnalyzerPage() {
   }, [jobs, profileSkills, targetCareer]);
 
   const targetSkills = useMemo(() => {
-    if (targetJob?.job.required_skills?.length) {
+    if (
+      targetJob?.job.required_skills &&
+      targetJob.job.required_skills.length > 0
+    ) {
       return targetJob.job.required_skills;
     }
 
-    const careerSkillMap: Record<string, string[]> = {
-      "Full Stack Developer": [
-        "JavaScript",
-        "React",
-        "Next.js",
-        "Node.js",
-        "SQL",
-        "TypeScript",
-        "Git",
-        "REST API",
-      ],
-      "Frontend Developer": [
-        "JavaScript",
-        "React",
-        "Next.js",
-        "TypeScript",
-        "HTML",
-        "CSS",
-        "Tailwind CSS",
-      ],
-      "Backend Developer": [
-        "Node.js",
-        "Python",
-        "SQL",
-        "REST API",
-        "Git",
-        "Docker",
-      ],
-      "Data Analyst": [
-        "Python",
-        "SQL",
-        "Excel",
-        "Data Analysis",
-        "Power BI",
-      ],
-      "AI / Machine Learning Engineer": [
-        "Python",
-        "Machine Learning",
-        "SQL",
-        "Git",
-      ],
-      "Cloud & DevOps Engineer": [
-        "Linux",
-        "Git",
-        "Docker",
-        "AWS",
-        "CI/CD",
-      ],
-      "Cybersecurity Analyst": [
-        "Linux",
-        "Networking",
-        "Python",
-        "Security",
-      ],
-      "UI/UX Designer": [
-        "Figma",
-        "UI/UX",
-        "Communication",
-      ],
-    };
-
     return (
-      careerSkillMap[targetCareer] || [
-        ...profileSkills.map((skill) => skill.name),
-      ]
+      fallbackSkills[targetCareer] ||
+      fallbackSkills["Full Stack Developer"]
     );
-  }, [targetCareer, targetJob, profileSkills]);
+  }, [targetJob, targetCareer]);
 
-  function setFile(file: File | null) {
+  function validateFile(file: File) {
+    const extension =
+      file.name.split(".").pop()?.toLowerCase() || "";
+
+    const allowedExtensions = [
+      "pdf",
+      "doc",
+      "docx",
+      "txt",
+      "rtf",
+      "odt",
+      "png",
+      "jpg",
+      "jpeg",
+      "webp",
+      "gif",
+    ];
+
+    if (!allowedExtensions.includes(extension)) {
+      return "Please select a PDF, DOC, DOCX, TXT, RTF, ODT, PNG, JPG, WEBP or GIF resume.";
+    }
+
+    if (file.size === 0) {
+      return "The selected file is empty.";
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      return "Maximum file size is 8 MB.";
+    }
+
+    return "";
+  }
+
+  function handleSelectedFile(file: File | null) {
     setError("");
+    setSuccessMessage("");
     setResult(null);
 
     if (!file) {
@@ -331,27 +381,16 @@ export default function ResumeAnalyzerPage() {
       return;
     }
 
-    const validExtensions = [
-      ".pdf",
-      ".docx",
-      ".txt",
-    ];
+    const validationError = validateFile(file);
 
-    const name = file.name.toLowerCase();
+    if (validationError) {
+      setSelectedFile(null);
+      setError(validationError);
 
-    if (
-      !validExtensions.some((extension) =>
-        name.endsWith(extension)
-      )
-    ) {
-      setError(
-        "Please upload a PDF, DOCX or TXT resume."
-      );
-      return;
-    }
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
 
-    if (file.size > 8 * 1024 * 1024) {
-      setError("Maximum file size is 8 MB.");
       return;
     }
 
@@ -361,34 +400,78 @@ export default function ResumeAnalyzerPage() {
   function handleFileChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
-    setFile(event.target.files?.[0] || null);
+    const file = event.target.files?.[0] || null;
+
+    handleSelectedFile(file);
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
+  function handleDrop(
+    event: DragEvent<HTMLDivElement>
+  ) {
     event.preventDefault();
+    event.stopPropagation();
+
     setDragActive(false);
-    setFile(event.dataTransfer.files?.[0] || null);
+
+    const file =
+      event.dataTransfer.files?.[0] || null;
+
+    handleSelectedFile(file);
+  }
+
+  function openFilePicker() {
+    fileInputRef.current?.click();
+  }
+
+  function removeFile() {
+    setSelectedFile(null);
+    setResult(null);
+    setError("");
+    setSuccessMessage("");
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }
 
   async function analyzeResume() {
+    setError("");
+    setSuccessMessage("");
+    setResult(null);
+
     if (!selectedFile) {
-      setError("Please select your resume first.");
+      setError(
+        "Please select your resume file before analyzing."
+      );
+
+      openFilePicker();
       return;
     }
 
-    setError("");
+    const validationError =
+      validateFile(selectedFile);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setAnalyzing(true);
-    setResult(null);
 
     try {
       const formData = new FormData();
 
       formData.append("file", selectedFile);
-      formData.append("targetCareer", targetCareer);
+      formData.append(
+        "targetCareer",
+        targetCareer
+      );
+
       formData.append(
         "targetSkills",
         targetSkills.join(",")
       );
+
       formData.append(
         "profileSkills",
         profileSkills
@@ -404,7 +487,9 @@ export default function ResumeAnalyzerPage() {
         }
       );
 
-      const data = await response.json();
+      const data = await response
+        .json()
+        .catch(() => null);
 
       if (!response.ok) {
         throw new Error(
@@ -414,6 +499,19 @@ export default function ResumeAnalyzerPage() {
       }
 
       setResult(data as AnalysisResult);
+
+      setSuccessMessage(
+        "Resume analyzed successfully."
+      );
+
+      window.setTimeout(() => {
+        document
+          .getElementById("analysis-results")
+          ?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+      }, 100);
     } catch (analysisError) {
       console.error(
         "Resume analysis error:",
@@ -430,784 +528,912 @@ export default function ResumeAnalyzerPage() {
     }
   }
 
-  async function copyText(
-    text: string,
-    label: string
-  ) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(label);
-
-      window.setTimeout(() => {
-        setCopied("");
-      }, 1800);
-    } catch {
-      setCopied("");
-    }
-  }
-
   function scoreLabel(score: number) {
     if (score >= 85) return "Excellent";
     if (score >= 70) return "Strong";
-    if (score >= 55) return "Needs Improvement";
-    return "High Priority Fix";
+    if (score >= 50) return "Needs Work";
+    return "Needs Improvement";
   }
 
   function scoreClass(score: number) {
     if (score >= 85) {
-      return "border-teal-500/30 bg-teal-500/10 text-teal-300";
+      return "border-emerald-400/20 bg-emerald-400/10 text-emerald-300";
     }
 
     if (score >= 70) {
-      return "border-blue-600/30 bg-blue-600/10 text-blue-300";
+      return "border-cyan-400/20 bg-cyan-400/10 text-cyan-300";
     }
 
-    if (score >= 55) {
-      return "border-yellow-400/30 bg-yellow-400/10 text-yellow-300";
+    if (score >= 50) {
+      return "border-yellow-400/20 bg-yellow-400/10 text-yellow-300";
     }
 
-    return "border-red-400/30 bg-red-400/10 text-red-300";
+    return "border-red-400/20 bg-red-400/10 text-red-300";
   }
 
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0B1F3A] text-white">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600/20 border-t-cyan-400" />
-          <p className="mt-5 text-sm text-slate-400">
-            Loading your SkillTrack resume intelligence...
-          </p>
-        </div>
-      </main>
-    );
+  function formatBytes(bytes: number) {
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
   }
 
   return (
     <main className="min-h-screen bg-[#0B1F3A] text-white">
-      <header className="hidden sticky top-0 z-50 border-b border-white/10 bg-[#0B1F3A]/95 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link
-            href="/"
-            className="text-2xl font-black tracking-tight"
-          >
-            Skill
-            <span className="text-blue-600">
-              Track
-            </span>
-          </Link>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
-          <nav className="hidden items-center gap-7 text-sm text-slate-300 lg:flex">
-            <Link
-              href="/"
-              className="transition hover:text-blue-600"
-            >
-              Dashboard
-            </Link>
+        <section className="overflow-hidden rounded-3xl border border-white/10 bg-[#10294A] shadow-2xl shadow-black/20">
+          <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_320px] lg:p-10">
 
-            <Link
-              href="/jobs"
-              className="transition hover:text-blue-600"
-            >
-              Jobs
-            </Link>
-
-            <div className="group relative">
-              <button
-                type="button"
-                className="flex items-center gap-2 py-3 text-blue-600"
-              >
-                AI Career
-                <span className="text-[10px] transition-transform duration-200 group-hover:rotate-180">
-                  ▼
-                </span>
-              </button>
-
-              <div className="pointer-events-none absolute left-1/2 top-full z-[100] w-80 -translate-x-1/2 translate-y-2 rounded-2xl border border-white/10 bg-[#10294A] p-2 opacity-0 shadow-2xl shadow-cyan-500/10 transition-all duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100">
-                <Link
-                  href="/ai-assistant"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    AI Career Assistant
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Ask personalized career questions
-                  </div>
-                </Link>
-
-                <Link
-                  href="/recommendations"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Career Recommendations
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Discover your best career paths
-                  </div>
-                </Link>
-
-                <Link
-                  href="/skill-gap"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Skill Gap Analysis
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Find missing and improving skills
-                  </div>
-                </Link>
-
-                <Link
-                  href="/career-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Career Coach
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Build your personalized roadmap
-                  </div>
-                </Link>
-
-                <Link
-                  href="/resume-analyzer"
-                  className="block rounded-xl bg-blue-600/10 px-4 py-3"
-                >
-                  <div className="font-semibold text-blue-300">
-                    Resume Analyzer
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Deep ATS and career matching
-                  </div>
-                </Link>
-
-                <Link
-                  href="/interview-coach"
-                  className="block rounded-xl px-4 py-3 transition hover:bg-blue-600/10"
-                >
-                  <div className="font-semibold text-white">
-                    Interview Coach
-                  </div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Practice role-based interviews
-                  </div>
-                </Link>
-              </div>
-            </div>
-
-            <Link
-              href="/applications"
-              className="transition hover:text-blue-600"
-            >
-              Applications
-            </Link>
-
-            <Link
-              href="/profile"
-              className="transition hover:text-blue-600"
-            >
-              Profile
-            </Link>
-          </nav>
-
-          <Link
-            href="/profile"
-            className="rounded-xl border border-blue-600/30 bg-blue-600/10 px-4 py-2 text-sm font-semibold text-blue-300"
-          >
-            My Profile
-          </Link>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-7xl px-6 py-10">
-        <section className="mb-8 overflow-hidden rounded-3xl border border-blue-600/20 bg-gradient-to-br from-[#10294A] via-[#0B1F3A] to-[#163456] p-8 shadow-2xl shadow-cyan-500/5">
-          <div className="grid gap-8 lg:grid-cols-[1fr_320px] lg:items-center">
             <div>
-              <div className="mb-4 inline-flex rounded-full border border-blue-600/20 bg-blue-600/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-blue-300">
+              <div className="inline-flex rounded-full border border-blue-400/20 bg-blue-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
                 AI Resume Intelligence
               </div>
 
-              <h1 className="text-4xl font-black tracking-tight md:text-5xl">
+              <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-5xl">
                 Make your resume
-                <span className="block text-blue-600">
+                <span className="block text-blue-400">
                   job-ready.
                 </span>
               </h1>
 
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
                 Upload your resume and SkillTrack will
                 analyze ATS readiness, career alignment,
-                keywords, skills, sections and improvement
+                keywords, structure, skills and improvement
                 opportunities.
               </p>
+
+              <div className="mt-6 flex flex-wrap gap-3 text-xs text-slate-400">
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">
+                  PDF
+                </span>
+
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">
+                  DOCX
+                </span>
+
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">
+                  TXT
+                </span>
+
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">
+                  DOC / RTF / ODT
+                </span>
+
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">
+                  JPG / PNG / WEBP / GIF
+                </span>
+
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2">
+                  Maximum 8 MB
+                </span>
+              </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-black/10 p-6">
+            <div className="rounded-3xl border border-white/10 bg-[#0B1F3A] p-6">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
                 Target Career
               </p>
 
-              <h2 className="mt-3 text-2xl font-black">
-                {targetCareer}
+              <h2 className="mt-3 text-xl font-black">
+                Choose your role
               </h2>
 
-              <p className="mt-3 text-sm leading-6 text-slate-500">
-                {targetSkills.length} target skills are
-                being used for your resume analysis.
+              <select
+                value={targetCareer}
+                onChange={(event) =>
+                  setTargetCareer(event.target.value)
+                }
+                className="mt-5 w-full rounded-2xl border border-white/10 bg-[#10294A] px-4 py-3 text-sm font-semibold text-white outline-none focus:border-blue-400"
+              >
+                {careerOptions.map((career) => (
+                  <option
+                    key={career}
+                    value={career}
+                  >
+                    {career}
+                  </option>
+                ))}
+              </select>
+
+              <p className="mt-4 text-sm leading-6 text-slate-500">
+                {targetSkills.length} target skills will
+                be used for keyword and career alignment.
               </p>
             </div>
+
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                  Step 01
-                </p>
-                <h2 className="mt-2 text-2xl font-black">
-                  Select target career
-                </h2>
-              </div>
+        <section className="mt-6 grid gap-6 lg:grid-cols-2">
 
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-500">
-                {targetSkills.length} skills
-              </span>
-            </div>
+          <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6 sm:p-8">
 
-            <select
-              value={targetCareer}
-              onChange={(event) =>
-                setTargetCareer(event.target.value)
-              }
-              className="w-full rounded-2xl border border-white/10 bg-[#0B1F3A] px-4 py-4 text-sm text-white outline-none focus:border-blue-600/40"
-            >
-              {careerOptions.map((career) => (
-                <option
-                  key={career}
-                  value={career}
-                  className="bg-[#0B1F3A]"
-                >
-                  {career}
-                </option>
-              ))}
-            </select>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {targetSkills.slice(0, 10).map((skill) => (
-                <span
-                  key={skill}
-                  className="rounded-full border border-blue-600/10 bg-blue-600/5 px-3 py-2 text-xs text-blue-300"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
-
-            {targetJob && (
-              <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
-                  Current SkillTrack Job Benchmark
-                </p>
-
-                <p className="mt-2 font-bold text-white">
-                  {targetJob.job.title}
-                </p>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  {targetJob.job.company} •{" "}
-                  {targetJob.job.location ||
-                    "Location not specified"}
-                </p>
-
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xs text-slate-600">
-                    Your current profile match
-                  </span>
-                  <span className="text-lg font-black text-blue-600">
-                    {targetJob.gap.matchPercentage}%
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
             <div className="mb-6">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                Step 02
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+                Step 01
               </p>
+
               <h2 className="mt-2 text-2xl font-black">
-                Upload your resume
+                Select your resume
               </h2>
-              <p className="mt-2 text-sm text-slate-500">
-                PDF, DOCX or TXT • maximum 8 MB
+
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Choose a PDF, DOC, DOCX, TXT, RTF, ODT or resume image from your
+                computer.
               </p>
             </div>
 
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+              accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.png,.jpg,.jpeg,.webp,.gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/rtf,text/rtf,application/vnd.oasis.opendocument.text,image/png,image/jpeg,image/webp,image/gif"
               onChange={handleFileChange}
-              className="hidden"
+              className="sr-only"
             />
 
             <div
               onDragOver={(event) => {
                 event.preventDefault();
+                event.stopPropagation();
                 setDragActive(true);
               }}
-              onDragLeave={() =>
-                setDragActive(false)
-              }
+              onDragLeave={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setDragActive(false);
+              }}
               onDrop={handleDrop}
-              onClick={() =>
-                fileInputRef.current?.click()
-              }
-              className={`cursor-pointer rounded-3xl border-2 border-dashed p-8 text-center transition ${
+              className={`rounded-3xl border-2 border-dashed p-8 text-center transition ${
                 dragActive
-                  ? "border-blue-600 bg-blue-600/10"
-                  : "border-white/10 bg-white/[0.02] hover:border-blue-600/30 hover:bg-blue-600/5"
+                  ? "border-blue-400 bg-blue-400/10"
+                  : "border-white/10 bg-white/[0.02] hover:border-blue-400/40 hover:bg-blue-400/[0.04]"
               }`}
             >
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-600/20 bg-blue-600/10 text-2xl font-black text-blue-600">
-                CV
-              </div>
+              {!selectedFile ? (
+                <>
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-400/10 text-sm font-black text-blue-300">
+                    CV
+                  </div>
 
-              <p className="mt-5 text-lg font-bold">
-                {selectedFile
-                  ? selectedFile.name
-                  : "Drop your resume here"}
-              </p>
+                  <h3 className="mt-5 text-lg font-bold">
+                    Drop your resume here
+                  </h3>
 
-              <p className="mt-2 text-sm text-slate-500">
-                or click to browse files
-              </p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    or select a file from your computer
+                  </p>
 
-              {selectedFile && (
-                <p className="mt-4 text-xs text-blue-300">
-                  {(
-                    selectedFile.size /
-                    1024 /
-                    1024
-                  ).toFixed(2)}{" "}
-                  MB selected
-                </p>
+                  <button
+                    type="button"
+                    onClick={openFilePicker}
+                    className="mt-6 rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white transition hover:bg-blue-500"
+                  >
+                    Choose Resume
+                  </button>
+                </>
+              ) : (
+                <div>
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-emerald-400/20 bg-emerald-400/10 text-sm font-black text-emerald-300">
+                    OK
+                  </div>
+
+                  <h3 className="mt-5 break-all text-lg font-bold">
+                    {selectedFile.name}
+                  </h3>
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    {formatBytes(selectedFile.size)}
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={openFilePicker}
+                      className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-bold text-slate-300 transition hover:bg-white/[0.08]"
+                    >
+                      Change File
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={removeFile}
+                      className="rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-2.5 text-sm font-bold text-red-300 transition hover:bg-red-400/20"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
             {error && (
-              <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-300">
+              <div className="mt-5 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-4 text-sm leading-6 text-red-300">
                 {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mt-5 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-4 text-sm leading-6 text-emerald-300">
+                {successMessage}
               </div>
             )}
 
             <button
               type="button"
               onClick={analyzeResume}
-              disabled={!selectedFile || analyzing}
-              className="mt-5 w-full rounded-2xl bg-blue-600 px-6 py-4 text-sm font-black text-slate-950 transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={analyzing}
+              className="mt-6 flex min-h-14 w-full items-center justify-center rounded-2xl bg-blue-600 px-6 py-4 text-sm font-black text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {analyzing
                 ? "Analyzing Resume..."
                 : "Analyze Resume"}
             </button>
+
+            <p className="mt-3 text-center text-xs text-slate-600">
+              Your file is processed only for resume analysis.
+            </p>
           </div>
+
+          <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6 sm:p-8">
+
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+              Step 02
+            </p>
+
+            <h2 className="mt-2 text-2xl font-black">
+              Career context
+            </h2>
+
+            <p className="mt-3 text-sm leading-7 text-slate-500">
+              SkillTrack combines your selected target
+              career with your existing profile and job
+              market data.
+            </p>
+
+            <div className="mt-6 space-y-3">
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-slate-600">
+                  Target role
+                </p>
+
+                <p className="mt-2 font-bold text-white">
+                  {targetCareer}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-slate-600">
+                  Profile skills
+                </p>
+
+                <p className="mt-2 font-bold text-white">
+                  {profileSkills.length} skills
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-slate-600">
+                  Job database
+                </p>
+
+                <p className="mt-2 font-bold text-white">
+                  {loadingContext
+                    ? "Loading..."
+                    : `${jobs.length} jobs`}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-slate-600">
+                  Target keywords
+                </p>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {targetSkills
+                    .slice(0, 10)
+                    .map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1.5 text-xs font-semibold text-blue-300"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </section>
 
         {result && (
-          <section className="mt-8 space-y-6">
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
-                  ATS Score
-                </p>
-                <div className="mt-4 flex items-end justify-between">
-                  <span className="text-5xl font-black text-blue-600">
-                    {result.ats.score}
-                  </span>
-                  <span className="mb-2 text-sm text-slate-500">
-                    / 100
-                  </span>
-                </div>
-                <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-blue-600 transition-all duration-700"
-                    style={{
-                      width: `${result.ats.score}%`,
-                    }}
-                  />
-                </div>
-                <p className="mt-3 text-sm text-slate-400">
-                  {scoreLabel(result.ats.score)}
-                </p>
-              </div>
+          <section
+            id="analysis-results"
+            className="mt-8 space-y-6"
+          >
 
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
-                  Career Target
-                </p>
-                <p className="mt-4 text-xl font-black">
-                  {result.targetCareer}
-                </p>
-                <p className="mt-3 text-sm text-slate-500">
-                  {result.matchedSkills.length} matched
-                  target skills
-                </p>
-              </div>
+            <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6 sm:p-8">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
-                  Resume Length
-                </p>
-                <p className="mt-4 text-3xl font-black">
-                  {result.ats.wordCount}
-                </p>
-                <p className="mt-2 text-sm text-slate-500">
-                  words extracted
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-600">
-                  Impact Signals
-                </p>
-                <p className="mt-4 text-3xl font-black">
-                  {result.ats.metricCount}
-                </p>
-                <p className="mt-2 text-sm text-slate-500">
-                  measurable outcomes detected
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                    Resume Verdict
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+                    Analysis Complete
                   </p>
+
                   <h2 className="mt-2 text-2xl font-black">
-                    {result.localFeedback.quickVerdict}
+                    {result.fileName}
                   </h2>
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    {result.fileType} resume for{" "}
+                    {result.targetCareer}
+                  </p>
                 </div>
 
                 <span
-                  className={`rounded-full border px-4 py-2 text-xs font-bold ${scoreClass(
+                  className={`w-fit rounded-full border px-4 py-2 text-xs font-bold ${scoreClass(
                     result.ats.score
                   )}`}
                 >
                   {scoreLabel(result.ats.score)}
                 </span>
+
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs uppercase tracking-[0.15em] text-slate-600">
+                  ATS Score
+                </p>
+
+                <p className="mt-4 text-5xl font-black text-blue-300">
+                  {result.ats.score}
+                </p>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  out of 100
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs uppercase tracking-[0.15em] text-slate-600">
+                  Resume Length
+                </p>
+
+                <p className="mt-4 text-4xl font-black">
+                  {result.ats.wordCount}
+                </p>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  words extracted
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs uppercase tracking-[0.15em] text-slate-600">
                   Skills Found
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {result.matchedSkills.length ? (
-                    result.matchedSkills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-2 text-xs text-teal-300"
-                      >
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-slate-500">
-                      No target skills confidently detected.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                  Priority Gaps
+                <p className="mt-4 text-4xl font-black text-cyan-300">
+                  {result.detectedSkills.length}
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {result.missingSkills.length ? (
-                    result.missingSkills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-full border border-yellow-400/20 bg-yellow-400/10 px-3 py-2 text-xs text-yellow-300"
-                      >
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-teal-300">
-                      No major target skill gaps detected.
-                    </p>
-                  )}
-                </div>
+                <p className="mt-2 text-sm text-slate-500">
+                  target keywords found
+                </p>
               </div>
+
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs uppercase tracking-[0.15em] text-slate-600">
+                  Sections
+                </p>
+
+                <p className="mt-4 text-4xl font-black text-emerald-300">
+                  {
+                    result.sectionStatus.filter(
+                      (section) => section.found
+                    ).length
+                  }
+                  /{result.sectionStatus.length}
+                </p>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  detected sections
+                </p>
+              </div>
+
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+            <div className="grid gap-6 lg:grid-cols-2">
+
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+                  Resume Verdict
+                </p>
+
+                <h3 className="mt-3 text-2xl font-black">
+                  {result.localFeedback.quickVerdict}
+                </h3>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+
+                  <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.1em] text-emerald-400">
+                      Matched Skills
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {result.localFeedback.matchedSkills.length >
+                      0 ? (
+                        result.localFeedback.matchedSkills.map(
+                          (skill) => (
+                            <span
+                              key={skill}
+                              className="rounded-full bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-300"
+                            >
+                              {skill}
+                            </span>
+                          )
+                        )
+                      ) : (
+                        <span className="text-sm text-slate-500">
+                          No target skills detected.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/10 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.1em] text-yellow-400">
+                      Missing Skills
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {result.missingSkills.length > 0 ? (
+                        result.missingSkills.map(
+                          (skill) => (
+                            <span
+                              key={skill}
+                              className="rounded-full bg-yellow-400/10 px-3 py-1.5 text-xs font-semibold text-yellow-300"
+                            >
+                              {skill}
+                            </span>
+                          )
+                        )
+                      ) : (
+                        <span className="text-sm text-slate-500">
+                          No major target keywords missing.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+                  ATS Breakdown
+                </p>
+
+                <div className="mt-6 space-y-5">
+
+                  {[
+                    [
+                      "Keyword Alignment",
+                      result.ats.keywordScore,
+                      35,
+                    ],
+                    [
+                      "Resume Structure",
+                      result.ats.sectionScore,
+                      25,
+                    ],
+                    [
+                      "Resume Length",
+                      result.ats.lengthScore,
+                      15,
+                    ],
+                    [
+                      "Contact Information",
+                      result.ats.contactScore,
+                      10,
+                    ],
+                    [
+                      "Action Language",
+                      result.ats.actionWordScore,
+                      10,
+                    ],
+                  ].map(
+                    ([label, value, max]) => (
+                      <div key={label as string}>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-semibold text-slate-300">
+                            {label as string}
+                          </span>
+
+                          <span className="font-bold text-blue-300">
+                            {value as number}/{max as number}
+                          </span>
+                        </div>
+
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-blue-500"
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                ((value as number) /
+                                  (max as number)) *
+                                  100
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  )}
+
+                </div>
+              </div>
+
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6 sm:p-8">
+
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
                 Resume Structure
               </p>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {result.sectionStatus.map((section) => (
-                  <div
-                    key={section.name}
-                    className={`flex items-center justify-between rounded-2xl border px-4 py-4 ${
-                      section.found
-                        ? "border-teal-500/20 bg-teal-500/10"
-                        : "border-red-400/20 bg-red-400/10"
-                    }`}
-                  >
-                    <span className="text-sm font-semibold capitalize">
-                      {section.name}
-                    </span>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 
-                    <span
-                      className={`text-xs font-bold ${
+                {result.sectionStatus.map(
+                  (section) => (
+                    <div
+                      key={section.name}
+                      className={`flex items-center justify-between rounded-2xl border px-4 py-4 ${
                         section.found
-                          ? "text-teal-300"
-                          : "text-red-300"
+                          ? "border-emerald-400/20 bg-emerald-400/10"
+                          : "border-red-400/20 bg-red-400/10"
                       }`}
                     >
-                      {section.found
-                        ? "Detected"
-                        : "Missing"}
-                    </span>
-                  </div>
-                ))}
+                      <span className="font-semibold">
+                        {section.name}
+                      </span>
+
+                      <span
+                        className={`text-xs font-black ${
+                          section.found
+                            ? "text-emerald-300"
+                            : "text-red-300"
+                        }`}
+                      >
+                        {section.found
+                          ? "FOUND"
+                          : "MISSING"}
+                      </span>
+                    </div>
+                  )
+                )}
+
               </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                      Better Summary
-                    </p>
-                    <h2 className="mt-2 text-xl font-black">
-                      ATS-friendly professional summary
-                    </h2>
-                  </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyText(
-                        result.localFeedback.summary,
-                        "summary"
-                      )
-                    }
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-slate-300"
-                  >
-                    {copied === "summary"
-                      ? "Copied"
-                      : "Copy"}
-                  </button>
-                </div>
-
-                <p className="mt-5 text-sm leading-7 text-slate-300">
-                  {result.localFeedback.summary}
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                  High-Impact Improvements
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+                  Recommended Improvements
                 </p>
 
                 <div className="mt-5 space-y-3">
-                  {result.localFeedback.suggestions.map(
+                  {result.localFeedback.improvementSuggestions.map(
                     (suggestion, index) => (
                       <div
-                        key={index}
-                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm leading-6 text-slate-300"
+                        key={`${suggestion}-${index}`}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
                       >
-                        {suggestion}
+                        <div className="flex gap-3">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-xs font-black text-blue-300">
+                            {index + 1}
+                          </span>
+
+                          <p className="text-sm leading-6 text-slate-300">
+                            {suggestion}
+                          </p>
+                        </div>
                       </div>
                     )
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                    Rewrite Examples
-                  </p>
-                  <h2 className="mt-2 text-xl font-black">
-                    Stronger achievement bullets
-                  </h2>
-                </div>
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
+                  Contact Check
+                </p>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    copyText(
-                      result.localFeedback.bullets
-                        .map(
-                          (bullet, index) =>
-                            `${index + 1}. ${bullet}`
-                        )
-                        .join("\n\n"),
-                      "bullets"
-                    )
-                  }
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-slate-300"
-                >
-                  {copied === "bullets"
-                    ? "Copied"
-                    : "Copy All"}
-                </button>
-              </div>
+                <div className="mt-5 space-y-3">
 
-              <div className="mt-5 space-y-3">
-                {result.localFeedback.bullets.map(
-                  (bullet, index) => (
-                    <div
-                      key={index}
-                      className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-slate-300"
+                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4">
+                    <span className="text-sm font-semibold">
+                      Email
+                    </span>
+
+                    <span
+                      className={
+                        result.ats.hasEmail
+                          ? "text-emerald-300"
+                          : "text-red-300"
+                      }
                     >
-                      <span className="mr-2 font-black text-blue-600">
-                        {index + 1}.
-                      </span>
-                      {bullet}
-                    </div>
-                  )
-                )}
+                      {result.ats.hasEmail
+                        ? "Detected"
+                        : "Missing"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4">
+                    <span className="text-sm font-semibold">
+                      Phone
+                    </span>
+
+                    <span
+                      className={
+                        result.ats.hasPhone
+                          ? "text-emerald-300"
+                          : "text-red-300"
+                      }
+                    >
+                      {result.ats.hasPhone
+                        ? "Detected"
+                        : "Missing"}
+                    </span>
+                  </div>
+
+                </div>
               </div>
+
             </div>
 
-            {result.aiFeedback && (
-              <div className="rounded-3xl border border-blue-600/20 bg-gradient-to-br from-[#10294A] to-[#163456] p-6">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            {result.aiReview && (
+              <div className="rounded-3xl border border-cyan-400/10 bg-[#10294A] p-6 sm:p-8">
+
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
                       AI Deep Review
                     </p>
+
                     <h2 className="mt-2 text-2xl font-black">
                       Personalized resume intelligence
                     </h2>
                   </div>
 
-                  <span className="rounded-full border border-teal-500/20 bg-teal-500/10 px-3 py-2 text-xs font-semibold text-teal-300">
-                    AI analysis complete
+                  <span className="w-fit rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-bold text-cyan-300">
+                    AI Review
                   </span>
+
                 </div>
 
-                <div className="mt-6 whitespace-pre-wrap rounded-2xl border border-white/10 bg-black/10 p-5 text-sm leading-7 text-slate-300">
-                  {result.aiFeedback}
+                {result.aiReview.summary && (
+                  <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                    <p className="text-sm leading-7 text-slate-300">
+                      {result.aiReview.summary}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-6 grid gap-6 lg:grid-cols-2">
+
+                  <AIList
+                    title="Strengths"
+                    items={
+                      result.aiReview.strengths || []
+                    }
+                  />
+
+                  <AIList
+                    title="Weaknesses"
+                    items={
+                      result.aiReview.weaknesses || []
+                    }
+                  />
+
+                  <AIList
+                    title="Keyword Advice"
+                    items={
+                      result.aiReview.keywordAdvice || []
+                    }
+                  />
+
+                  <AIList
+                    title="Bullet Improvements"
+                    items={
+                      result.aiReview.bulletImprovements ||
+                      []
+                    }
+                  />
+
                 </div>
+
+                <AIList
+                  title="Action Plan"
+                  items={
+                    result.aiReview.actionPlan || []
+                  }
+                />
+
               </div>
             )}
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-3xl border border-white/10 bg-[#163456] p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
                   Extracted Resume
                 </p>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  {result.fileName} •{" "}
                   {result.extractedCharacters.toLocaleString()}{" "}
-                  characters
+                  characters extracted
                 </p>
 
-                <div className="mt-5 max-h-80 overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1F3A] p-5 text-sm leading-7 text-slate-400">
+                <div className="mt-5 max-h-96 overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1F3A] p-5 text-sm leading-7 text-slate-400">
                   {result.previewText}
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-blue-600/20 bg-blue-600/5 p-6">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              <div className="rounded-3xl border border-white/10 bg-[#10294A] p-6">
+
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-300">
                   Next Step
                 </p>
 
                 <h3 className="mt-3 text-2xl font-black">
-                  Turn this resume into an interview plan
+                  Turn this analysis into a career plan.
                 </h3>
 
-                <p className="mt-3 text-sm leading-7 text-slate-400">
+                <p className="mt-3 text-sm leading-7 text-slate-500">
                   Use your detected skill gaps and target
-                  career to prepare role-specific interview
-                  questions.
+                  career to continue your SkillTrack journey.
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-3">
+
                   <Link
-                    href="/interview-coach"
-                    className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-slate-950"
+                    href="/skill-gap"
+                    className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-black text-white transition hover:bg-blue-500"
                   >
-                    Practice Interview
+                    View Skill Gap
                   </Link>
 
                   <Link
                     href="/career-coach"
-                    className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-slate-300"
+                    className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-slate-300 transition hover:bg-white/[0.08]"
                   >
-                    Build Roadmap
+                    Career Coach
                   </Link>
+
+                  <Link
+                    href="/interview-coach"
+                    className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-slate-300 transition hover:bg-white/[0.08]"
+                  >
+                    Interview Coach
+                  </Link>
+
                 </div>
+
               </div>
+
             </div>
+
           </section>
         )}
 
-        <section className="mt-8 rounded-3xl border border-white/10 bg-[#163456] p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-600">
+        <section className="mt-8 rounded-3xl border border-white/10 bg-[#10294A] p-6 sm:p-8">
+
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
             How SkillTrack Scores Your Resume
           </p>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="font-bold">Keyword Alignment</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Measures how strongly your resume matches
-                the selected career&apos;s required skills.
-              </p>
-            </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="font-bold">Structure</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Checks important resume sections such as
-                summary, skills, experience, education and
-                projects.
-              </p>
-            </div>
+            <InfoCard
+              title="Keyword Alignment"
+              text="Checks how strongly your resume matches the selected career's required skills."
+            />
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="font-bold">Impact Evidence</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Looks for action verbs and measurable results
-                instead of responsibility-only statements.
-              </p>
-            </div>
+            <InfoCard
+              title="Structure"
+              text="Checks important sections such as summary, skills, experience, education and projects."
+            />
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="font-bold">Career Context</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Connects your resume analysis with your
-                SkillTrack profile and job-market context.
-              </p>
-            </div>
+            <InfoCard
+              title="Impact Evidence"
+              text="Looks for measurable language and action-oriented resume bullets."
+            />
+
+            <InfoCard
+              title="Career Context"
+              text="Connects your resume analysis with your SkillTrack profile and job-market context."
+            />
+
           </div>
+
         </section>
+
       </div>
     </main>
+  );
+}
+
+function AIList({
+  title,
+  items,
+}: {
+  title: string;
+  items: string[];
+}) {
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <h3 className="font-bold">
+        {title}
+      </h3>
+
+      <div className="mt-4 space-y-3">
+        {items.map((item, index) => (
+          <div
+            key={`${title}-${index}`}
+            className="flex gap-3"
+          >
+            <span className="mt-1 text-cyan-300">
+              •
+            </span>
+
+            <p className="text-sm leading-6 text-slate-400">
+              {item}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({
+  title,
+  text,
+}: {
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <p className="font-bold">
+        {title}
+      </p>
+
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        {text}
+      </p>
+    </div>
   );
 }
 

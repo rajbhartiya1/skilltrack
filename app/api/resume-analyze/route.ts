@@ -1,505 +1,493 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
-import { extractText, getDocumentProxy } from "unpdf";
-import * as mammoth from "mammoth";
+import OpenAI from "openai";
+import { extractText } from "unpdf";
+import mammoth from "mammoth";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
-const MAX_FILE_SIZE = 8 * 1024 * 1024;
-
-const SKILL_ALIASES: Record<string, string[]> = {
-  javascript: ["javascript", "js", "ecmascript"],
-  typescript: ["typescript", "ts"],
-  react: ["react", "react.js", "reactjs"],
-  "next.js": ["next.js", "nextjs", "next js"],
-  "node.js": ["node.js", "nodejs", "node js"],
-  python: ["python"],
-  java: ["java"],
-  sql: ["sql", "mysql", "postgresql", "postgres"],
-  mongodb: ["mongodb", "mongo db", "mongo"],
-  html: ["html", "html5"],
-  css: ["css", "css3"],
-  "tailwind css": ["tailwind css", "tailwind"],
-  "rest api": ["rest api", "restful api", "rest"],
-  git: ["git"],
-  github: ["github"],
-  docker: ["docker"],
-  aws: ["aws", "amazon web services"],
-  azure: ["azure"],
-  gcp: ["gcp", "google cloud"],
-  "machine learning": ["machine learning", "ml"],
-  "data analysis": ["data analysis", "data analytics"],
-  excel: ["excel", "microsoft excel"],
-  communication: ["communication", "verbal communication", "written communication"],
-  leadership: ["leadership", "team leadership"],
-  figma: ["figma"],
-  "ui/ux": ["ui/ux", "ui ux", "user interface", "user experience"],
-  "power bi": ["power bi", "powerbi"],
-};
-
-const SECTION_PATTERNS: Record<string, RegExp[]> = {
-  summary: [
-    /professional summary/i,
-    /career summary/i,
-    /profile/i,
-    /objective/i,
-    /about me/i,
-  ],
-  experience: [
-    /experience/i,
-    /work experience/i,
-    /professional experience/i,
-    /employment/i,
-  ],
-  education: [
-    /education/i,
-    /academic background/i,
-    /qualifications/i,
-  ],
-  skills: [
-    /skills/i,
-    /technical skills/i,
-    /core skills/i,
-    /technologies/i,
-  ],
-  projects: [
-    /projects/i,
-    /personal projects/i,
-    /academic projects/i,
-    /key projects/i,
-  ],
-  certifications: [
-    /certifications/i,
-    /certificates/i,
-    /licenses/i,
-  ],
-};
-
-function normalizeText(text: string) {
-  return text
-    .replace(/\u0000/g, " ")
-    .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-function hasAny(text: string, patterns: RegExp[]) {
-  return patterns.some((pattern) => pattern.test(text));
-}
-
-function detectSkills(text: string) {
-  const lower = text.toLowerCase();
-  const found: string[] = [];
-
-  Object.entries(SKILL_ALIASES).forEach(([canonical, aliases]) => {
-    if (aliases.some((alias) => lower.includes(alias.toLowerCase()))) {
-      found.push(canonical);
-    }
-  });
-
-  return found;
-}
-
-function calculateAtsScore(
-  text: string,
-  foundSkills: string[],
-  targetSkills: string[]
-) {
-  const wordCount = text.split(/\s+/).filter(Boolean).length;
-
-  const hasEmail =
-    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(text);
-
-  const hasPhone =
-    /(?:\+?\d[\d\s().-]{8,}\d)/.test(text);
-
-  const sections = Object.values(SECTION_PATTERNS).map((patterns) =>
-    hasAny(text, patterns)
-  );
-
-  const sectionScore = Math.round(
-    (sections.filter(Boolean).length / sections.length) * 25
-  );
-
-  const keywordScore =
-    targetSkills.length > 0
-      ? Math.round(
-          (foundSkills.filter((skill) =>
-            targetSkills
-              .map((item) => item.toLowerCase())
-              .includes(skill.toLowerCase())
-          ).length /
-            targetSkills.length) *
-            35
-        )
-      : 0;
-
-  const actionWords =
-    text.match(
-      /\b(led|built|created|developed|designed|implemented|improved|optimized|managed|reduced|increased|delivered|automated|launched|deployed|engineered)\b/gi
-    ) || [];
-
-  const metricMatches =
-    text.match(
-      /(?:\d+%|\d+\+|\$\d+|\b\d+\s*(?:users|clients|customers|projects|days|months|years)\b)/gi
-    ) || [];
-
-  const actionScore = Math.min(
-    15,
-    Math.round(
-      actionWords.length * 0.6 + metricMatches.length * 1.2
-    )
-  );
-
-  const contactScore =
-    (hasEmail ? 5 : 0) +
-    (hasPhone ? 5 : 0);
-
-  let readabilityScore = 10;
-
-  if (wordCount < 180) {
-    readabilityScore = 6;
-  } else if (wordCount > 1100) {
-    readabilityScore = 5;
-  } else if (wordCount > 900) {
-    readabilityScore = 7;
-  }
-
-  const lengthScore =
-    wordCount >= 250 && wordCount <= 900
-      ? 5
-      : wordCount >= 180 && wordCount <= 1100
-        ? 3
-        : 1;
-
-  const score = Math.min(
-    100,
-    Math.max(
-      0,
-      keywordScore +
-        sectionScore +
-        actionScore +
-        contactScore +
-        readabilityScore +
-        lengthScore
-    )
-  );
-
-  return {
-    score,
-    wordCount,
-    hasEmail,
-    hasPhone,
-    sectionScore,
-    keywordScore,
-    actionScore,
-    metricCount: metricMatches.length,
-    readabilityScore,
-    lengthScore,
-  };
-}
-
-function buildLocalFeedback(args: {
-  text: string;
-  targetCareer: string;
-  foundSkills: string[];
-  targetSkills: string[];
-  missingSkills: string[];
-  atsScore: number;
-}) {
-  const {
-    text,
-    targetCareer,
-    foundSkills,
-    targetSkills,
-    missingSkills,
-    atsScore,
-  } = args;
-
-  const summary =
-    targetCareer.toLowerCase().includes("full stack")
-      ? "Results-driven Full Stack Developer with experience building responsive web applications using modern frontend and backend technologies. Strong foundation in JavaScript, React, Next.js, Node.js and SQL, with a focus on scalable solutions and measurable outcomes."
-      : `Results-driven professional targeting ${targetCareer}, combining practical technical skills with project-based experience. Focused on building reliable solutions, continuous learning and delivering measurable results.`;
-
-  const bullets = [
-    "Built and delivered production-style applications using relevant technologies, improving usability and overall workflow efficiency.",
-    "Implemented reusable components, APIs and data-driven features while maintaining clean and maintainable code.",
-    "Collaborated on project requirements, debugging and deployment to deliver features within defined timelines.",
-  ];
-
-  const suggestions: string[] = [];
-
-  if (missingSkills.length) {
-    suggestions.push(
-      `Add evidence for these high-priority skills where genuinely applicable: ${missingSkills.slice(0, 6).join(", ")}.`
-    );
-  }
-
-  if (!/github/i.test(text)) {
-    suggestions.push(
-      "Add a clickable GitHub profile or repository links for major projects."
-    );
-  }
-
-  if (!/\bhttps?:\/\//i.test(text)) {
-    suggestions.push(
-      "Add portfolio, LinkedIn or live project links when available."
-    );
-  }
-
-  if (!/\d+%|\d+\+|\b\d+\s*(users|clients|projects|months|years)\b/i.test(text)) {
-    suggestions.push(
-      "Add measurable outcomes to project and experience bullets instead of only describing responsibilities."
-    );
-  }
-
-  return {
-    summary,
-    bullets,
-    suggestions,
-    quickVerdict:
-      atsScore >= 85
-        ? "Your resume is strongly aligned with the selected role."
-        : atsScore >= 70
-          ? "Your resume has a solid foundation, but a few targeted improvements can make it more competitive."
-          : "Your resume needs targeted improvements in keywords, structure and evidence before applying aggressively.",
-    detectedSkillCount: foundSkills.length,
-    targetSkillCount: targetSkills.length,
-  };
-}
-
-async function extractResumeText(file: File) {
+async function extractResumeText(file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
-  const name = file.name.toLowerCase();
 
-  if (buffer.length > MAX_FILE_SIZE) {
-    throw new Error("Resume file is too large. Maximum allowed size is 8 MB.");
+  const fileName = file.name.toLowerCase();
+
+  if (fileName.endsWith(".txt")) {
+    return buffer.toString("utf-8");
   }
 
-  if (
-    file.type === "text/plain" ||
-    name.endsWith(".txt")
-  ) {
-    return buffer.toString("utf8");
-  }
-
-  if (
-    file.type ===
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    name.endsWith(".docx")
-  ) {
+  if (fileName.endsWith(".docx")) {
     const result = await mammoth.extractRawText({
       buffer,
     });
 
-    return result.value;
+    return result.value || "";
   }
 
-  if (file.type === "application/pdf" || name.endsWith(".pdf")) {
-    const pdf = await getDocumentProxy(new Uint8Array(buffer));
-    const extracted = await extractText(pdf, {
+  if (fileName.endsWith(".pdf")) {
+    const result = await extractText(new Uint8Array(buffer), {
       mergePages: true,
     });
 
-    return String(extracted.text);
+    if (typeof result.text === "string") {
+      return result.text;
+    }
+
+    return "";
   }
 
-  throw new Error(
-    "Unsupported file type. Please upload PDF, DOCX or TXT."
-  );
+  return "";
+}
+
+function buildAnalysisPrompt(
+  targetCareer: string,
+  targetSkills: string,
+  profileSkills: string,
+  resumeText: string
+) {
+  return `
+You are an expert resume analyzer for SkillTrack, a career platform for students and job seekers.
+
+Analyze the resume below and provide practical, honest and structured feedback.
+
+TARGET CAREER:
+${targetCareer || "Not specified"}
+
+TARGET SKILLS:
+${targetSkills || "Not specified"}
+
+USER PROFILE SKILLS:
+${profileSkills || "Not specified"}
+
+RESUME:
+${resumeText.slice(0, 30000)}
+
+If the resume is provided as an image, read all clearly visible resume text and
+include it in the extractedText field. Preserve names, contact details, dates,
+section headings and bullet points as accurately as possible. For non-image
+resumes, return the supplied resume text in extractedText.
+
+Return the analysis in JSON with exactly these fields:
+
+{
+  "extractedText": string,
+  "overallScore": number,
+  "summary": string,
+  "strengths": string[],
+  "weaknesses": string[],
+  "missingSkills": string[],
+  "recommendedSkills": string[],
+  "improvements": string[],
+  "atsTips": string[],
+  "careerFit": string
+}
+
+Rules:
+- overallScore must be between 0 and 100.
+- Do not invent experience or qualifications.
+- Base the analysis only on the resume and provided target information.
+- Give specific and useful suggestions.
+- Keep the language professional and easy to understand.
+`;
+}
+
+function parseAnalysis(output: string) {
+  try {
+    const cleaned = output
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+
+    try {
+      return JSON.parse(cleaned);
+    } catch {
+      const objectStart = cleaned.indexOf("{");
+      const objectEnd = cleaned.lastIndexOf("}");
+
+      if (objectStart < 0 || objectEnd <= objectStart) {
+        throw new Error("No JSON object found in AI response.");
+      }
+
+      return JSON.parse(cleaned.slice(objectStart, objectEnd + 1));
+    }
+  } catch (parseError) {
+    console.error("Resume AI JSON parse error:", parseError);
+
+    return {
+      overallScore: 0,
+      extractedText: "",
+      summary: output,
+      strengths: [],
+      weaknesses: [],
+      missingSkills: [],
+      recommendedSkills: [],
+      improvements: [],
+      atsTips: [],
+      careerFit: "Unable to determine automatically.",
+    };
+  }
+}
+
+async function requestAnalysis(
+  apiKey: string,
+  prompt: string,
+  file?: File
+) {
+  const openai = new OpenAI({ apiKey });
+  const input = file
+    ? [
+        {
+          role: "user" as const,
+          content: [
+            /\.(png|jpe?g|webp|gif)$/i.test(file.name)
+              ? {
+                  type: "input_image" as const,
+                  image_url: `data:${file.type || "image/jpeg"};base64,${Buffer.from(await file.arrayBuffer()).toString("base64")}`,
+                  detail: "high" as const,
+                }
+              : {
+                  type: "input_file" as const,
+                  filename: file.name,
+                  file_data: `data:${file.type || "application/pdf"};base64,${Buffer.from(await file.arrayBuffer()).toString("base64")}`,
+                },
+            { type: "input_text" as const, text: prompt },
+          ],
+        },
+      ]
+    : prompt;
+
+  const response = await openai.responses.create({
+    model: "gpt-5.6-luna",
+    input,
+    text: {
+      format: {
+        type: "json_object",
+      },
+    },
+  });
+
+  return response.output_text?.trim() || "";
 }
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
+    const apiKey = process.env.OPENAI_API_KEY;
 
-    const file = formData.get("file");
-    const targetCareer =
-      typeof formData.get("targetCareer") === "string"
-        ? String(formData.get("targetCareer")).trim()
-        : "";
-
-    const targetSkillsRaw =
-      typeof formData.get("targetSkills") === "string"
-        ? String(formData.get("targetSkills"))
-        : "";
-
-    const profileSkillsRaw =
-      typeof formData.get("profileSkills") === "string"
-        ? String(formData.get("profileSkills"))
-        : "";
-
-    const targetSkills = targetSkillsRaw
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter(Boolean);
-
-    const profileSkills = profileSkillsRaw
-      .split(",")
-      .map((skill) => skill.trim())
-      .filter(Boolean);
-
-    if (!(file instanceof File)) {
-      return NextResponse.json(
-        { error: "Please upload a resume file." },
-        { status: 400 }
-      );
-    }
-
-    const text = normalizeText(
-      await extractResumeText(file)
-    );
-
-    if (text.length < 80) {
+    if (!apiKey) {
       return NextResponse.json(
         {
           error:
-            "Very little text could be extracted from this resume. Please upload a text-based PDF, DOCX or TXT resume.",
+            "OPENAI_API_KEY is missing. Please add it to your environment variables.",
+        },
+        { status: 500 }
+      );
+    }
+
+    let formData: FormData;
+
+    try {
+      formData = await request.formData();
+    } catch (formDataError) {
+      console.error(
+        "Resume form data error:",
+        formDataError
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Please upload the resume using the file picker or drag-and-drop area.",
         },
         { status: 400 }
       );
     }
 
-    const allTargetSkills = Array.from(
-      new Set([
-        ...targetSkills,
-        ...profileSkills,
-      ])
+    const file = formData.get("file");
+
+    const targetCareerValue = formData.get("targetCareer");
+    const targetSkillsValue = formData.get("targetSkills");
+    const profileSkillsValue = formData.get("profileSkills");
+
+    const targetCareer =
+      typeof targetCareerValue === "string" ? targetCareerValue : "";
+    const targetSkills =
+      typeof targetSkillsValue === "string" ? targetSkillsValue : "";
+    const profileSkills =
+      typeof profileSkillsValue === "string" ? profileSkillsValue : "";
+
+    if (!(file instanceof File)) {
+      return NextResponse.json(
+        {
+          error: "Please upload a resume file.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const allowedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "application/msword",
+      "application/rtf",
+      "text/rtf",
+      "application/vnd.oasis.opendocument.text",
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/gif",
+    ];
+
+    const fileName = file.name.toLowerCase();
+
+    const validExtension =
+      fileName.endsWith(".pdf") ||
+      fileName.endsWith(".docx") ||
+      fileName.endsWith(".txt") ||
+      fileName.endsWith(".doc") ||
+      fileName.endsWith(".rtf") ||
+      fileName.endsWith(".odt") ||
+      fileName.endsWith(".png") ||
+      fileName.endsWith(".jpg") ||
+      fileName.endsWith(".jpeg") ||
+      fileName.endsWith(".webp") ||
+      fileName.endsWith(".gif");
+
+    if (!allowedTypes.includes(file.type) && !validExtension) {
+      return NextResponse.json(
+        {
+          error:
+            "Please upload a PDF, DOC, DOCX, TXT, RTF, ODT, PNG, JPG, WEBP or GIF resume.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      return NextResponse.json(
+        {
+          error: "Resume file must be smaller than 8 MB.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const isImageResume =
+      fileName.endsWith(".png") ||
+      fileName.endsWith(".jpg") ||
+      fileName.endsWith(".jpeg") ||
+      fileName.endsWith(".webp") ||
+      fileName.endsWith(".gif");
+
+    let resumeText = "";
+
+    try {
+      if (!isImageResume) {
+        resumeText = await extractResumeText(file);
+      }
+    } catch (extractError) {
+      console.error(
+        "Resume extraction error:",
+        extractError
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "We could not read this resume file. Please try another PDF, DOCX, TXT or image file.",
+        },
+        { status: 422 }
+      );
+    }
+
+    resumeText = resumeText
+      .replace(/\u0000/g, " ")
+      .replace(/\r/g, "\n")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n\s*\n\s*\n+/g, "\n\n")
+      .trim();
+
+    console.log(
+      "Resume extraction:",
+      file.name,
+      "characters:",
+      resumeText.length
     );
 
-    const detectedSkills = detectSkills(text);
-
-    const matchedSkills = allTargetSkills.filter(
-      (skill) =>
-        detectedSkills.includes(skill.toLowerCase()) ||
-        text.toLowerCase().includes(skill.toLowerCase())
+    const prompt = buildAnalysisPrompt(
+      targetCareer,
+      targetSkills,
+      profileSkills,
+      resumeText
     );
 
-    const missingSkills = allTargetSkills.filter(
-      (skill) =>
-        !matchedSkills
-          .map((item) => item.toLowerCase())
-          .includes(skill.toLowerCase())
-    );
+    const isLowTextPdf =
+      resumeText.length < 30 && fileName.endsWith(".pdf");
 
-    const sectionStatus = Object.entries(
-      SECTION_PATTERNS
-    ).map(([name, patterns]) => ({
-      name,
-      found: hasAny(text, patterns),
-    }));
+    const canUseDirectFileAnalysis =
+      isImageResume ||
+      isLowTextPdf ||
+      fileName.endsWith(".doc") ||
+      fileName.endsWith(".rtf") ||
+      fileName.endsWith(".odt");
 
-    const ats = calculateAtsScore(
-      text,
-      detectedSkills,
-      allTargetSkills
-    );
+    if (
+      resumeText.length < 30 &&
+      !canUseDirectFileAnalysis
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Very little text could be extracted from this resume. Please upload a readable DOCX or TXT file, or a PDF with selectable text.",
+        },
+        { status: 422 }
+      );
+    }
 
-    const localFeedback = buildLocalFeedback({
-      text,
-      targetCareer:
-        targetCareer || "your target career",
-      foundSkills: detectedSkills,
-      targetSkills: allTargetSkills,
-      missingSkills,
-      atsScore: ats.score,
-    });
+    let output = "";
 
-    let aiFeedback = "";
+    try {
+      output = await requestAnalysis(
+        apiKey,
+        prompt,
+        canUseDirectFileAnalysis ? file : undefined
+      );
+    } catch (analysisError) {
+      console.error("Resume AI request error:", analysisError);
 
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        const openai = new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
-
-        const limitedResumeText = text.slice(0, 14000);
-
-        const response = await openai.responses.create({
-          model: "gpt-5.6-luna",
-          instructions: `
-You are SkillTrack Resume Intelligence, an expert ATS resume reviewer.
-
-Analyze the candidate's resume for the selected career.
-
-Rules:
-- Never invent work experience, education, projects or achievements.
-- Clearly separate existing evidence from recommendations.
-- Prioritize ATS compatibility, job relevance, measurable achievements, clarity and truthful keyword alignment.
-- Give practical suggestions.
-- Do not claim that a skill exists just because it is suggested.
-- Keep the response structured and concise.
-- Include:
-  1. Resume verdict
-  2. Strongest evidence
-  3. Missing/high-priority keywords
-  4. 3 rewritten bullet examples based only on the resume evidence
-  5. Improved professional summary
-  6. 30-day improvement plan
-`,
-          input: `
-TARGET CAREER:
-${targetCareer || "Not specified"}
-
-PROFILE SKILLS:
-${profileSkills.join(", ") || "None provided"}
-
-DETECTED RESUME SKILLS:
-${detectedSkills.join(", ") || "None confidently detected"}
-
-CALCULATED ATS SCORE:
-${ats.score}/100
-
-CALCULATED MATCHED SKILLS:
-${matchedSkills.join(", ") || "None"}
-
-CALCULATED MISSING SKILLS:
-${missingSkills.join(", ") || "None"}
-
-RESUME TEXT:
-${limitedResumeText}
-`,
-        });
-
-        aiFeedback = response.output_text || "";
-      } catch (error) {
-        console.error(
-          "Resume AI feedback error:",
-          error
+      if (canUseDirectFileAnalysis) {
+        return NextResponse.json(
+          {
+            error:
+              isImageResume
+                ? "This resume image could not be read. Please upload a clearer PNG, JPG, WEBP or GIF image."
+                : "This PDF appears to be image-based and could not be read automatically. Please upload a clearer PDF, DOCX, or TXT resume.",
+          },
+          { status: 422 }
         );
       }
+
+      throw analysisError;
     }
+
+    if (!output) {
+      return NextResponse.json(
+        {
+          error:
+            "AI could not analyze this resume. Please try again.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const analysis = parseAnalysis(output);
+
+    const extractedImageText =
+      typeof analysis.extractedText === "string"
+        ? analysis.extractedText
+        : "";
+    const normalizedResumeText =
+      (resumeText || extractedImageText) || "";
+    const extractedWords = normalizedResumeText
+      .split(/\s+/)
+      .filter(Boolean).length;
+    const sectionNames = [
+      "Summary",
+      "Experience",
+      "Education",
+      "Skills",
+      "Projects",
+      "Certifications",
+    ];
+    const sectionStatus = sectionNames.map((name) => ({
+      name,
+      found: new RegExp(`\\b${name}\\b`, "i").test(
+        normalizedResumeText
+      ),
+    }));
+    const normalizedTargetSkills = targetSkills
+      .split(",")
+      .map((skill) => skill.trim())
+      .filter(Boolean);
+    const detectedSkills = normalizedTargetSkills.filter((skill) =>
+      normalizedResumeText.toLowerCase().includes(skill.toLowerCase())
+    );
+    const analysisScore =
+      typeof analysis.overallScore === "number"
+        ? Math.max(0, Math.min(100, analysis.overallScore))
+        : 0;
 
     return NextResponse.json({
       success: true,
       fileName: file.name,
-      fileType: file.type || "unknown",
-      extractedCharacters: text.length,
-      extractedWords: text
-        .split(/\s+/)
-        .filter(Boolean).length,
-      targetCareer:
-        targetCareer || "Not specified",
-      ats,
-      matchedSkills,
-      missingSkills,
-      detectedSkills,
+      fileType: file.type || fileName.split(".").pop() || "unknown",
+      targetCareer,
+      extractedCharacters: normalizedResumeText.length,
+      extractedTextLength: resumeText.length,
+      extractedWords,
+      previewText: normalizedResumeText.slice(0, 12000),
+      ats: {
+        score: analysisScore,
+        wordCount: extractedWords,
+        hasEmail: /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/.test(normalizedResumeText),
+        hasPhone: /(?:\+?\d[\d\s().-]{8,}\d)/.test(normalizedResumeText),
+        keywordScore: Math.round(
+          (detectedSkills.length / Math.max(normalizedTargetSkills.length, 1)) * 100
+        ),
+        sectionScore: Math.round(
+          (sectionStatus.filter((section) => section.found).length /
+            sectionStatus.length) *
+            100
+        ),
+        lengthScore: extractedWords >= 150 && extractedWords <= 900 ? 100 : 60,
+        contactScore: normalizedResumeText.match(/@/) ? 100 : 0,
+        actionWordScore: 0,
+      },
+      localFeedback: {
+        quickVerdict:
+          analysis.summary || "Resume analyzed successfully.",
+        matchedSkills: detectedSkills,
+        missingSkills: Array.isArray(analysis.missingSkills)
+          ? analysis.missingSkills
+          : [],
+        improvementSuggestions: Array.isArray(analysis.improvements)
+          ? analysis.improvements
+          : [],
+      },
       sectionStatus,
-      localFeedback,
-      aiFeedback,
-      previewText: text.slice(0, 5000),
+      detectedSkills,
+      missingSkills: Array.isArray(analysis.missingSkills)
+        ? analysis.missingSkills
+        : [],
+      aiReview: {
+        summary: analysis.summary || "",
+        strengths: Array.isArray(analysis.strengths)
+          ? analysis.strengths
+          : [],
+        weaknesses: Array.isArray(analysis.weaknesses)
+          ? analysis.weaknesses
+          : [],
+        keywordAdvice: Array.isArray(analysis.atsTips)
+          ? analysis.atsTips
+          : [],
+        bulletImprovements: Array.isArray(analysis.improvements)
+          ? analysis.improvements
+          : [],
+        actionPlan: Array.isArray(analysis.recommendedSkills)
+          ? analysis.recommendedSkills
+          : [],
+      },
+      analysis,
     });
   } catch (error) {
-    console.error("Resume Analyze API Error:", error);
+    console.error(
+      "Resume Analyze API Error:",
+      error
+    );
 
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Resume analysis failed. Please try again.",
+          "Resume analysis failed. Please try again.",
       },
       { status: 500 }
     );
